@@ -1,50 +1,49 @@
-# Welcome to your Expo app 👋
+![](thumbnail.png)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# Pomodoro App
 
-## Get started
+Um projeto simples para introdução ao desenvolvimento com React Native, parte do curso voltado para quem já domina os fundamentos de ReactJS. Durante o curso, desenvolvemos gradualmente um app de Pomodoro.
 
-1. Install dependencies
+## 🔨 Funcionalidades do projeto
 
-   ```bash
-   npm install
-   ```
+- Seleção de diferentes modos de temporizador: Foco, Pausa Curta e Pausa Longa.
+- Contador regressivo animado com opções de iniciar e pausar.
+- Exibição de ícones interativos para controle do temporizador.
 
-2. Start the app
+![](screen-capture.gif)
 
-   ```bash
-   npx expo start
-   ```
+## ✔️ Técnicas e tecnologias utilizadas
 
-In the output, you'll find options to open the app in a
+O desenvolvimento do projeto envolve as seguintes tecnologias e técnicas:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **`useState` e `useRef`**: Gerenciamento de estado e referência de intervalos.
+- **Componentização**: Criação de componentes reutilizáveis como `FokusButton`, `ActionButton` e `Timer`.
+- **`StyleSheet`**: Estilização customizada para layouts e interatividade.
+- **Imagens e SVGs**: Utilização de imagens locais e ícones SVG personalizados.
+- **`setInterval`**: Lógica de contagem regressiva com controle de interrupção.
+- **React Native CLI**: Configuração e execução do projeto.
+- **Simulação de Pomodoro**: Estrutura para foco e pausas integradas ao design.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🛠️ Abrir e rodar o projeto
 
-## Get a fresh project
+Após baixar o projeto, siga os passos abaixo para executá-lo:
 
-When you're ready, run:
+1. Certifique-se de que possui o ambiente de desenvolvimento React Native configurado ([guia oficial](https://docs.expo.dev/get-started/set-up-your-environment/)).
+
+2. No terminal, navegue até a pasta do projeto e instale as dependências:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+3. Execute o projeto:
 
-## Learn more
+```bash
+npm start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+4. Com o expo em execução, você pode abrir o app no seu navegador, em dispositivos virtuais (android | ios) ou no seu celular através do Expo Go
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📚 Mais informações do curso
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Gostou do projeto e quer aprender mais? Acesse o curso e desenvolva habilidades para criar aplicativos com React Native desde o início!
