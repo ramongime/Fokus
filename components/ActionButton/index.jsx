@@ -6,6 +6,8 @@ export const ActionButton = ({ active, onPress, display }) => {
     <Pressable
       style={active ? styles.contextButtonActive : null}
       onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: !!active }}
     >
       <Text style={styles.contextButtonText}>{display}</Text>
     </Pressable>

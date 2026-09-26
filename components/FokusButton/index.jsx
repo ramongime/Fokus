@@ -6,6 +6,7 @@ export const FokusButton = ({ onPress, title, icon, outline }) => {
     <Pressable
       style={[styles.button, outline && styles.outlineButton]}
       onPress={onPress}
+      accessibilityRole="button"
     >
       {icon}
       <Text style={[styles.buttonText, outline && styles.outlineButtonText]}>

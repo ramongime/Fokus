@@ -10,6 +10,8 @@ export const BackButtonDrawer = ({ backHref }) => {
       color={colors.text}
       style={{ marginLeft: 16 }}
       onPress={() => router.navigate(backHref)}
+      accessibilityRole="button"
+      accessibilityLabel="Voltar"
     />
   );
 };

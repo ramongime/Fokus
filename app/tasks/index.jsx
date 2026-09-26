@@ -1,5 +1,7 @@
 import { router } from "expo-router";
+import { useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
+import { ConfirmModal } from "../../components/ConfirmModal";
 import useTaskContext from "../../components/context/useTaskContext";
 import { FokusButton } from "../../components/FokusButton";
 import { IconPlus } from "../../components/Icons";
@@ -8,6 +10,12 @@ import { colors, fontSizes } from "../../constants/theme";
 
 export default function Tasks() {
   const { tasks, deleteTask, toggleTaskCompleted } = useTaskContext();
+  const [taskToDelete, setTaskToDelete] = useState(null);
+
+  const confirmDelete = () => {
+    deleteTask(taskToDelete.id);
+    setTaskToDelete(null);
+  };
 
   return (
     <View style={styles.container}>
@@ -20,7 +28,7 @@ export default function Tasks() {
                 completed={item.completed}
                 text={item.description}
                 pomodoros={item.pomodoros}
-                onPressDelete={() => deleteTask(item.id)}
+                onPressDelete={() => setTaskToDelete(item)}
                 onToggleComplete={() => toggleTaskCompleted(item.id)}
                 onPressEdit={() => router.navigate(`/edit-task/${item.id}`)}
               />
@@ -48,6 +56,18 @@ export default function Tasks() {
           />
         </View>
       </View>
+      <ConfirmModal
+        visible={taskToDelete != null}
+        title="Excluir tarefa?"
+        message={
+          taskToDelete
+            ? `"${taskToDelete.description}" vai sumir da sua lista.`
+            : ""
+        }
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setTaskToDelete(null)}
+      />
     </View>
   );
 }

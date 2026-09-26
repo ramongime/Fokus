@@ -18,7 +18,12 @@ const TaskItem = ({
 
   return (
     <View style={cardStyles}>
-      <Pressable onPress={onToggleComplete}>
+      <Pressable
+        onPress={onToggleComplete}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: !!completed }}
+        accessibilityLabel={`Concluir "${text}"`}
+      >
         <IconCheck checked={completed} />
       </Pressable>
       <View style={styles.content}>
@@ -29,10 +34,18 @@ const TaskItem = ({
           </Text>
         )}
       </View>
-      <Pressable onPress={onPressEdit}>
+      <Pressable
+        onPress={onPressEdit}
+        accessibilityRole="button"
+        accessibilityLabel={`Editar "${text}"`}
+      >
         <IconPencil />
       </Pressable>
-      <Pressable onPress={onPressDelete}>
+      <Pressable
+        onPress={onPressDelete}
+        accessibilityRole="button"
+        accessibilityLabel={`Excluir "${text}"`}
+      >
         <IconTrash />
       </Pressable>
     </View>

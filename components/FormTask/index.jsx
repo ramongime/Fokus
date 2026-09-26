@@ -36,6 +36,7 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
           </Text>
           <Text style={styles.label}>Em que você está trabalhando?</Text>
           <TextInput
+            accessibilityLabel="Descrição da tarefa"
             style={styles.input}
             numberOfLines={10}
             multiline={true}
@@ -43,7 +44,11 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
             onChangeText={setDescription}
           />
           <View style={styles.actions}>
-            <Pressable style={styles.button} onPress={submitTask}>
+            <Pressable
+              style={styles.button}
+              onPress={submitTask}
+              accessibilityRole="button"
+            >
               <IconSave />
               <Text>Salvar</Text>
             </Pressable>

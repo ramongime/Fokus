@@ -21,7 +21,16 @@ export const TaskPicker = ({ tasks, currentTask, onSelect }) => {
 
   return (
     <>
-      <Pressable style={styles.trigger} onPress={() => setOpen(true)}>
+      <Pressable
+        style={styles.trigger}
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={
+          currentTask
+            ? `Focando em ${currentTask.description}. Toque para trocar`
+            : "Escolher uma tarefa para o foco"
+        }
+      >
         <Text style={styles.triggerLabel}>🎯 Focando em</Text>
         <Text style={styles.triggerText} numberOfLines={1}>
           {currentTask ? currentTask.description : "Escolher uma tarefa"}

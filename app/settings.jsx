@@ -23,6 +23,7 @@ export default function Settings() {
           <Switch
             value={settings.autoStartCycles}
             onValueChange={setAutoStartCycles}
+            accessibilityLabel="Emendar ciclos"
             trackColor={{ false: colors.muted, true: colors.primary }}
             thumbColor={colors.text}
           />
