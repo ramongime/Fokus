@@ -54,11 +54,23 @@ const serve = () =>
     server.listen(PORT, () => done(server));
   });
 
-const today = () => {
+// Data local de `daysAgo` dias atrás, no formato "2026-09-26"
+const dayKey = (daysAgo) => {
   const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
+
+// Focos por dia da semana de exemplo: [dias atrás, focos]
+const sampleWeek = [
+  [6, 2],
+  [5, 4],
+  [3, 1],
+  [2, 6],
+  [1, 3],
+  [0, 3],
+];
 
 // Dados de exemplo que aparecem nas capturas
 const seed = {
@@ -73,7 +85,12 @@ const seed = {
     pausedSeconds: null,
     segments: null,
     processed: 0,
-    stats: { date: today(), count: 3 },
+    history: Object.fromEntries(
+      sampleWeek.map(([daysAgo, count]) => [
+        dayKey(daysAgo),
+        { count, minutes: count * 25 },
+      ]),
+    ),
     currentTaskId: "1",
   },
 };
@@ -127,6 +144,9 @@ const captureScreens = async (browser) => {
 
   await open("/settings");
   await shot("configuracoes");
+
+  await open("/history");
+  await shot("historico");
 
   await page.close();
 };

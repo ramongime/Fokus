@@ -20,7 +20,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![Web](https://img.shields.io/badge/Web-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![Jest](https://img.shields.io/badge/testes-20_passando-C21325?style=flat-square&logo=jest&logoColor=white)
+![Jest](https://img.shields.io/badge/testes-31_passando-C21325?style=flat-square&logo=jest&logoColor=white)
 [![CI](https://github.com/ramongime/Fokus/actions/workflows/ci.yml/badge.svg)](https://github.com/ramongime/Fokus/actions/workflows/ci.yml)
 
 [Funcionalidades](#-funcionalidades) •
@@ -41,6 +41,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 | ⏱️ **Três modos de timer** | Foco, Pausa curta e Pausa longa, com ilustração própria para cada um |
 | 🔁 **Ciclos emendados** | Acabou o foco, a pausa começa sozinha; acabou a pausa, volta o foco. Dá para desligar nas configurações |
 | 🍅 **Contador do dia** | Bolinhas mostram quanto falta para a pausa longa, que vem a cada 4 focos (configurável) |
+| 📊 **Histórico da semana** | Gráfico de focos por dia, tempo focado, total da semana e sequência de dias seguidos |
 | 🎯 **Foco em uma tarefa** | Escolha no que está trabalhando; cada foco concluído soma um 🍅 na tarefa |
 | ⚙️ **Configurações** | Durações de cada modo, intervalo da pausa longa, emendar ciclos e vibração |
 | 🔒 **Funciona com a tela bloqueada** | O tempo é calculado a partir do horário de término, então nada se perde quando o celular dorme |
@@ -65,9 +66,9 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/escolher-tarefa.png" width="230" alt="Escolher a tarefa do foco"> | <img src="docs/screenshots/tarefas.png" width="230" alt="Lista de tarefas com pomodoros"> | <img src="docs/screenshots/configuracoes.png" width="230" alt="Tela de configurações"> |
 
-| Nova tarefa |
-|:---:|
-| <img src="docs/screenshots/nova-tarefa.png" width="230" alt="Formulário de nova tarefa"> |
+| Histórico da semana | Nova tarefa |
+|:---:|:---:|
+| <img src="docs/screenshots/historico.png" width="230" alt="Histórico com gráfico de focos por dia"> | <img src="docs/screenshots/nova-tarefa.png" width="230" alt="Formulário de nova tarefa"> |
 
 </div>
 
@@ -166,18 +167,21 @@ fokus/
 │   ├── _layout.jsx              #    Providers + menu lateral (Drawer)
 │   ├── index.jsx                #    Boas-vindas
 │   ├── pomodoro.jsx             #    Timer
+│   ├── history.jsx              #    Histórico da semana
 │   ├── settings.jsx             #    Configurações
 │   ├── tasks/index.jsx          #    Lista de tarefas
 │   ├── add-task/index.jsx       #    Nova tarefa
 │   └── edit-task/[id].jsx       #    Editar tarefa
 ├── components/                  # 🧩 Componentes visuais (dados e ações via props)
 │   ├── FokusButton/  Timer/  TaskItem/  TaskPicker/  PomodoroCounter/
-│   ├── SettingRow/  Stepper/  FormTask/  ConfirmModal/  Icons/ ...
+│   ├── WeekChart/  StatTile/  SettingRow/  Stepper/  FormTask/
+│   ├── ConfirmModal/  Icons/ ...
 │   └── context/                 # 🧠 Estado global
 │       ├── SettingsProvider.jsx #    Configurações + AsyncStorage
 │       ├── TaskProvider.jsx     #    Tarefas + AsyncStorage
-│       ├── TimerProvider.jsx    #    Timer, ciclos, contador + notificações
+│       ├── TimerProvider.jsx    #    Timer, ciclos, histórico + notificações
 │       ├── timerLogic.js        #    Regras puras do timer (testadas)
+│       ├── historyLogic.js      #    Histórico por dia, semana e sequência (testadas)
 │       └── timerNotifications.js
 ├── constants/                   # 🎛️ Configuração
 │   ├── theme.js                 #    Cores, fontes e raios
@@ -195,8 +199,8 @@ fokus/
 - 🧩 **Componentes burros**: recebem tudo por props e nunca acessam o contexto.
 - 📝 **Um formulário para criar e editar**: `FormTask` muda só pelo `defaultValue`.
 - 🎨 **Tema único**: nenhuma cor solta; tudo vem de [`constants/theme.js`](constants/theme.js).
-- 🧪 **Regras em funções puras**: a lógica do timer fica em `timerLogic.js`, sem React, e é
-  testada. Os arquivos de lógica têm comentários explicando o papel de cada parte.
+- 🧪 **Regras em funções puras**: a lógica do timer e do histórico fica em `timerLogic.js` e
+  `historyLogic.js`, sem React, e é testada. Os arquivos de lógica têm comentários explicando o papel de cada parte.
 
 ### 🤖 Qualidade
 
@@ -236,7 +240,8 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 - [x] Confirmação antes de excluir e acessibilidade
 - [x] CI no GitHub Actions
 - [x] Vibrar no fim de cada ciclo
-- [ ] Histórico da semana com gráfico
+- [x] Histórico da semana com gráfico
+- [ ] Histórico do mês e metas diárias
 - [ ] Sons diferentes para foco e pausa
 - [ ] Widget na tela inicial do celular
 - [ ] Build instalável com EAS
@@ -247,7 +252,7 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 
 Projeto nascido no curso de **React Native da [Alura](https://www.alura.com.br/)** e evoluído
 com timer em segundo plano, notificações, ciclos emendados, contador diário, tarefas vinculadas
-ao foco, configurações, testes, tema centralizado e lint.
+ao foco, configurações, vibração, histórico com gráfico, testes, tema centralizado e lint.
 
 <div align="center">
 

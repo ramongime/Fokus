@@ -29,6 +29,7 @@ app/                       # rotas do expo-router (uma tela por arquivo)
   _layout.jsx              # Providers + GestureHandlerRootView + Drawer
   index.jsx                # landing, sem header e fora do menu
   pomodoro.jsx             # tela do timer (tarefa do foco, contador do dia)
+  history.jsx              # histórico da semana (gráfico, tempo focado, sequência)
   settings.jsx             # configurações (ciclos e durações)
   tasks/index.jsx          # lista de tarefas
   add-task/index.jsx       # criar tarefa (usa FormTask)
@@ -44,6 +45,7 @@ components/
     TimerProvider.jsx      # timer, ciclos, contador do dia + AsyncStorage ("fokus-timer")
     useTimerContext.js
     timerLogic.js          # funções puras do timer, testadas em timerLogic.test.js
+    historyLogic.js        # histórico por dia, semana e sequência (historyLogic.test.js)
     timerNotifications.js  # agendar/cancelar notificações locais (expo-notifications)
 constants/
   theme.js                 # cores (colors), tamanhos de fonte (fontSizes) e raios (radii)
@@ -68,7 +70,11 @@ docs/                      # banner e screenshots usados no README
   ligado. O tempo exibido e o ciclo atual são derivados de `Date.now()` a cada tick e quando o
   app volta para primeiro plano (`AppState`), então tudo continua certo com a tela bloqueada ou
   o app fechado. Ciclos que terminaram são contabilizados uma vez só (`processed` + ref): somam
-  no contador do dia (`stats`) e, se for foco, na tarefa escolhida (`pomodoros`).
+  no histórico (`history`) e, se for foco, na tarefa escolhida (`pomodoros`).
+- **Histórico**: `history` no `fokus-timer` é `{ "AAAA-MM-DD": { count, minutes } }`, com os
+  últimos 90 dias. O dia é o do fim do foco e os minutos vêm de `startTime`/`endTime` do ciclo.
+  O antigo `stats` (`{ date, count }`, só de hoje) é convertido ao carregar. A tela de
+  histórico deriva semana, totais e sequência com `historyLogic.js`.
 - **Fim do plano**: o timer para no próximo modo sugerido (pausa longa a cada
   `longBreakInterval` focos do dia).
 - **Durações**: vêm das configurações; `pausedSeconds = null` significa "duração cheia", então
