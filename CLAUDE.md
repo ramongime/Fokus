@@ -9,6 +9,7 @@ UI em português (pt-BR).
 npm install
 npx expo start        # Expo Go, emulador ou web
 npx expo run:ios      # build nativo (passo a passo em Documentos/)
+npm test              # Jest (jest-expo); testes em *.test.js ao lado do código
 npm run lint          # ESLint (eslint-config-expo); precisa passar sem avisos
 npm run format        # Prettier em app/, components/ e constants/
 ```
@@ -19,7 +20,8 @@ npm run format        # Prettier em app/, components/ e constants/
 app/                       # rotas do expo-router (uma tela por arquivo)
   _layout.jsx              # Providers + GestureHandlerRootView + Drawer
   index.jsx                # landing, sem header e fora do menu
-  pomodoro.jsx             # tela do timer
+  pomodoro.jsx             # tela do timer (tarefa do foco, contador do dia)
+  settings.jsx             # configurações (ciclos e durações)
   tasks/index.jsx          # lista de tarefas
   add-task/index.jsx       # criar tarefa (usa FormTask)
   edit-task/[id].jsx       # editar tarefa (usa FormTask com defaultValue)
@@ -29,12 +31,16 @@ components/
   context/
     TaskProvider.jsx       # estado das tarefas + AsyncStorage ("fokus-tasks")
     useTaskContext.js
-    TimerProvider.jsx      # estado do timer + AsyncStorage ("fokus-timer")
+    SettingsProvider.jsx   # configurações + AsyncStorage ("fokus-settings")
+    useSettingsContext.js
+    TimerProvider.jsx      # timer, ciclos, contador do dia + AsyncStorage ("fokus-timer")
     useTimerContext.js
-    timerNotifications.js  # agendar/cancelar notificação local (expo-notifications)
+    timerLogic.js          # funções puras do timer, testadas em timerLogic.test.js
+    timerNotifications.js  # agendar/cancelar notificações locais (expo-notifications)
 constants/
   theme.js                 # cores (colors), tamanhos de fonte (fontSizes) e raios (radii)
-  pomodoro.js              # modos do timer: id, duração, imagem, texto e notificação
+  settings.js              # configurações padrão e limites
+  pomodoro.js              # modos do timer: id, imagem, texto e notificação
 Documentos/                # tutoriais de build iOS
 docs/                      # banner e screenshots usados no README
 .claude/skills/expo-app-pattern/  # padrão de arquitetura para reutilizar em outros apps
@@ -47,13 +53,20 @@ docs/                      # banner e screenshots usados no README
   visuais não acessam contexto.
 - **Persistência**: o Provider lê o AsyncStorage ao montar e só grava depois de
   `isLoaded`, para não sobrescrever os dados salvos com o estado inicial.
-- **Timer**: o `TimerProvider` guarda o horário de término (`endTime`), não um contador. O
-  tempo restante é recalculado a partir dele a cada tick e quando o app volta para
-  primeiro plano (`AppState`). Por isso o tempo fica certo mesmo com a tela bloqueada,
-  quando o JS do app fica suspenso.
-- **Notificação**: ao iniciar, uma notificação local é agendada para `endTime` no sistema
-  operacional, que a entrega mesmo com o app suspenso ou fechado. Pausar ou trocar de modo
-  cancela a notificação. A permissão é pedida na primeira vez que o timer inicia.
+- **Ordem dos Providers** (`_layout.jsx`): `SettingsProvider` > `TasksProvider` > `TimerProvider`,
+  porque o timer lê as configurações e soma pomodoros nas tarefas.
+- **Timer**: ao dar play, `buildPlan` monta os ciclos com horário de término
+  (`segments: [{ typeId, endTime }]`): só o atual, ou os próximos 8 se "Emendar ciclos" estiver
+  ligado. O tempo exibido e o ciclo atual são derivados de `Date.now()` a cada tick e quando o
+  app volta para primeiro plano (`AppState`), então tudo continua certo com a tela bloqueada ou
+  o app fechado. Ciclos que terminaram são contabilizados uma vez só (`processed` + ref): somam
+  no contador do dia (`stats`) e, se for foco, na tarefa escolhida (`pomodoros`).
+- **Fim do plano**: o timer para no próximo modo sugerido (pausa longa a cada
+  `longBreakInterval` focos do dia).
+- **Durações**: vêm das configurações; `pausedSeconds = null` significa "duração cheia", então
+  mudar a configuração reflete na hora quando o timer não foi iniciado.
+- **Notificação**: uma por ciclo planejado, agendada no sistema operacional. Pausar ou trocar de
+  modo cancela todas. A permissão é pedida no primeiro play.
 - **Navegação**: Drawer do expo-router. Telas de adicionar/editar ficam escondidas do menu
   (`drawerItemStyle: { display: "none" }`) e têm `BackButtonDrawer` no header.
 

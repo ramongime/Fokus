@@ -20,6 +20,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![Web](https://img.shields.io/badge/Web-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
+![Jest](https://img.shields.io/badge/testes-16_passando-C21325?style=flat-square&logo=jest&logoColor=white)
 
 [Funcionalidades](#-funcionalidades) •
 [Telas](#-telas) •
@@ -36,9 +37,13 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 
 | | |
 |---|---|
-| ⏱️ **Três modos de timer** | Foco (25 min), Pausa curta (5 min) e Pausa longa (15 min), com ilustração própria para cada um |
+| ⏱️ **Três modos de timer** | Foco, Pausa curta e Pausa longa, com ilustração própria para cada um |
+| 🔁 **Ciclos emendados** | Acabou o foco, a pausa começa sozinha; acabou a pausa, volta o foco. Dá para desligar nas configurações |
+| 🍅 **Contador do dia** | Bolinhas mostram quanto falta para a pausa longa, que vem a cada 4 focos (configurável) |
+| 🎯 **Foco em uma tarefa** | Escolha no que está trabalhando; cada foco concluído soma um 🍅 na tarefa |
+| ⚙️ **Configurações** | Durações de cada modo, intervalo da pausa longa e o liga/desliga dos ciclos |
 | 🔒 **Funciona com a tela bloqueada** | O tempo é calculado a partir do horário de término, então nada se perde quando o celular dorme |
-| 🔔 **Notificação no fim do ciclo** | Agendada direto no sistema operacional: chega mesmo com o app em segundo plano ou fechado |
+| 🔔 **Notificação no fim do ciclo** | Agendada direto no sistema operacional: chega mesmo com o app em segundo plano ou fechado, avisando qual ciclo começou |
 | 💾 **Retoma de onde parou** | Fechou o app no meio do foco? Ao abrir, o timer continua certinho |
 | ✅ **Lista de tarefas completa** | Criar, editar, concluir e excluir, tudo salvo no aparelho |
 | 🎨 **Tema escuro com personalidade** | Paleta centralizada em um único arquivo, fácil de customizar |
@@ -53,9 +58,13 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/home.png" width="230" alt="Tela inicial"> | <img src="docs/screenshots/timer.png" width="230" alt="Timer de foco em andamento"> | <img src="docs/screenshots/pausa-longa.png" width="230" alt="Modo pausa longa"> |
 
-| Suas tarefas | Nova tarefa |
-|:---:|:---:|
-| <img src="docs/screenshots/tarefas.png" width="230" alt="Lista de tarefas"> | <img src="docs/screenshots/nova-tarefa.png" width="230" alt="Formulário de nova tarefa"> |
+| No que você vai focar? | Suas tarefas | Configurações |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/escolher-tarefa.png" width="230" alt="Escolher a tarefa do foco"> | <img src="docs/screenshots/tarefas.png" width="230" alt="Lista de tarefas com pomodoros"> | <img src="docs/screenshots/configuracoes.png" width="230" alt="Tela de configurações"> |
+
+| Nova tarefa |
+|:---:|
+| <img src="docs/screenshots/nova-tarefa.png" width="230" alt="Formulário de nova tarefa"> |
 
 </div>
 
@@ -83,12 +92,18 @@ sequenceDiagram
     Note over App: Tempo certo, sem depender do setInterval
 ```
 
-1. **Horário de término, não contador.** O app guarda `endTime` e mostra sempre `endTime - agora`.
+1. **Horário de término, não contador.** O app guarda o horário em que cada ciclo termina e mostra
+   sempre `término - agora`. Com os ciclos emendados, ele planeja os próximos 8 ciclos de uma vez
+   (foco, pausa, foco...), então mesmo que você só abra o app 1 hora depois, ele sabe em qual
+   ciclo está e quantos focos você completou.
 2. **Recalcula ao voltar.** Um listener de `AppState` atualiza o tempo assim que o app fica ativo.
-3. **Quem avisa é o sistema.** A notificação local (`expo-notifications`) é agendada no iOS/Android,
-   que a entrega mesmo com o app suspenso. Pausar ou trocar de modo cancela o aviso.
+3. **Quem avisa é o sistema.** Uma notificação local (`expo-notifications`) é agendada no iOS/Android
+   para o fim de cada ciclo planejado, e ele entrega mesmo com o app suspenso. Pausar ou trocar de
+   modo cancela os avisos.
 
-Tudo isso vive em [`TimerProvider.jsx`](components/context/TimerProvider.jsx) e
+A lógica pura (planejar ciclos, decidir a próxima pausa, contar focos do dia) fica em
+[`timerLogic.js`](components/context/timerLogic.js), coberta por testes. O estado mora em
+[`TimerProvider.jsx`](components/context/TimerProvider.jsx) e as notificações em
 [`timerNotifications.js`](components/context/timerNotifications.js).
 
 ---
@@ -127,6 +142,8 @@ Escaneie o QR code com o Expo Go e pronto. 🎉
 |---|---|
 | `npm start` | Inicia o Expo (Expo Go, emulador ou web) |
 | `npm run android` / `npm run ios` / `npm run web` | Abre direto na plataforma |
+| `npm test` | Roda os testes (Jest + jest-expo) |
+| `npm run test:watch` | Testes em modo observação |
 | `npm run lint` | ESLint com as regras do Expo |
 | `npm run format` | Formata o código com Prettier |
 
@@ -140,24 +157,29 @@ fokus/
 │   ├── _layout.jsx              #    Providers + menu lateral (Drawer)
 │   ├── index.jsx                #    Boas-vindas
 │   ├── pomodoro.jsx             #    Timer
+│   ├── settings.jsx             #    Configurações
 │   ├── tasks/index.jsx          #    Lista de tarefas
 │   ├── add-task/index.jsx       #    Nova tarefa
 │   └── edit-task/[id].jsx       #    Editar tarefa
 ├── components/                  # 🧩 Componentes visuais (dados e ações via props)
-│   ├── FokusButton/  ActionButton/  Timer/  TaskItem/  FormTask/  Icons/ ...
+│   ├── FokusButton/  Timer/  TaskItem/  TaskPicker/  PomodoroCounter/
+│   ├── SettingRow/  Stepper/  FormTask/  Icons/ ...
 │   └── context/                 # 🧠 Estado global
+│       ├── SettingsProvider.jsx #    Configurações + AsyncStorage
 │       ├── TaskProvider.jsx     #    Tarefas + AsyncStorage
-│       ├── TimerProvider.jsx    #    Timer + AsyncStorage + notificação
+│       ├── TimerProvider.jsx    #    Timer, ciclos, contador + notificações
+│       ├── timerLogic.js        #    Regras puras do timer (testadas)
 │       └── timerNotifications.js
 ├── constants/                   # 🎛️ Configuração
 │   ├── theme.js                 #    Cores, fontes e raios
+│   ├── settings.js              #    Configurações padrão e limites
 │   └── pomodoro.js              #    Modos do timer e textos das notificações
 └── docs/                        # 🖼️ Imagens deste README
 ```
 
 **Como as peças se encaixam:**
 
-- 🧭 **Telas finas**: pegam dados de um hook (`useTaskContext`, `useTimerContext`) e montam a UI.
+- 🧭 **Telas finas**: pegam dados de um hook (`useTaskContext`, `useTimerContext`, `useSettingsContext`) e montam a UI.
 - 🧠 **Um Provider por domínio**: estado, persistência no `AsyncStorage` e ações ficam juntos.
 - 🧩 **Componentes burros**: recebem tudo por props e nunca acessam o contexto.
 - 📝 **Um formulário para criar e editar**: `FormTask` muda só pelo `defaultValue`.
@@ -187,18 +209,22 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 - [x] Lista de tarefas com persistência local
 - [x] Timer que sobrevive à tela bloqueada
 - [x] Notificação no fim de cada ciclo
-- [ ] Emendar automaticamente foco → pausa → foco
-- [ ] Vincular uma tarefa ao pomodoro em andamento
-- [ ] Contador de pomodoros concluídos por dia
-- [ ] Durações personalizáveis
-- [ ] Testes automatizados com `jest-expo`
+- [x] Emendar automaticamente foco → pausa → foco (com opção de desligar)
+- [x] Vincular uma tarefa ao pomodoro em andamento
+- [x] Contador de pomodoros concluídos por dia
+- [x] Durações personalizáveis
+- [x] Testes automatizados com `jest-expo`
+- [ ] Histórico da semana com gráfico
+- [ ] Sons diferentes para foco e pausa
+- [ ] Widget na tela inicial do celular
 
 ---
 
 ## 🙌 Créditos
 
 Projeto nascido no curso de **React Native da [Alura](https://www.alura.com.br/)** e evoluído
-com timer em segundo plano, notificações, persistência do timer, tema centralizado e lint.
+com timer em segundo plano, notificações, ciclos emendados, contador diário, tarefas vinculadas
+ao foco, configurações, testes, tema centralizado e lint.
 
 <div align="center">
 
