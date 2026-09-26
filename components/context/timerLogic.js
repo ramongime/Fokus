@@ -122,7 +122,7 @@ export const normalizeSettings = (saved = {}) => {
 
 // Quanto tempo depois do fim de um ciclo ainda vale vibrar pelo app. Se a pessoa só
 // abrir o app bem depois, o ciclo já acabou faz tempo e não faz sentido vibrar.
-export const VIBRATION_WINDOW_MS = 5000;
+const VIBRATION_WINDOW_MS = 5000;
 
 // Vibrar pelo próprio app só quando ele está aberto, o ciclo acabou agora e não há
 // notificação agendada (se houver, a notificação já vibra, inclusive com a tela bloqueada)
