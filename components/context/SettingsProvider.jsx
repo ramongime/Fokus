@@ -3,6 +3,11 @@ import { createContext, useEffect, useState } from "react";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 import { normalizeSettings } from "./timerLogic";
 
+/*
+ * Configurações do usuário (emendar ciclos, durações, intervalo da pausa longa),
+ * salvas no aparelho. Todo valor passa por normalizeSettings, que completa com os
+ * padrões e respeita os limites de constants/settings.js.
+ */
 export const SettingsContext = createContext();
 
 const SETTINGS_STORAGE_KEY = "fokus-settings";
@@ -11,6 +16,7 @@ export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Carrega as configurações salvas ao abrir o app
   useEffect(() => {
     const getData = async () => {
       try {
@@ -27,6 +33,7 @@ export function SettingsProvider({ children }) {
     getData();
   }, []);
 
+  // Salva a cada mudança, mas só depois de carregar (para não gravar os padrões por cima)
   useEffect(() => {
     if (!isLoaded) {
       return;
@@ -40,6 +47,7 @@ export function SettingsProvider({ children }) {
     setSettings((oldState) => ({ ...oldState, autoStartCycles }));
   };
 
+  // Ex.: setDuration("focus", 50) -> foco de 50 minutos
   const setDuration = (typeId, minutes) => {
     setSettings((oldState) =>
       normalizeSettings({

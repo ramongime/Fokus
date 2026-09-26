@@ -19,6 +19,19 @@ import {
 import useSettingsContext from "./useSettingsContext";
 import useTaskContext from "./useTaskContext";
 
+/*
+ * Estado do timer Pomodoro.
+ *
+ * Em vez de um contador que diminui a cada segundo, o timer guarda o horário em que cada
+ * ciclo termina (`segments`). O tempo na tela é sempre "término - agora". Assim, se o
+ * celular bloquear e o JavaScript ficar congelado, ao voltar o valor já está certo.
+ *
+ * Fluxo:
+ *   play   -> buildPlan monta os ciclos e agenda uma notificação para o fim de cada um
+ *   tick   -> descobre em qual ciclo estamos, contabiliza os que terminaram e atualiza a tela
+ *   pausa  -> guarda o tempo restante e cancela as notificações
+ *   fim    -> para no próximo modo sugerido (pausa curta, longa ou foco)
+ */
 export const TimerContext = createContext();
 
 const TIMER_STORAGE_KEY = "fokus-timer";
@@ -41,9 +54,12 @@ export function TimerProvider({ children }) {
   // Atualizado a cada minuto para o contador do dia virar à meia-noite
   const [clock, setClock] = useState(Date.now());
 
+  // Cópias em ref para o tick ler o valor mais recente sem esperar um novo render.
+  // Evita contar o mesmo ciclo duas vezes se dois ticks rodarem seguidos.
   const segmentsRef = useRef(null);
   const processedRef = useRef(0);
 
+  // Atualiza o plano e o state juntos, para ref e state nunca ficarem diferentes
   const updateRun = (newSegments, newProcessed) => {
     segmentsRef.current = newSegments;
     processedRef.current = newProcessed;
@@ -51,6 +67,7 @@ export function TimerProvider({ children }) {
     setProcessed(newProcessed);
   };
 
+  // Valores derivados: calculados a cada render, não guardados
   const timerRunning = segments != null;
   const timerType = getTypeById(typeId);
   const seconds = timerRunning
@@ -58,7 +75,11 @@ export function TimerProvider({ children }) {
     : (pausedSeconds ?? getDurationSeconds(typeId, settings));
   const todayCount = getTodayCount(stats, clock);
   const currentTask = tasks.find((t) => t.id === currentTaskId) ?? null;
+  // Só processa ciclos depois de tudo carregado, senão os pomodoros somados numa tarefa
+  // seriam sobrescritos quando a lista de tarefas terminasse de carregar
   const ready = isLoaded && settingsLoaded && tasksLoaded;
+
+  // Carrega o estado salvo ao abrir o app
 
   useEffect(() => {
     const getData = async () => {
@@ -87,6 +108,7 @@ export function TimerProvider({ children }) {
     getData();
   }, []);
 
+  // Força um render por minuto e ao voltar para o app, para o "focos hoje" virar o dia
   useEffect(() => {
     const updateClock = () => setClock(Date.now());
     const intervalId = setInterval(updateClock, 60 * 1000);
@@ -101,6 +123,7 @@ export function TimerProvider({ children }) {
     };
   }, []);
 
+  // Salva sempre que algo relevante muda (o tempo ao vivo não precisa ser salvo)
   useEffect(() => {
     if (!isLoaded) {
       return;
@@ -133,6 +156,7 @@ export function TimerProvider({ children }) {
       return;
     }
 
+    // Roda 4x por segundo e sempre que o app volta para primeiro plano
     const tick = () => {
       const plan = segmentsRef.current;
       if (plan == null) {
@@ -142,6 +166,7 @@ export function TimerProvider({ children }) {
       const finished = countFinishedSegments(plan, now);
       let count = getTodayCount(stats, now);
 
+      // Ciclos que terminaram desde o último tick: soma os focos no dia e na tarefa
       if (finished > processedRef.current) {
         const focusDone = plan
           .slice(processedRef.current, finished)
@@ -167,6 +192,7 @@ export function TimerProvider({ children }) {
         return;
       }
 
+      // Ainda há ciclo em andamento: mostra o modo e o tempo restante dele
       const current = plan[finished];
       setTypeId(current.typeId);
       setLiveSeconds(getRemainingSeconds(current.endTime, now));
@@ -186,6 +212,7 @@ export function TimerProvider({ children }) {
     };
   }, [ready, segments, stats, settings, currentTaskId, addPomodorosToTask]);
 
+  // Play: planeja os ciclos a partir do tempo atual e agenda as notificações
   const startTimer = async () => {
     const plan = buildPlan({
       typeId,
@@ -209,6 +236,7 @@ export function TimerProvider({ children }) {
     }
   };
 
+  // Pausa: guarda quanto faltava no ciclo atual e cancela os avisos
   const pauseTimer = () => {
     const plan = segmentsRef.current;
     const now = Date.now();
@@ -228,6 +256,7 @@ export function TimerProvider({ children }) {
     startTimer();
   };
 
+  // Trocar de modo manualmente sempre para o timer e começa com a duração cheia
   const toggleTimerType = (newTimerType) => {
     if (timerRunning) {
       cancelTimerNotifications();

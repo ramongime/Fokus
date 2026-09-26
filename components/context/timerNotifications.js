@@ -1,6 +1,12 @@
+/*
+ * Notificações locais do timer. São agendadas no próprio iOS/Android para um horário
+ * exato, então aparecem mesmo com a tela bloqueada ou o app fechado. Não há servidor
+ * nem push: tudo acontece no aparelho.
+ */
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+// No Android, cada notificação pertence a um canal que define prioridade e som
 const CHANNEL_ID = "timer";
 
 // Mostra a notificação mesmo com o app aberto
@@ -12,6 +18,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Cria o canal (Android) e pede permissão só se ainda não foi concedida.
+// Se a pessoa negar, o timer funciona normalmente, só sem os avisos.
 const ensurePermission = async () => {
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
