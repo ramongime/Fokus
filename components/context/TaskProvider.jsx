@@ -38,13 +38,12 @@ export function TasksProvider({ children }) {
   }, [tasks]);
 
   const addTask = (description) => {
-    console.log("tarefa vai ser adicionada");
     setTasks((oldState) => {
       return [
         ...oldState,
         {
           description,
-          id: oldState.length + 1,
+          id: Date.now().toString(),
         },
       ];
     });
@@ -53,24 +52,16 @@ export function TasksProvider({ children }) {
 
   const toggleTaskCompleted = (id) => {
     setTasks((oldState) => {
-      return oldState.map((t) => {
-        if (t.id == id) {
-          t.completed = !t.completed;
-        }
-        return t;
-      });
+      return oldState.map((t) =>
+        t.id == id ? { ...t, completed: !t.completed } : t
+      );
     });
     // chamar persistencia
   };
 
   const updateTask = (id, description) => {
     setTasks((oldState) => {
-      return oldState.map((t) => {
-        if (t.id == id) {
-          t.description = description;
-        }
-        return t;
-      });
+      return oldState.map((t) => (t.id == id ? { ...t, description } : t));
     });
     // chamar persistencia
   };
