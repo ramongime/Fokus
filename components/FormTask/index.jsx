@@ -62,9 +62,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   text: {
-    color: colors.surfaceLight,
+    color: colors.background,
     textAlign: "center",
     fontSize: fontSizes.lg,
+    fontWeight: "bold",
   },
   inner: {
     backgroundColor: colors.muted,
