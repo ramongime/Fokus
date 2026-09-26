@@ -68,8 +68,12 @@ Documentos/              # tutoriais de build e anotações do projeto
    `drawerItemStyle: { display: "none" }` e ganham um `BackButtonDrawer` no `headerLeft`.
 8. **Dados estáticos de configuração** (ex.: os modos do Pomodoro) ficam num array de
    objetos `{ id, display, ... }` no topo do arquivo e a UI é gerada com `.map`.
-9. **Timers e intervalos** guardam o id em `useRef`, sempre com uma função `clear()` que
-   limpa o intervalo e zera o ref; limpar também no unmount **(corrigido)**.
+9. **Timers ficam num Provider e guardam o horário de término**, não um contador: o tempo
+   restante é `endTime - Date.now()`, recalculado num `setInterval` e ao voltar para
+   primeiro plano (`AppState`). Ao iniciar, agende uma notificação local com
+   `expo-notifications` (trigger `DATE`) para `endTime`; cancele ao pausar ou trocar de
+   modo. Assim o timer sobrevive à tela bloqueada e ao app fechado. Referência:
+   `TimerProvider.jsx` e `timerNotifications.js` do Fokus.
 10. **Formulários** usam `KeyboardAvoidingView` (`padding` no iOS, `height` no Android) +
     `TouchableWithoutFeedback onPress={Keyboard.dismiss}`.
 

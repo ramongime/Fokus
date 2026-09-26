@@ -1,72 +1,15 @@
-import { useRef, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActionButton } from "../components/ActionButton";
+import useTimerContext from "../components/context/useTimerContext";
 import { FokusButton } from "../components/FokusButton";
 import { IconPause, IconPlay } from "../components/Icons";
 import { Timer } from "../components/Timer";
-
-const pomodoro = [
-  {
-    id: "focus",
-    initialValue: 25 * 60,
-    image: require("../assets/images/pomodoro.png"),
-    display: "Foco",
-  },
-  {
-    id: "short",
-    initialValue: 5 * 60,
-    image: require("../assets/images/short.png"),
-    display: "Pausa curta",
-  },
-  {
-    id: "long",
-    initialValue: 15 * 60,
-    image: require("../assets/images/long.png"),
-    display: "Pausa longa",
-  },
-];
+import { pomodoro } from "../constants/pomodoro";
 
 export default function Pomodoro() {
-  const [timerType, setTimerType] = useState(pomodoro[0]);
-  const [seconds, setSeconds] = useState(pomodoro[0].initialValue);
-  const [timerRunning, setTimerRunning] = useState(false);
-
-  const timerRef = useRef(null);
-
-  const clear = () => {
-    if (timerRef.current != null) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-      setTimerRunning(false);
-    }
-  };
-
-  const toggleTimerType = (newTimerType) => {
-    setTimerType(newTimerType);
-    setSeconds(newTimerType.initialValue);
-    clear();
-  };
-
-  const toggleTimer = () => {
-    if (timerRef.current) {
-      clear();
-      return;
-    }
-
-    setTimerRunning(true);
-
-    const id = setInterval(() => {
-      setSeconds((oldState) => {
-        if (oldState === 0) {
-          clear();
-          return timerType.initialValue;
-        }
-        return oldState - 1;
-      });
-    }, 1000);
-    timerRef.current = id;
-  };
+  const { timerType, seconds, timerRunning, toggleTimer, toggleTimerType } =
+    useTimerContext();
 
   return (
     <SafeAreaView style={styles.container}>
