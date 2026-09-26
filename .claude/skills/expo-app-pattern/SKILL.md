@@ -1,6 +1,6 @@
 ---
 name: expo-app-pattern
-description: Padrão de arquitetura do Ramon para apps mobile em React Native + Expo (extraído do projeto Fokus). Use ao criar um app Expo novo, adicionar uma tela, um CRUD, um Context/Provider, persistência local com AsyncStorage, navegação com expo-router (Drawer) ou componentes visuais (botões, cards, formulários, ícones SVG) em projetos React Native do Ramon. Triggers: "novo app", "nova tela", "novo CRUD", "expo", "react native", "expo-router", "drawer", "context", "provider", "AsyncStorage", "padrão do Fokus".
+description: Padrão de arquitetura do Ramon para apps mobile em React Native + Expo (extraído do projeto Fokus). Use ao criar um app Expo novo, adicionar uma tela, um CRUD, um Context/Provider, persistência local com AsyncStorage, navegação com expo-router (Drawer) ou componentes visuais (botões, cards, formulários, ícones SVG) em projetos React Native do Ramon. Também cobre configurações do usuário, lógica pura com testes (jest-expo), modais de confirmação, acessibilidade, CI e geração de screenshots. Triggers: "novo app", "nova tela", "novo CRUD", "expo", "react native", "expo-router", "drawer", "context", "provider", "AsyncStorage", "configurações", "testes", "padrão do Fokus".
 ---
 
 # Padrão de app Expo (base: Fokus)
@@ -24,6 +24,8 @@ atalhos de curso, esta skill já traz a versão corrigida, marcada com **(corrig
 | Estilo | `StyleSheet.create` no fim de cada arquivo; cores vindas de `constants/theme.js` |
 | Ícones | SVG próprios com `react-native-svg` em `components/Icons`; `@expo/vector-icons` para ícones genéricos (ex.: voltar) |
 | Idioma da UI | Português (pt-BR) |
+| Testes | Jest com `jest-expo`; arquivos `*.test.js` ao lado do código |
+| Qualidade | ESLint (`eslint-config-expo`) + Prettier; CI no GitHub Actions |
 
 ## Estrutura de pastas
 
@@ -38,11 +40,19 @@ app/
 components/
   <NomeComponente>/index.jsx   # um componente por pasta, PascalCase
   Icons/index.jsx              # todos os ícones SVG, exports nomeados IconXxx
+  ConfirmModal/index.jsx       # confirmação no visual do app (o Alert nativo não funciona na web)
   context/
     <Recurso>Provider.jsx
     use<Recurso>Context.js
+    SettingsProvider.jsx       # configurações do usuário
+    <dominio>Logic.js          # regras puras do domínio, sem React
+    <dominio>Logic.test.js
 constants/
   theme.js               # cores, tamanhos de fonte, raios (corrigido: no Fokus eram hex soltos)
+  settings.js            # configurações padrão e limites (min/max)
+scripts/
+  screenshots.mjs        # gera as imagens do README com Playwright
+.github/workflows/ci.yml # lint + testes + bundle a cada push/PR
 assets/images/, assets/fonts/
 Documentos/              # tutoriais de build e anotações do projeto
 ```
@@ -76,6 +86,26 @@ Documentos/              # tutoriais de build e anotações do projeto
    `TimerProvider.jsx` e `timerNotifications.js` do Fokus.
 10. **Formulários** usam `KeyboardAvoidingView` (`padding` no iOS, `height` no Android) +
     `TouchableWithoutFeedback onPress={Keyboard.dismiss}`.
+11. **Regras de negócio em funções puras** (`<dominio>Logic.js`): recebem dados e o `now`,
+    devolvem um resultado, sem ler relógio, storage ou contexto. O Provider só guarda
+    estado e chama essas funções. Cada função exportada ganha um comentário curto do que
+    recebe e devolve, com exemplo, e é testada em `<dominio>Logic.test.js`.
+12. **Configurações do usuário** num `SettingsProvider`: padrões e limites em
+    `constants/settings.js`, e todo valor salvo ou alterado passa por um `normalizeSettings`
+    que completa com os padrões e aplica os limites. A tela de configurações usa
+    `SettingRow` (rótulo + descrição) com `Switch` ou `Stepper` (−/+).
+13. **Providers que dependem de outros** ficam dentro deles no `_layout.jsx` (ex.:
+    `SettingsProvider` > `TasksProvider` > `TimerProvider`) e só processam dados quando
+    todos os `isLoaded` estão `true`, senão uma escrita pode ser sobrescrita pelo carregamento.
+14. **Ações destrutivas pedem confirmação** com `ConfirmModal` (estado `itemToDelete` na
+    tela), em vez de `Alert.alert`, que não funciona na versão web.
+15. **Acessibilidade**: todo `Pressable` só com ícone recebe `accessibilityRole` e
+    `accessibilityLabel` com o nome do item (ex.: `Excluir "Estudar"`); checkboxes usam
+    `accessibilityRole="checkbox"` + `accessibilityState={{ checked }}`; abas usam `tab` +
+    `selected`.
+16. **Comentários explicam o porquê**, não o quê: um bloco no topo dos arquivos de lógica
+    (papel do arquivo e fluxo) e comentários nas partes não óbvias. Telas e componentes
+    simples ficam sem comentário.
 
 Componentes, tema e ícones: `references/components-and-theme.md`.
 
@@ -88,7 +118,8 @@ Componentes, tema e ícones: `references/components-and-theme.md`.
 4. Crie as telas `app/<recurso>/index.jsx`, `app/add-<recurso>/index.jsx` e
    `app/edit-<recurso>/[id].jsx` a partir de `templates/screens/`.
 5. Registre as três telas no `Drawer` (lista visível, add/edit escondidas com botão voltar).
-6. Rode `npx expo lint` e teste no Expo Go.
+6. Se houver regra de negócio, coloque em `<dominio>Logic.js` com testes.
+7. Rode `npm run lint` e `npm test`, e teste no Expo Go.
 
 ## Correções em relação ao Fokus original
 
@@ -105,6 +136,19 @@ Ao aplicar o padrão, use sempre a versão corrigida:
 - **Cores centralizadas** em `constants/theme.js` em vez de hex repetido em cada arquivo.
 - **Sem `console.log` de debug** nem código comentado sobrando nos commits.
 - **`scheme` do app.json**: troque o `myapp` padrão pelo slug do app.
+
+## Qualidade e documentação
+
+- `package.json` tem os scripts `lint` (`eslint .`), `format` (Prettier), `test` (`jest`),
+  `test:watch` e `screenshots`.
+- No `eslint.config.js`, ignore `.claude/*` e habilite `globals.jest` para `**/*.test.js`.
+- Versão web com `web.output: "single"` no `app.json`: com `"static"`, dados que só existem
+  no cliente (AsyncStorage) geram erros de hidratação.
+- CI em `.github/workflows/ci.yml`: `npm ci`, `npm run lint`, `npm test` e
+  `npx expo export --platform android`.
+- README com banner e capturas geradas por `npm run screenshots` (Playwright abre a versão
+  web com dados de exemplo). Referência: `scripts/screenshots.mjs` do Fokus.
+- `CLAUDE.md` na raiz descrevendo estrutura, fluxo de dados e convenções.
 
 ## Build
 

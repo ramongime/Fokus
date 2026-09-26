@@ -21,6 +21,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
 ![Jest](https://img.shields.io/badge/testes-16_passando-C21325?style=flat-square&logo=jest&logoColor=white)
+[![CI](https://github.com/ramongime/Fokus/actions/workflows/ci.yml/badge.svg)](https://github.com/ramongime/Fokus/actions/workflows/ci.yml)
 
 [Funcionalidades](#-funcionalidades) •
 [Telas](#-telas) •
@@ -45,7 +46,8 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 | 🔒 **Funciona com a tela bloqueada** | O tempo é calculado a partir do horário de término, então nada se perde quando o celular dorme |
 | 🔔 **Notificação no fim do ciclo** | Agendada direto no sistema operacional: chega mesmo com o app em segundo plano ou fechado, avisando qual ciclo começou |
 | 💾 **Retoma de onde parou** | Fechou o app no meio do foco? Ao abrir, o timer continua certinho |
-| ✅ **Lista de tarefas completa** | Criar, editar, concluir e excluir, tudo salvo no aparelho |
+| ✅ **Lista de tarefas completa** | Criar, editar, concluir e excluir (com confirmação), tudo salvo no aparelho |
+| ♿ **Acessível** | Botões de ícone com descrição para leitores de tela (TalkBack e VoiceOver) |
 | 🎨 **Tema escuro com personalidade** | Paleta centralizada em um único arquivo, fácil de customizar |
 
 ---
@@ -146,6 +148,11 @@ Escaneie o QR code com o Expo Go e pronto. 🎉
 | `npm run test:watch` | Testes em modo observação |
 | `npm run lint` | ESLint com as regras do Expo |
 | `npm run format` | Formata o código com Prettier |
+| `npm run screenshots` | Gera de novo o banner e as capturas deste README* |
+
+\* Na primeira vez, rode `npx playwright install chromium`. O script exporta a versão web,
+abre o app num navegador do tamanho de um iPhone com dados de exemplo e salva as imagens em
+[`docs/`](docs/).
 
 ---
 
@@ -163,7 +170,7 @@ fokus/
 │   └── edit-task/[id].jsx       #    Editar tarefa
 ├── components/                  # 🧩 Componentes visuais (dados e ações via props)
 │   ├── FokusButton/  Timer/  TaskItem/  TaskPicker/  PomodoroCounter/
-│   ├── SettingRow/  Stepper/  FormTask/  Icons/ ...
+│   ├── SettingRow/  Stepper/  FormTask/  ConfirmModal/  Icons/ ...
 │   └── context/                 # 🧠 Estado global
 │       ├── SettingsProvider.jsx #    Configurações + AsyncStorage
 │       ├── TaskProvider.jsx     #    Tarefas + AsyncStorage
@@ -174,6 +181,8 @@ fokus/
 │   ├── theme.js                 #    Cores, fontes e raios
 │   ├── settings.js              #    Configurações padrão e limites
 │   └── pomodoro.js              #    Modos do timer e textos das notificações
+├── scripts/screenshots.mjs      # 📸 Gera as imagens do README
+├── .github/workflows/ci.yml     # 🤖 Lint + testes + bundle a cada push
 └── docs/                        # 🖼️ Imagens deste README
 ```
 
@@ -184,6 +193,14 @@ fokus/
 - 🧩 **Componentes burros**: recebem tudo por props e nunca acessam o contexto.
 - 📝 **Um formulário para criar e editar**: `FormTask` muda só pelo `defaultValue`.
 - 🎨 **Tema único**: nenhuma cor solta; tudo vem de [`constants/theme.js`](constants/theme.js).
+- 🧪 **Regras em funções puras**: a lógica do timer fica em `timerLogic.js`, sem React, e é
+  testada. Os arquivos de lógica têm comentários explicando o papel de cada parte.
+
+### 🤖 Qualidade
+
+A cada push na `main` e em todo pull request, o [GitHub Actions](.github/workflows/ci.yml)
+roda o lint, os testes e gera o bundle Android. Se algo quebrar, o selo **CI** lá em cima
+fica vermelho.
 
 Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 [`.claude/skills/expo-app-pattern`](.claude/skills/expo-app-pattern/SKILL.md), com regras e templates.
@@ -214,9 +231,13 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 - [x] Contador de pomodoros concluídos por dia
 - [x] Durações personalizáveis
 - [x] Testes automatizados com `jest-expo`
+- [x] Confirmação antes de excluir e acessibilidade
+- [x] CI no GitHub Actions
+- [ ] Vibrar no fim de cada ciclo
 - [ ] Histórico da semana com gráfico
 - [ ] Sons diferentes para foco e pausa
 - [ ] Widget na tela inicial do celular
+- [ ] Build instalável com EAS
 
 ---
 

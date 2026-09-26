@@ -11,7 +11,15 @@ npx expo start        # Expo Go, emulador ou web
 npx expo run:ios      # build nativo (passo a passo em Documentos/)
 npm test              # Jest (jest-expo); testes em *.test.js ao lado do código
 npm run lint          # ESLint (eslint-config-expo); precisa passar sem avisos
-npm run format        # Prettier em app/, components/ e constants/
+npm run format        # Prettier em app/, components/, constants/ e scripts/
+npm run screenshots   # regenera docs/banner.png e docs/screenshots (Playwright)
+```
+
+O CI (`.github/workflows/ci.yml`) roda `npm ci`, lint, testes e o bundle Android a cada push
+na `main` e em PRs. Rode lint e testes antes de commitar.
+
+```bash
+npx playwright install chromium   # uma vez, antes do primeiro npm run screenshots
 ```
 
 ## Estrutura
@@ -75,6 +83,12 @@ docs/                      # banner e screenshots usados no README
 - Estilos com `StyleSheet.create` no fim do arquivo, usando sempre `colors`, `fontSizes`
   e `radii` de `constants/theme.js`; nada de hex solto nos componentes.
 - Código formatado com Prettier (aspas duplas, ponto e vírgula).
+- Comentários explicam o porquê. Arquivos de lógica (`timerLogic.js`, `TimerProvider.jsx`,
+  `timerNotifications.js`, `SettingsProvider.jsx`) têm um bloco no topo com o papel do
+  arquivo; funções exportadas de `timerLogic.js` têm uma linha dizendo o que fazem.
+- Ações destrutivas pedem confirmação com `ConfirmModal` (o `Alert` nativo não funciona na web).
+- `Pressable` só com ícone precisa de `accessibilityRole` e `accessibilityLabel`.
+- Quando a UI mudar, rode `npm run screenshots` para atualizar as imagens do README.
 - Variações visuais por prop booleana (`outline`, `active`, `completed`).
 - Configurações estáticas como array de objetos `{ id, display, ... }` em `constants/`.
 - IDs são strings (`Date.now().toString()`) e comparados com `===`. O `TaskProvider`
