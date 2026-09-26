@@ -12,7 +12,7 @@ export default function Index() {
           Otimize sua {"\n"}produtividade,{"\n"}
           <Text style={styles.bold}>mergulhe no que{"\n"} importa</Text>
         </Text>
-        <Image source={require("../assets/images/home.png")} />
+        <Image source={require("../assets/images/pomodoro.png")} />
         <FokusButton
           title="Quero iniciar!"
           onPress={() => router.navigate("/pomodoro")}

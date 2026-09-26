@@ -36,6 +36,7 @@ constants/
   theme.js                 # cores (colors), tamanhos de fonte (fontSizes) e raios (radii)
   pomodoro.js              # modos do timer: id, duração, imagem, texto e notificação
 Documentos/                # tutoriais de build iOS
+docs/                      # banner e screenshots usados no README
 .claude/skills/expo-app-pattern/  # padrão de arquitetura para reutilizar em outros apps
 ```
 
@@ -68,6 +69,7 @@ Documentos/                # tutoriais de build iOS
 - Mudanças de dependência nativa: use a versão de `node_modules/expo/bundledNativeModules.json`
   (equivalente a `npx expo install`).
 
-## Pendências conhecidas
+## Web
 
-- `app/index.jsx` usa `assets/images/home.png`, que não está versionado.
+`app.json` usa `web.output: "single"` (SPA). Com `"static"`, a pré-renderização gera erros de
+hidratação, porque tarefas e timer vêm do armazenamento local só no cliente.
