@@ -103,6 +103,7 @@ export const normalizeSettings = (saved = {}) => {
       typeof saved.vibrate === "boolean"
         ? saved.vibrate
         : DEFAULT_SETTINGS.vibrate,
+    hasSeenWelcome: saved.hasSeenWelcome === true,
     longBreakInterval: clamp(
       Number(saved.longBreakInterval) || DEFAULT_SETTINGS.longBreakInterval,
       SETTINGS_LIMITS.longBreakInterval,

@@ -199,6 +199,7 @@ describe("normalizeSettings", () => {
     ).toEqual({
       autoStartCycles: false,
       vibrate: true,
+      hasSeenWelcome: false,
       longBreakInterval: 8,
       durations: { focus: 50, short: 5, long: 15 },
     });

@@ -1,6 +1,8 @@
 export const DEFAULT_SETTINGS = {
   autoStartCycles: true,
   vibrate: true,
+  // A tela de boas-vindas aparece só até o primeiro "Quero iniciar!"
+  hasSeenWelcome: false,
   longBreakInterval: 4,
   // Em minutos
   durations: {

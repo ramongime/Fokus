@@ -47,6 +47,10 @@ export function SettingsProvider({ children }) {
     setSettings((oldState) => ({ ...oldState, autoStartCycles }));
   };
 
+  const markWelcomeSeen = () => {
+    setSettings((oldState) => ({ ...oldState, hasSeenWelcome: true }));
+  };
+
   const setVibrate = (vibrate) => {
     setSettings((oldState) => ({ ...oldState, vibrate }));
   };
@@ -74,6 +78,7 @@ export function SettingsProvider({ children }) {
         isLoaded,
         setAutoStartCycles,
         setVibrate,
+        markWelcomeSeen,
         setDuration,
         setLongBreakInterval,
       }}

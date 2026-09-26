@@ -35,9 +35,7 @@ export default function Tasks() {
             )}
             keyExtractor={(item) => item.id}
             ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-            ListHeaderComponent={
-              <Text style={styles.text}>Lista de tarefas:</Text>
-            }
+            ListHeaderComponent={<Text style={styles.text}>Tarefas</Text>}
             ListFooterComponent={
               <View style={{ marginTop: 16 }}>
                 <FokusButton

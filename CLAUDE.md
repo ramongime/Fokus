@@ -85,8 +85,16 @@ docs/                      # banner e screenshots usados no README
   Android há dois canais (`cycles`, com vibração, e `cycles-quiet`), porque um canal não muda
   depois de criado; o canal antigo `timer` é apagado. Com o app aberto e sem notificações
   agendadas (permissão negada ou web), o app vibra com `Vibration` (`shouldVibrateInApp`).
+- **Boas-vindas**: `app/index.jsx` aparece só até o primeiro "Quero iniciar!"
+  (`settings.hasSeenWelcome`); depois redireciona direto para `/pomodoro`.
 - **Navegação**: Drawer do expo-router. Telas de adicionar/editar ficam escondidas do menu
   (`drawerItemStyle: { display: "none" }`) e têm `BackButtonDrawer` no header.
+
+## Ícone
+
+O símbolo de alvo do logo está em `assets/images/icon.svg`. `icon.png`, `adaptive-icon.png`,
+`splash-icon.png` e `favicon.png` foram gerados a partir dele, sobre o azul `#021123`
+(o mesmo fundo da tela de abertura e do ícone adaptativo no `app.json`).
 
 ## Convenções
 

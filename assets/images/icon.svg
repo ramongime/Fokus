@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Símbolo de alvo do logo do Fokus: anel interno, anel externo em 4 arcos e a mira -->
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
+    <circle cx="512" cy="512" r="150" stroke-width="44"/>
+    <path stroke-width="40" d="
+      M 553 213 A 300 300 0 0 1 811 471
+      M 811 553 A 300 300 0 0 1 553 811
+      M 471 811 A 300 300 0 0 1 213 553
+      M 213 471 A 300 300 0 0 1 471 213"/>
+    <path stroke-width="40" d="
+      M 512 150 V 362
+      M 512 662 V 874
+      M 150 512 H 362
+      M 662 512 H 874"/>
+  </g>
+</svg>

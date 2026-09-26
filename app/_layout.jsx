@@ -18,6 +18,7 @@ export default function Layout() {
                   backgroundColor: colors.background,
                 },
                 headerTintColor: colors.text,
+                headerShadowVisible: false,
                 drawerStyle: {
                   backgroundColor: colors.background,
                 },
@@ -63,7 +64,7 @@ export default function Layout() {
               <Drawer.Screen
                 name="tasks/index"
                 options={{
-                  drawerLabel: "Lista de tarefas",
+                  drawerLabel: "Tarefas",
                   title: "",
                 }}
               />

@@ -3,13 +3,13 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { FokusButton } from "../../components/FokusButton";
 import { IconSave } from "../../components/Icons";
 import { colors, fontSizes, radii } from "../../constants/theme";
 
@@ -31,27 +31,26 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.inner}>
-          <Text style={styles.text}>
-            {defaultValue ? "Editar" : "Adicionar"} uma tarefa:
+          <Text style={styles.title}>
+            {defaultValue ? "Editar tarefa" : "Nova tarefa"}
           </Text>
-          <Text style={styles.label}>Em que você está trabalhando?</Text>
-          <TextInput
-            accessibilityLabel="Descrição da tarefa"
-            style={styles.input}
-            numberOfLines={10}
-            multiline={true}
-            value={description}
-            onChangeText={setDescription}
-          />
-          <View style={styles.actions}>
-            <Pressable
-              style={styles.button}
+          <View style={styles.card}>
+            <Text style={styles.label}>Em que você está trabalhando?</Text>
+            <TextInput
+              accessibilityLabel="Descrição da tarefa"
+              style={styles.input}
+              numberOfLines={10}
+              multiline={true}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Ex.: estudar React Native"
+              placeholderTextColor={colors.muted}
+            />
+            <FokusButton
+              title="Salvar"
+              icon={<IconSave />}
               onPress={submitTask}
-              accessibilityRole="button"
-            >
-              <IconSave />
-              <Text>Salvar</Text>
-            </Pressable>
+            />
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -63,39 +62,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    gap: 16,
-    alignItems: "center",
-  },
-  text: {
-    color: colors.background,
-    textAlign: "center",
-    fontSize: fontSizes.lg,
-    fontWeight: "bold",
   },
   inner: {
-    backgroundColor: colors.muted,
+    alignSelf: "center",
     width: "90%",
-    borderRadius: radii.sm,
-    padding: 16,
-    gap: 32,
+    gap: 24,
+  },
+  title: {
+    textAlign: "center",
+    color: colors.text,
+    fontSize: fontSizes.lg,
+    marginTop: 16,
+  },
+  card: {
+    backgroundColor: colors.surfaceTranslucent,
+    borderColor: colors.surface,
+    borderWidth: 2,
+    borderRadius: radii.lg,
+    padding: 20,
+    gap: 16,
   },
   label: {
-    fontWeight: 600,
+    color: colors.text,
     fontSize: fontSizes.md,
   },
   input: {
-    backgroundColor: colors.surfaceLight,
-    padding: 16,
+    backgroundColor: colors.background,
+    borderColor: colors.surface,
+    borderWidth: 2,
     borderRadius: radii.sm,
-    height: 100,
-  },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+    color: colors.text,
+    fontSize: fontSizes.md,
+    padding: 16,
+    height: 120,
+    textAlignVertical: "top",
   },
 });
