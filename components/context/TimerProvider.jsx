@@ -1,15 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useEffect, useRef, useState } from "react";
 import { AppState, Vibration } from "react-native";
+import { DEFAULT_SETTINGS } from "../../constants/settings";
 import {
-  addFocusCompletions,
+  addFocusSessions,
+  getTodayCount,
+  historyFromLegacyStats,
+} from "./historyLogic";
+import {
   buildPlan,
   countFinishedSegments,
   getDurationSeconds,
   getNextTypeId,
   getRemainingSeconds,
+  getSegmentMinutes,
   getSegmentNotification,
-  getTodayCount,
   getTypeById,
   shouldVibrateInApp,
 } from "./timerLogic";
@@ -50,7 +55,8 @@ export function TimerProvider({ children }) {
   // Quantos ciclos do plano já terminaram e foram contabilizados
   const [processed, setProcessed] = useState(0);
   const [liveSeconds, setLiveSeconds] = useState(0);
-  const [stats, setStats] = useState({ date: null, count: 0 });
+  // Focos por dia: { "2026-09-26": { count, minutes } }
+  const [history, setHistory] = useState({});
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   // Atualizado a cada minuto para o contador do dia virar à meia-noite
@@ -78,7 +84,7 @@ export function TimerProvider({ children }) {
   const seconds = timerRunning
     ? liveSeconds
     : (pausedSeconds ?? getDurationSeconds(typeId, settings));
-  const todayCount = getTodayCount(stats, clock);
+  const todayCount = getTodayCount(history, clock);
   const currentTask = tasks.find((t) => t.id === currentTaskId) ?? null;
   // Só processa ciclos depois de tudo carregado, senão os pomodoros somados numa tarefa
   // seriam sobrescritos quando a lista de tarefas terminasse de carregar
@@ -96,7 +102,14 @@ export function TimerProvider({ children }) {
           const savedTypeId = getTypeById(saved.typeId ?? saved.timerTypeId).id;
           setTypeId(savedTypeId);
           setPausedSeconds(saved.pausedSeconds ?? saved.seconds ?? null);
-          setStats(saved.stats ?? { date: null, count: 0 });
+          // `stats` é o contador só de hoje da versão anterior
+          setHistory(
+            saved.history ??
+              historyFromLegacyStats(
+                saved.stats,
+                DEFAULT_SETTINGS.durations.focus,
+              ),
+          );
           setCurrentTaskId(saved.currentTaskId ?? null);
           if (Array.isArray(saved.segments) && saved.segments.length) {
             updateRun(saved.segments, saved.processed ?? 0);
@@ -138,7 +151,7 @@ export function TimerProvider({ children }) {
       pausedSeconds,
       segments,
       processed,
-      stats,
+      history,
       currentTaskId,
     });
     AsyncStorage.setItem(TIMER_STORAGE_KEY, jsonValue).catch((e) =>
@@ -149,7 +162,7 @@ export function TimerProvider({ children }) {
     pausedSeconds,
     segments,
     processed,
-    stats,
+    history,
     currentTaskId,
     isLoaded,
   ]);
@@ -169,14 +182,15 @@ export function TimerProvider({ children }) {
       }
       const now = Date.now();
       const finished = countFinishedSegments(plan, now);
-      let count = getTodayCount(stats, now);
+      let count = getTodayCount(history, now);
 
       // Ciclos que terminaram desde o último tick: soma os focos no dia e na tarefa
       if (finished > processedRef.current) {
         const finishedSegments = plan.slice(processedRef.current, finished);
-        const focusDone = finishedSegments.filter(
+        const focusSegments = finishedSegments.filter(
           (s) => s.typeId === "focus",
-        ).length;
+        );
+        const focusDone = focusSegments.length;
         if (
           shouldVibrateInApp({
             finishedSegments,
@@ -192,7 +206,16 @@ export function TimerProvider({ children }) {
         setProcessed(finished);
         if (focusDone > 0) {
           count += focusDone;
-          setStats((oldState) => addFocusCompletions(oldState, focusDone, now));
+          setHistory((oldState) =>
+            addFocusSessions(
+              oldState,
+              focusSegments.map((s) => ({
+                endTime: s.endTime,
+                minutes: getSegmentMinutes(s, settings),
+              })),
+              now,
+            ),
+          );
           setClock(now);
           if (currentTaskId) {
             addPomodorosToTask(currentTaskId, focusDone);
@@ -227,7 +250,7 @@ export function TimerProvider({ children }) {
       clearInterval(intervalId);
       subscription.remove();
     };
-  }, [ready, segments, stats, settings, currentTaskId, addPomodorosToTask]);
+  }, [ready, segments, history, settings, currentTaskId, addPomodorosToTask]);
 
   // Play: planeja os ciclos a partir do tempo atual e agenda as notificações
   const startTimer = async () => {
@@ -294,6 +317,7 @@ export function TimerProvider({ children }) {
         seconds,
         timerRunning,
         todayCount,
+        history,
         currentTask,
         setCurrentTaskId,
         toggleTimer,

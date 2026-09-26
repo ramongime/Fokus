@@ -13,12 +13,6 @@ const pad = (value) => String(value).padStart(2, "0");
 
 const clamp = (value, { min, max }) => Math.min(max, Math.max(min, value));
 
-// Data local no formato "2026-09-26", usada para saber se o contador é de hoje
-export const todayKey = (now) => {
-  const date = new Date(now);
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
-
 // Modo do timer pelo id ("focus", "short", "long"); cai no foco se o id for desconhecido
 export const getTypeById = (id) =>
   pomodoro.find((p) => p.id === id) ?? pomodoro[0];
@@ -43,7 +37,7 @@ export const getNextTypeId = (finishedTypeId, focusCount, settings) => {
 // Monta a sequência de ciclos a partir de agora. Sem emendar ciclos, é só o atual.
 // Ex.: foco com 0 focos no dia -> foco, curta, foco, curta, foco, curta, foco, longa
 export const buildPlan = ({ typeId, seconds, now, focusCount, settings }) => {
-  const segments = [{ typeId, endTime: now + seconds * 1000 }];
+  const segments = [{ typeId, startTime: now, endTime: now + seconds * 1000 }];
   if (!settings.autoStartCycles) {
     return segments;
   }
@@ -57,6 +51,7 @@ export const buildPlan = ({ typeId, seconds, now, focusCount, settings }) => {
     const nextTypeId = getNextTypeId(last.typeId, count, settings);
     segments.push({
       typeId: nextTypeId,
+      startTime: last.endTime,
       endTime: last.endTime + getDurationSeconds(nextTypeId, settings) * 1000,
     });
   }
@@ -67,15 +62,12 @@ export const buildPlan = ({ typeId, seconds, now, focusCount, settings }) => {
 export const countFinishedSegments = (segments, now) =>
   segments.filter((s) => s.endTime <= now).length;
 
-// Focos concluídos hoje; se o contador salvo é de outro dia, vale 0
-export const getTodayCount = (stats, now) =>
-  stats.date === todayKey(now) ? stats.count : 0;
-
-// Soma focos no contador do dia, zerando antes se o dia mudou
-export const addFocusCompletions = (stats, amount, now) => ({
-  date: todayKey(now),
-  count: getTodayCount(stats, now) + amount,
-});
+// Minutos focados num ciclo que terminou. Planos salvos pela versão anterior não têm
+// `startTime`; nesse caso vale a duração configurada.
+export const getSegmentMinutes = (segment, settings) =>
+  segment.startTime != null
+    ? Math.round((segment.endTime - segment.startTime) / 60000)
+    : settings.durations[segment.typeId];
 
 // Texto da notificação do fim do ciclo `index`: diz qual ciclo começou (se houver
 // próximo) e cita a tarefa quando um foco termina

@@ -1,16 +1,14 @@
 import {
-  addFocusCompletions,
   buildPlan,
   countFinishedSegments,
   formatSeconds,
   getNextTypeId,
   getRemainingSeconds,
+  getSegmentMinutes,
   getSegmentNotification,
-  getTodayCount,
   MAX_PLANNED_SEGMENTS,
   normalizeSettings,
   shouldVibrateInApp,
-  todayKey,
 } from "./timerLogic";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 
@@ -53,7 +51,9 @@ describe("buildPlan", () => {
       focusCount: 0,
       settings: { ...settings, autoStartCycles: false },
     });
-    expect(plan).toEqual([{ typeId: "focus", endTime: NOW + 25 * MIN }]);
+    expect(plan).toEqual([
+      { typeId: "focus", startTime: NOW, endTime: NOW + 25 * MIN },
+    ]);
   });
 
   it("emenda foco e pausas com a pausa longa no 4º foco", () => {
@@ -101,6 +101,7 @@ describe("buildPlan", () => {
     expect(plan[0].endTime).toBe(NOW + 90 * 1000);
     expect(plan[1]).toEqual({
       typeId: "focus",
+      startTime: NOW + 90 * 1000,
       endTime: NOW + 90 * 1000 + 50 * MIN,
     });
   });
@@ -125,19 +126,19 @@ describe("tempo e contagem", () => {
     expect(countFinishedSegments(plan, NOW + 7 * MIN)).toBe(2);
   });
 
-  it("zera o contador do dia quando a data muda", () => {
-    const stats = { date: todayKey(NOW), count: 3 };
-    const tomorrow = NOW + 24 * 60 * MIN;
-    expect(getTodayCount(stats, NOW)).toBe(3);
-    expect(getTodayCount(stats, tomorrow)).toBe(0);
-    expect(addFocusCompletions(stats, 2, NOW)).toEqual({
-      date: todayKey(NOW),
-      count: 5,
+  it("calcula os minutos focados de cada ciclo", () => {
+    const plan = buildPlan({
+      typeId: "focus",
+      seconds: 25 * 60,
+      now: NOW,
+      focusCount: 0,
+      settings,
     });
-    expect(addFocusCompletions(stats, 1, tomorrow)).toEqual({
-      date: todayKey(tomorrow),
-      count: 1,
-    });
+    expect(getSegmentMinutes(plan[0], settings)).toBe(25);
+    expect(getSegmentMinutes(plan[1], settings)).toBe(5);
+    expect(getSegmentMinutes({ typeId: "focus", endTime: NOW }, settings)).toBe(
+      25,
+    );
   });
 
   it("formata minutos e segundos, inclusive acima de uma hora", () => {

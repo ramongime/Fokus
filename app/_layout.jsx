@@ -68,6 +68,13 @@ export default function Layout() {
                 }}
               />
               <Drawer.Screen
+                name="history"
+                options={{
+                  drawerLabel: "Histórico",
+                  title: "",
+                }}
+              />
+              <Drawer.Screen
                 name="settings"
                 options={{
                   drawerLabel: "Configurações",
