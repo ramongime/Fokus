@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useEffect, useRef, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Vibration } from "react-native";
 import {
   addFocusCompletions,
   buildPlan,
@@ -11,10 +11,12 @@ import {
   getSegmentNotification,
   getTodayCount,
   getTypeById,
+  shouldVibrateInApp,
 } from "./timerLogic";
 import {
   cancelTimerNotifications,
   scheduleTimerNotifications,
+  VIBRATION_PATTERN,
 } from "./timerNotifications";
 import useSettingsContext from "./useSettingsContext";
 import useTaskContext from "./useTaskContext";
@@ -58,6 +60,9 @@ export function TimerProvider({ children }) {
   // Evita contar o mesmo ciclo duas vezes se dois ticks rodarem seguidos.
   const segmentsRef = useRef(null);
   const processedRef = useRef(0);
+  // Se há notificações agendadas para este plano, elas já vibram; o app não vibra junto.
+  // Começa true para um plano restaurado ao abrir o app, que teve notificações agendadas.
+  const notificationsScheduledRef = useRef(true);
 
   // Atualiza o plano e o state juntos, para ref e state nunca ficarem diferentes
   const updateRun = (newSegments, newProcessed) => {
@@ -168,9 +173,21 @@ export function TimerProvider({ children }) {
 
       // Ciclos que terminaram desde o último tick: soma os focos no dia e na tarefa
       if (finished > processedRef.current) {
-        const focusDone = plan
-          .slice(processedRef.current, finished)
-          .filter((s) => s.typeId === "focus").length;
+        const finishedSegments = plan.slice(processedRef.current, finished);
+        const focusDone = finishedSegments.filter(
+          (s) => s.typeId === "focus",
+        ).length;
+        if (
+          shouldVibrateInApp({
+            finishedSegments,
+            now,
+            settings,
+            appActive: AppState.currentState === "active",
+            notificationsScheduled: notificationsScheduledRef.current,
+          })
+        ) {
+          Vibration.vibrate(VIBRATION_PATTERN);
+        }
         processedRef.current = finished;
         setProcessed(finished);
         if (focusDone > 0) {
@@ -223,17 +240,21 @@ export function TimerProvider({ children }) {
     });
     updateRun(plan, 0);
     setLiveSeconds(seconds);
+    notificationsScheduledRef.current = false;
 
     const ids = await scheduleTimerNotifications(
       plan.map((segment, index) => ({
         ...getSegmentNotification(plan, index, settings, currentTask),
         date: segment.endTime,
       })),
+      { vibrate: settings.vibrate },
     );
     // Pausou ou trocou de modo enquanto as notificações eram agendadas
     if (segmentsRef.current !== plan) {
       await cancelTimerNotifications(ids);
+      return;
     }
+    notificationsScheduledRef.current = ids.length > 0;
   };
 
   // Pausa: guarda quanto faltava no ciclo atual e cancela os avisos

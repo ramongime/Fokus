@@ -17,7 +17,8 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "android.permission.SCHEDULE_EXACT_ALARM"
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.VIBRATE"
       ]
     },
     "web": {

@@ -1,5 +1,6 @@
 export const DEFAULT_SETTINGS = {
   autoStartCycles: true,
+  vibrate: true,
   longBreakInterval: 4,
   // Em minutos
   durations: {

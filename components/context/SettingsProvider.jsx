@@ -47,6 +47,10 @@ export function SettingsProvider({ children }) {
     setSettings((oldState) => ({ ...oldState, autoStartCycles }));
   };
 
+  const setVibrate = (vibrate) => {
+    setSettings((oldState) => ({ ...oldState, vibrate }));
+  };
+
   // Ex.: setDuration("focus", 50) -> foco de 50 minutos
   const setDuration = (typeId, minutes) => {
     setSettings((oldState) =>
@@ -69,6 +73,7 @@ export function SettingsProvider({ children }) {
         settings,
         isLoaded,
         setAutoStartCycles,
+        setVibrate,
         setDuration,
         setLongBreakInterval,
       }}

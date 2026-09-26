@@ -107,6 +107,10 @@ export const normalizeSettings = (saved = {}) => {
       typeof saved.autoStartCycles === "boolean"
         ? saved.autoStartCycles
         : DEFAULT_SETTINGS.autoStartCycles,
+    vibrate:
+      typeof saved.vibrate === "boolean"
+        ? saved.vibrate
+        : DEFAULT_SETTINGS.vibrate,
     longBreakInterval: clamp(
       Number(saved.longBreakInterval) || DEFAULT_SETTINGS.longBreakInterval,
       SETTINGS_LIMITS.longBreakInterval,
@@ -122,6 +126,24 @@ export const normalizeSettings = (saved = {}) => {
     ),
   };
 };
+
+// Quanto tempo depois do fim de um ciclo ainda vale vibrar pelo app. Se a pessoa só
+// abrir o app bem depois, o ciclo já acabou faz tempo e não faz sentido vibrar.
+export const VIBRATION_WINDOW_MS = 5000;
+
+// Vibrar pelo próprio app só quando ele está aberto, o ciclo acabou agora e não há
+// notificação agendada (se houver, a notificação já vibra, inclusive com a tela bloqueada)
+export const shouldVibrateInApp = ({
+  finishedSegments,
+  now,
+  settings,
+  appActive,
+  notificationsScheduled,
+}) =>
+  settings.vibrate &&
+  appActive &&
+  !notificationsScheduled &&
+  finishedSegments.some((s) => now - s.endTime <= VIBRATION_WINDOW_MS);
 
 // 1500 -> "25:00". Não usa Date, então funciona acima de 60 minutos ("90:00")
 export const formatSeconds = (totalSeconds) =>

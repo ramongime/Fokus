@@ -9,12 +9,14 @@ import {
   getTodayCount,
   MAX_PLANNED_SEGMENTS,
   normalizeSettings,
+  shouldVibrateInApp,
   todayKey,
 } from "./timerLogic";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 
 const settings = {
   autoStartCycles: true,
+  vibrate: true,
   longBreakInterval: 4,
   durations: { focus: 25, short: 5, long: 15 },
 };
@@ -189,13 +191,51 @@ describe("normalizeSettings", () => {
     expect(
       normalizeSettings({
         autoStartCycles: false,
+        vibrate: "sim",
         longBreakInterval: 99,
         durations: { focus: 50, short: 0, long: "abc", extra: 3 },
       }),
     ).toEqual({
       autoStartCycles: false,
+      vibrate: true,
       longBreakInterval: 8,
       durations: { focus: 50, short: 5, long: 15 },
     });
+  });
+});
+
+describe("shouldVibrateInApp", () => {
+  const justFinished = [{ typeId: "focus", endTime: NOW - 1000 }];
+  const base = {
+    finishedSegments: justFinished,
+    now: NOW,
+    settings,
+    appActive: true,
+    notificationsScheduled: false,
+  };
+
+  it("vibra quando o ciclo acabou agora, com o app aberto e sem notificação", () => {
+    expect(shouldVibrateInApp(base)).toBe(true);
+  });
+
+  it("não vibra junto com a notificação, que já vibra sozinha", () => {
+    expect(shouldVibrateInApp({ ...base, notificationsScheduled: true })).toBe(
+      false,
+    );
+  });
+
+  it("não vibra com o app em segundo plano ou com a opção desligada", () => {
+    expect(shouldVibrateInApp({ ...base, appActive: false })).toBe(false);
+    expect(
+      shouldVibrateInApp({
+        ...base,
+        settings: { ...settings, vibrate: false },
+      }),
+    ).toBe(false);
+  });
+
+  it("não vibra por um ciclo que acabou há muito tempo", () => {
+    const old = [{ typeId: "focus", endTime: NOW - 10 * MIN }];
+    expect(shouldVibrateInApp({ ...base, finishedSegments: old })).toBe(false);
   });
 });

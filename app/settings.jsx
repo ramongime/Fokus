@@ -7,8 +7,13 @@ import { SETTINGS_LIMITS } from "../constants/settings";
 import { colors, fontSizes, radii } from "../constants/theme";
 
 export default function Settings() {
-  const { settings, setAutoStartCycles, setDuration, setLongBreakInterval } =
-    useSettingsContext();
+  const {
+    settings,
+    setAutoStartCycles,
+    setVibrate,
+    setDuration,
+    setLongBreakInterval,
+  } = useSettingsContext();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.inner}>
@@ -24,6 +29,18 @@ export default function Settings() {
             value={settings.autoStartCycles}
             onValueChange={setAutoStartCycles}
             accessibilityLabel="Emendar ciclos"
+            trackColor={{ false: colors.muted, true: colors.primary }}
+            thumbColor={colors.text}
+          />
+        </SettingRow>
+        <SettingRow
+          label="Vibrar no fim do ciclo"
+          description="Junto com a notificação, mesmo com a tela bloqueada."
+        >
+          <Switch
+            value={settings.vibrate}
+            onValueChange={setVibrate}
+            accessibilityLabel="Vibrar no fim do ciclo"
             trackColor={{ false: colors.muted, true: colors.primary }}
             thumbColor={colors.text}
           />
