@@ -13,6 +13,13 @@
     "format": "prettier --write app components constants scripts",
     "screenshots": "node scripts/screenshots.mjs"
   },
+  "expo": {
+    "install": {
+      "exclude": [
+        "eslint-config-expo"
+      ]
+    }
+  },
   "jest": {
     "preset": "jest-expo"
   },

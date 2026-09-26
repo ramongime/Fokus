@@ -90,6 +90,16 @@ docs/                      # banner e screenshots usados no README
 - **Navegação**: Drawer do expo-router. Telas de adicionar/editar ficam escondidas do menu
   (`drawerItemStyle: { display: "none" }`) e têm `BackButtonDrawer` no header.
 
+## Android e iOS
+
+- Identificador `com.ramongime.fokus` nos dois (`ios.bundleIdentifier`, `android.package`).
+- Projetos nativos são gerados pelo `expo prebuild` (`/ios` e `/android` estão no `.gitignore`).
+- Permissões Android: `VIBRATE` e `SCHEDULE_EXACT_ALARM` no `app.json`; notificações vêm do
+  `expo-notifications`. Armazenamento e `SYSTEM_ALERT_WINDOW` do template estão em
+  `android.blockedPermissions`, porque o app não usa.
+- `eslint-config-expo` está em `expo.install.exclude`: é só do lint e usa a versão 9 de
+  propósito (a 8, do SDK 52, não tem configuração flat).
+
 ## Ícone
 
 O símbolo de alvo do logo está em `assets/images/icon.svg`. `icon.png`, `adaptive-icon.png`,

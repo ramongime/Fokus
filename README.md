@@ -136,6 +136,17 @@ Escaneie o QR code com o Expo Go e pronto. 🎉
 > Quer ver a notificação sem esperar 25 minutos? Troque temporariamente `25 * 60` por `10`
 > em [`constants/pomodoro.js`](constants/pomodoro.js), dê play e bloqueie a tela.
 
+### 📦 Build nativo
+
+Para testar o ícone, a tela de abertura e a vibração do Android como no app instalado:
+
+```bash
+npx expo run:android   # precisa do Android Studio (SDK) instalado
+npx expo run:ios       # só no macOS, com Xcode
+```
+
+O identificador do app é `com.ramongime.fokus` nas duas plataformas.
+
 > [!NOTE]
 > No Android, a permissão de alarme exato (para a notificação chegar no segundo certo mesmo
 > em modo economia de bateria) só vale em build nativo (`npx expo run:android`).
