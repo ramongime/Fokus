@@ -82,7 +82,10 @@ Documentos/              # tutoriais de build e anotações do projeto
    restante é `endTime - Date.now()`, recalculado num `setInterval` e ao voltar para
    primeiro plano (`AppState`). Ao iniciar, agende uma notificação local com
    `expo-notifications` (trigger `DATE`) para `endTime`; cancele ao pausar ou trocar de
-   modo. Assim o timer sobrevive à tela bloqueada e ao app fechado. Referência:
+   modo. Assim o timer sobrevive à tela bloqueada e ao app fechado. Para vibrar, use o
+   canal da notificação no Android (`enableVibrate` + `vibrationPattern`, um canal por
+   variação, já que canais não mudam depois de criados) e `Vibration` do React Native só
+   como reserva com o app aberto. Referência:
    `TimerProvider.jsx` e `timerNotifications.js` do Fokus.
 10. **Formulários** usam `KeyboardAvoidingView` (`padding` no iOS, `height` no Android) +
     `TouchableWithoutFeedback onPress={Keyboard.dismiss}`.

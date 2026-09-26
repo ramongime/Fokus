@@ -75,6 +75,10 @@ docs/                      # banner e screenshots usados no README
   mudar a configuração reflete na hora quando o timer não foi iniciado.
 - **Notificação**: uma por ciclo planejado, agendada no sistema operacional. Pausar ou trocar de
   modo cancela todas. A permissão é pedida no primeiro play.
+- **Vibração**: com a tela bloqueada o JS não roda, então quem vibra é a notificação. No
+  Android há dois canais (`cycles`, com vibração, e `cycles-quiet`), porque um canal não muda
+  depois de criado; o canal antigo `timer` é apagado. Com o app aberto e sem notificações
+  agendadas (permissão negada ou web), o app vibra com `Vibration` (`shouldVibrateInApp`).
 - **Navegação**: Drawer do expo-router. Telas de adicionar/editar ficam escondidas do menu
   (`drawerItemStyle: { display: "none" }`) e têm `BackButtonDrawer` no header.
 

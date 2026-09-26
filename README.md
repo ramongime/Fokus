@@ -20,7 +20,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![Web](https://img.shields.io/badge/Web-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![Jest](https://img.shields.io/badge/testes-16_passando-C21325?style=flat-square&logo=jest&logoColor=white)
+![Jest](https://img.shields.io/badge/testes-20_passando-C21325?style=flat-square&logo=jest&logoColor=white)
 [![CI](https://github.com/ramongime/Fokus/actions/workflows/ci.yml/badge.svg)](https://github.com/ramongime/Fokus/actions/workflows/ci.yml)
 
 [Funcionalidades](#-funcionalidades) •
@@ -42,8 +42,9 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 | 🔁 **Ciclos emendados** | Acabou o foco, a pausa começa sozinha; acabou a pausa, volta o foco. Dá para desligar nas configurações |
 | 🍅 **Contador do dia** | Bolinhas mostram quanto falta para a pausa longa, que vem a cada 4 focos (configurável) |
 | 🎯 **Foco em uma tarefa** | Escolha no que está trabalhando; cada foco concluído soma um 🍅 na tarefa |
-| ⚙️ **Configurações** | Durações de cada modo, intervalo da pausa longa e o liga/desliga dos ciclos |
+| ⚙️ **Configurações** | Durações de cada modo, intervalo da pausa longa, emendar ciclos e vibração |
 | 🔒 **Funciona com a tela bloqueada** | O tempo é calculado a partir do horário de término, então nada se perde quando o celular dorme |
+| 📳 **Vibração no fim do ciclo** | O celular vibra junto com a notificação, mesmo com a tela bloqueada. Dá para desligar |
 | 🔔 **Notificação no fim do ciclo** | Agendada direto no sistema operacional: chega mesmo com o app em segundo plano ou fechado, avisando qual ciclo começou |
 | 💾 **Retoma de onde parou** | Fechou o app no meio do foco? Ao abrir, o timer continua certinho |
 | ✅ **Lista de tarefas completa** | Criar, editar, concluir e excluir (com confirmação), tudo salvo no aparelho |
@@ -101,7 +102,8 @@ sequenceDiagram
 2. **Recalcula ao voltar.** Um listener de `AppState` atualiza o tempo assim que o app fica ativo.
 3. **Quem avisa é o sistema.** Uma notificação local (`expo-notifications`) é agendada no iOS/Android
    para o fim de cada ciclo planejado, e ele entrega mesmo com o app suspenso. Pausar ou trocar de
-   modo cancela os avisos.
+   modo cancela os avisos. No Android, a vibração vem do canal da notificação, então também
+   funciona com a tela bloqueada.
 
 A lógica pura (planejar ciclos, decidir a próxima pausa, contar focos do dia) fica em
 [`timerLogic.js`](components/context/timerLogic.js), coberta por testes. O estado mora em
@@ -233,7 +235,7 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 - [x] Testes automatizados com `jest-expo`
 - [x] Confirmação antes de excluir e acessibilidade
 - [x] CI no GitHub Actions
-- [ ] Vibrar no fim de cada ciclo
+- [x] Vibrar no fim de cada ciclo
 - [ ] Histórico da semana com gráfico
 - [ ] Sons diferentes para foco e pausa
 - [ ] Widget na tela inicial do celular
