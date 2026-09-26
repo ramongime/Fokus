@@ -6,6 +6,7 @@ import { FokusButton } from "../components/FokusButton";
 import { IconPause, IconPlay } from "../components/Icons";
 import { Timer } from "../components/Timer";
 import { pomodoro } from "../constants/pomodoro";
+import { colors, fontSizes, radii } from "../constants/theme";
 
 export default function Pomodoro() {
   const { timerType, seconds, timerRunning, toggleTimer, toggleTimerType } =
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "#021123",
+    backgroundColor: colors.background,
   },
   inner: {
     alignItems: "center",
@@ -57,11 +58,11 @@ const styles = StyleSheet.create({
   actions: {
     paddingVertical: 24,
     paddingHorizontal: 24,
-    backgroundColor: "#14448080",
+    backgroundColor: colors.surfaceTranslucent,
     width: "80%",
-    borderRadius: 32,
+    borderRadius: radii.lg,
     borderWidth: 2,
-    borderColor: "#144480",
+    borderColor: colors.surface,
     gap: 32,
   },
   context: {
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: "center",
-    color: "#98A0A8",
-    fontSize: 12.5,
+    color: colors.muted,
+    fontSize: fontSizes.sm,
   },
 });

@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BackButtonDrawer } from "../components/BackButtonDrawer";
 import { TasksProvider } from "../components/context/TaskProvider";
 import { TimerProvider } from "../components/context/TimerProvider";
+import { colors } from "../constants/theme";
 
 export default function Layout() {
   return (
@@ -12,14 +13,14 @@ export default function Layout() {
           <Drawer
             screenOptions={{
               headerStyle: {
-                backgroundColor: "#021123",
+                backgroundColor: colors.background,
               },
-              headerTintColor: "#FFF",
+              headerTintColor: colors.text,
               drawerStyle: {
-                backgroundColor: "#021123",
+                backgroundColor: colors.background,
               },
               drawerLabelStyle: {
-                color: "#FFF",
+                color: colors.text,
               },
             }}
           >

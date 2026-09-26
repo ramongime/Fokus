@@ -14,10 +14,12 @@ export function TasksProvider({ children }) {
       try {
         const jsonValue = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
         const loadedData = jsonValue != null ? JSON.parse(jsonValue) : [];
-        setTasks(loadedData);
+        // Tarefas antigas foram salvas com id numérico
+        setTasks(loadedData.map((t) => ({ ...t, id: String(t.id) })));
         setIsLoaded(true);
       } catch (e) {
-        // error reading value
+        // Sem isLoaded, nada é gravado e as tarefas salvas não são sobrescritas
+        console.warn("Erro ao carregar tarefas", e);
       }
     };
     getData();
@@ -29,13 +31,13 @@ export function TasksProvider({ children }) {
         const jsonValue = JSON.stringify(value);
         await AsyncStorage.setItem(TASKS_STORAGE_KEY, jsonValue);
       } catch (e) {
-        // saving error
+        console.warn("Erro ao salvar tarefas", e);
       }
     };
     if (isLoaded) {
       storeData(tasks);
     }
-  }, [tasks]);
+  }, [tasks, isLoaded]);
 
   const addTask = (description) => {
     setTasks((oldState) => {
@@ -47,30 +49,26 @@ export function TasksProvider({ children }) {
         },
       ];
     });
-    // chamar persistencia
   };
 
   const toggleTaskCompleted = (id) => {
     setTasks((oldState) => {
       return oldState.map((t) =>
-        t.id == id ? { ...t, completed: !t.completed } : t
+        t.id === id ? { ...t, completed: !t.completed } : t,
       );
     });
-    // chamar persistencia
   };
 
   const updateTask = (id, description) => {
     setTasks((oldState) => {
-      return oldState.map((t) => (t.id == id ? { ...t, description } : t));
+      return oldState.map((t) => (t.id === id ? { ...t, description } : t));
     });
-    // chamar persistencia
   };
 
   const deleteTask = (id) => {
     setTasks((oldState) => {
-      return oldState.filter((t) => t.id != id);
+      return oldState.filter((t) => t.id !== id);
     });
-    // chamar persistencia
   };
 
   return (

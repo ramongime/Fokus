@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { IconSave } from "../../components/Icons";
+import { colors, fontSizes, radii } from "../../constants/theme";
 
 export default function FormTask({ onFormSubmit, defaultValue = "" }) {
   const [description, setDescription] = useState(defaultValue);
@@ -56,30 +57,30 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#021123",
+    backgroundColor: colors.background,
     gap: 16,
     alignItems: "center",
   },
   text: {
-    color: "#FFF",
+    color: colors.surfaceLight,
     textAlign: "center",
-    fontSize: 26,
+    fontSize: fontSizes.lg,
   },
   inner: {
-    backgroundColor: "#98A0A8",
+    backgroundColor: colors.muted,
     width: "90%",
-    borderRadius: 8,
+    borderRadius: radii.sm,
     padding: 16,
     gap: 32,
   },
   label: {
     fontWeight: 600,
-    fontSize: 18,
+    fontSize: fontSizes.md,
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surfaceLight,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     height: 100,
   },
   button: {

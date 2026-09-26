@@ -9,10 +9,9 @@ UI em português (pt-BR).
 npm install
 npx expo start        # Expo Go, emulador ou web
 npx expo run:ios      # build nativo (passo a passo em Documentos/)
+npm run lint          # ESLint (eslint-config-expo); precisa passar sem avisos
+npm run format        # Prettier em app/, components/ e constants/
 ```
-
-Não há ESLint instalado nas devDependencies, embora exista `eslint.config.js`; para rodar o
-lint, instale `eslint` e `eslint-config-expo` antes.
 
 ## Estrutura
 
@@ -34,6 +33,7 @@ components/
     useTimerContext.js
     timerNotifications.js  # agendar/cancelar notificação local (expo-notifications)
 constants/
+  theme.js                 # cores (colors), tamanhos de fonte (fontSizes) e raios (radii)
   pomodoro.js              # modos do timer: id, duração, imagem, texto e notificação
 Documentos/                # tutoriais de build iOS
 .claude/skills/expo-app-pattern/  # padrão de arquitetura para reutilizar em outros apps
@@ -58,12 +58,13 @@ Documentos/                # tutoriais de build iOS
 
 ## Convenções
 
-- Estilos com `StyleSheet.create` no fim do arquivo. Cores atuais: fundo `#021123`,
-  primária `#B872FF`, superfície `#144480`, cinza `#98A0A8`.
+- Estilos com `StyleSheet.create` no fim do arquivo, usando sempre `colors`, `fontSizes`
+  e `radii` de `constants/theme.js`; nada de hex solto nos componentes.
+- Código formatado com Prettier (aspas duplas, ponto e vírgula).
 - Variações visuais por prop booleana (`outline`, `active`, `completed`).
 - Configurações estáticas como array de objetos `{ id, display, ... }` em `constants/`.
-- Novos IDs: `Date.now().toString()`. Tarefas antigas podem ter ID numérico, por isso a
-  comparação de ID de tarefa usa `==`.
+- IDs são strings (`Date.now().toString()`) e comparados com `===`. O `TaskProvider`
+  converte para string os IDs numéricos de tarefas salvas em versões antigas.
 - Mudanças de dependência nativa: use a versão de `node_modules/expo/bundledNativeModules.json`
   (equivalente a `npx expo install`).
 

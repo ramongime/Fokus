@@ -4,6 +4,7 @@ import useTaskContext from "../../components/context/useTaskContext";
 import { FokusButton } from "../../components/FokusButton";
 import { IconPlus } from "../../components/Icons";
 import TaskItem from "../../components/TaskItem";
+import { colors, fontSizes } from "../../constants/theme";
 
 export default function Tasks() {
   const { tasks, deleteTask, toggleTaskCompleted } = useTaskContext();
@@ -12,15 +13,6 @@ export default function Tasks() {
     <View style={styles.container}>
       <View style={styles.wrapper}>
         <View style={styles.inner}>
-          {/* {tasks.map(t => {
-                    return (
-                        <TaskItem
-                            completed={t.completed}
-                            text={t.description}
-                            key={t.id}
-                        />
-                    )
-                })} */}
           <FlatList
             data={tasks}
             renderItem={({ item }) => (
@@ -48,19 +40,9 @@ export default function Tasks() {
               </View>
             }
             ListEmptyComponent={
-              <View>
-                <Text
-                  style={{
-                    color: "#98A0A8",
-                    fontSize: 18,
-                    textAlign: "center",
-                    marginTop: 40,
-                    marginBottom: 24,
-                  }}
-                >
-                  Ainda não há tarefas na sua lista, que tal adicionar uma?
-                </Text>
-              </View>
+              <Text style={styles.empty}>
+                Ainda não há tarefas na sua lista, que tal adicionar uma?
+              </Text>
             }
           />
         </View>
@@ -72,7 +54,7 @@ export default function Tasks() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#021123",
+    backgroundColor: colors.background,
     alignItems: "center",
   },
   wrapper: {
@@ -81,11 +63,18 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: "center",
-    color: "#FFF",
-    fontSize: 26,
+    color: colors.text,
+    fontSize: fontSizes.lg,
     margin: 16,
   },
   inner: {
     gap: 8,
+  },
+  empty: {
+    color: colors.muted,
+    fontSize: fontSizes.md,
+    textAlign: "center",
+    marginTop: 40,
+    marginBottom: 24,
   },
 });
