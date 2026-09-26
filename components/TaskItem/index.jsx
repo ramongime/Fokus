@@ -5,6 +5,7 @@ import { colors, fontSizes, radii } from "../../constants/theme";
 const TaskItem = ({
   completed,
   text,
+  pomodoros,
   onToggleComplete,
   onPressEdit,
   onPressDelete,
@@ -20,7 +21,14 @@ const TaskItem = ({
       <Pressable onPress={onToggleComplete}>
         <IconCheck checked={completed} />
       </Pressable>
-      <Text style={styles.text}>{text}</Text>
+      <View style={styles.content}>
+        <Text style={styles.text}>{text}</Text>
+        {pomodoros > 0 && (
+          <Text style={styles.pomodoros}>
+            🍅 {pomodoros} {pomodoros === 1 ? "pomodoro" : "pomodoros"}
+          </Text>
+        )}
+      </View>
       <Pressable onPress={onPressEdit}>
         <IconPencil />
       </Pressable>
@@ -45,11 +53,18 @@ const styles = StyleSheet.create({
   cardCompleted: {
     backgroundColor: colors.successDark,
   },
-  text: {
+  content: {
     flex: 1,
+    gap: 4,
+  },
+  text: {
     color: colors.background,
     fontSize: fontSizes.md,
     fontWeight: "bold",
+  },
+  pomodoros: {
+    color: colors.background,
+    fontSize: fontSizes.sm,
   },
 });
 

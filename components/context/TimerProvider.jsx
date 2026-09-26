@@ -1,33 +1,64 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
-import { pomodoro } from "../../constants/pomodoro";
 import {
-  cancelTimerNotification,
-  scheduleTimerNotification,
+  addFocusCompletions,
+  buildPlan,
+  countFinishedSegments,
+  getDurationSeconds,
+  getNextTypeId,
+  getRemainingSeconds,
+  getSegmentNotification,
+  getTodayCount,
+  getTypeById,
+} from "./timerLogic";
+import {
+  cancelTimerNotifications,
+  scheduleTimerNotifications,
 } from "./timerNotifications";
+import useSettingsContext from "./useSettingsContext";
+import useTaskContext from "./useTaskContext";
 
 export const TimerContext = createContext();
 
 const TIMER_STORAGE_KEY = "fokus-timer";
 
-const getRemainingSeconds = (endTime) =>
-  Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-
 export function TimerProvider({ children }) {
-  const [timerType, setTimerType] = useState(pomodoro[0]);
-  const [seconds, setSeconds] = useState(pomodoro[0].initialValue);
-  // Horário (ms) em que o timer termina; null quando está pausado
-  const [endTime, setEndTime] = useState(null);
+  const { settings, isLoaded: settingsLoaded } = useSettingsContext();
+  const { tasks, isLoaded: tasksLoaded, addPomodorosToTask } = useTaskContext();
+
+  const [typeId, setTypeId] = useState("focus");
+  // Tempo restante de um ciclo pausado no meio; null = duração cheia do modo
+  const [pausedSeconds, setPausedSeconds] = useState(null);
+  // Ciclos planejados enquanto o timer roda: [{ typeId, endTime }]; null = parado
+  const [segments, setSegments] = useState(null);
+  // Quantos ciclos do plano já terminaram e foram contabilizados
+  const [processed, setProcessed] = useState(0);
+  const [liveSeconds, setLiveSeconds] = useState(0);
+  const [stats, setStats] = useState({ date: null, count: 0 });
+  const [currentTaskId, setCurrentTaskId] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  // Atualizado a cada minuto para o contador do dia virar à meia-noite
+  const [clock, setClock] = useState(Date.now());
 
-  const endTimeRef = useRef(null);
-  const timerRunning = endTime != null;
+  const segmentsRef = useRef(null);
+  const processedRef = useRef(0);
 
-  const updateEndTime = (value) => {
-    endTimeRef.current = value;
-    setEndTime(value);
+  const updateRun = (newSegments, newProcessed) => {
+    segmentsRef.current = newSegments;
+    processedRef.current = newProcessed;
+    setSegments(newSegments);
+    setProcessed(newProcessed);
   };
+
+  const timerRunning = segments != null;
+  const timerType = getTypeById(typeId);
+  const seconds = timerRunning
+    ? liveSeconds
+    : (pausedSeconds ?? getDurationSeconds(typeId, settings));
+  const todayCount = getTodayCount(stats, clock);
+  const currentTask = tasks.find((t) => t.id === currentTaskId) ?? null;
+  const ready = isLoaded && settingsLoaded && tasksLoaded;
 
   useEffect(() => {
     const getData = async () => {
@@ -35,17 +66,16 @@ export function TimerProvider({ children }) {
         const jsonValue = await AsyncStorage.getItem(TIMER_STORAGE_KEY);
         if (jsonValue != null) {
           const saved = JSON.parse(jsonValue);
-          const savedType =
-            pomodoro.find((p) => p.id === saved.timerTypeId) ?? pomodoro[0];
-          setTimerType(savedType);
-
-          if (saved.endTime && saved.endTime > Date.now()) {
-            updateEndTime(saved.endTime);
+          // timerTypeId, seconds e endTime vêm da versão anterior do timer
+          const savedTypeId = getTypeById(saved.typeId ?? saved.timerTypeId).id;
+          setTypeId(savedTypeId);
+          setPausedSeconds(saved.pausedSeconds ?? saved.seconds ?? null);
+          setStats(saved.stats ?? { date: null, count: 0 });
+          setCurrentTaskId(saved.currentTaskId ?? null);
+          if (Array.isArray(saved.segments) && saved.segments.length) {
+            updateRun(saved.segments, saved.processed ?? 0);
           } else if (saved.endTime) {
-            // Terminou enquanto o app estava fechado (a notificação já foi entregue)
-            setSeconds(savedType.initialValue);
-          } else {
-            setSeconds(saved.seconds ?? savedType.initialValue);
+            updateRun([{ typeId: savedTypeId, endTime: saved.endTime }], 0);
           }
         }
       } catch (e) {
@@ -57,38 +87,89 @@ export function TimerProvider({ children }) {
     getData();
   }, []);
 
-  // Enquanto roda, só muda quando pausa; evita gravar a cada segundo
-  const pausedSeconds = timerRunning ? null : seconds;
+  useEffect(() => {
+    const updateClock = () => setClock(Date.now());
+    const intervalId = setInterval(updateClock, 60 * 1000);
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        updateClock();
+      }
+    });
+    return () => {
+      clearInterval(intervalId);
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLoaded) {
       return;
     }
     const jsonValue = JSON.stringify({
-      timerTypeId: timerType.id,
-      endTime,
-      seconds: pausedSeconds,
+      typeId,
+      pausedSeconds,
+      segments,
+      processed,
+      stats,
+      currentTaskId,
     });
     AsyncStorage.setItem(TIMER_STORAGE_KEY, jsonValue).catch((e) =>
       console.warn("Erro ao salvar o timer", e),
     );
-  }, [timerType, endTime, pausedSeconds, isLoaded]);
+  }, [
+    typeId,
+    pausedSeconds,
+    segments,
+    processed,
+    stats,
+    currentTaskId,
+    isLoaded,
+  ]);
 
-  // O tempo restante é calculado a partir do horário de término, então continua
-  // certo mesmo que o JS fique parado com a tela bloqueada ou o app em segundo plano
+  // O tempo vem do horário de término de cada ciclo, então continua certo mesmo
+  // que o JS fique parado com a tela bloqueada ou o app fechado
   useEffect(() => {
-    if (endTime == null) {
+    if (!ready || segments == null) {
       return;
     }
 
     const tick = () => {
-      const remaining = getRemainingSeconds(endTime);
-      if (remaining === 0) {
-        updateEndTime(null);
-        setSeconds(timerType.initialValue);
+      const plan = segmentsRef.current;
+      if (plan == null) {
         return;
       }
-      setSeconds(remaining);
+      const now = Date.now();
+      const finished = countFinishedSegments(plan, now);
+      let count = getTodayCount(stats, now);
+
+      if (finished > processedRef.current) {
+        const focusDone = plan
+          .slice(processedRef.current, finished)
+          .filter((s) => s.typeId === "focus").length;
+        processedRef.current = finished;
+        setProcessed(finished);
+        if (focusDone > 0) {
+          count += focusDone;
+          setStats((oldState) => addFocusCompletions(oldState, focusDone, now));
+          setClock(now);
+          if (currentTaskId) {
+            addPomodorosToTask(currentTaskId, focusDone);
+          }
+        }
+      }
+
+      if (finished >= plan.length) {
+        // Acabou o que foi planejado: para no próximo modo sugerido
+        const last = plan[plan.length - 1];
+        updateRun(null, 0);
+        setTypeId(getNextTypeId(last.typeId, count, settings));
+        setPausedSeconds(null);
+        return;
+      }
+
+      const current = plan[finished];
+      setTypeId(current.typeId);
+      setLiveSeconds(getRemainingSeconds(current.endTime, now));
     };
 
     tick();
@@ -103,26 +184,40 @@ export function TimerProvider({ children }) {
       clearInterval(intervalId);
       subscription.remove();
     };
-  }, [endTime, timerType]);
+  }, [ready, segments, stats, settings, currentTaskId, addPomodorosToTask]);
 
   const startTimer = async () => {
-    const newEndTime = Date.now() + seconds * 1000;
-    updateEndTime(newEndTime);
+    const plan = buildPlan({
+      typeId,
+      seconds,
+      now: Date.now(),
+      focusCount: todayCount,
+      settings,
+    });
+    updateRun(plan, 0);
+    setLiveSeconds(seconds);
 
-    const notificationId = await scheduleTimerNotification(
-      timerType,
-      newEndTime,
+    const ids = await scheduleTimerNotifications(
+      plan.map((segment, index) => ({
+        ...getSegmentNotification(plan, index, settings, currentTask),
+        date: segment.endTime,
+      })),
     );
-    // Pausou ou trocou de modo enquanto a notificação era agendada
-    if (endTimeRef.current !== newEndTime) {
-      await cancelTimerNotification(notificationId);
+    // Pausou ou trocou de modo enquanto as notificações eram agendadas
+    if (segmentsRef.current !== plan) {
+      await cancelTimerNotifications(ids);
     }
   };
 
   const pauseTimer = () => {
-    setSeconds(getRemainingSeconds(endTime));
-    updateEndTime(null);
-    cancelTimerNotification();
+    const plan = segmentsRef.current;
+    const now = Date.now();
+    const current =
+      plan[Math.min(countFinishedSegments(plan, now), plan.length - 1)];
+    setTypeId(current.typeId);
+    setPausedSeconds(getRemainingSeconds(current.endTime, now));
+    updateRun(null, 0);
+    cancelTimerNotifications();
   };
 
   const toggleTimer = () => {
@@ -135,11 +230,11 @@ export function TimerProvider({ children }) {
 
   const toggleTimerType = (newTimerType) => {
     if (timerRunning) {
-      cancelTimerNotification();
+      cancelTimerNotifications();
     }
-    updateEndTime(null);
-    setTimerType(newTimerType);
-    setSeconds(newTimerType.initialValue);
+    updateRun(null, 0);
+    setTypeId(newTimerType.id);
+    setPausedSeconds(null);
   };
 
   return (
@@ -148,6 +243,9 @@ export function TimerProvider({ children }) {
         timerType,
         seconds,
         timerRunning,
+        todayCount,
+        currentTask,
+        setCurrentTaskId,
         toggleTimer,
         toggleTimerType,
       }}

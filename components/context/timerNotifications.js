@@ -29,38 +29,42 @@ const ensurePermission = async () => {
   return request.granted;
 };
 
-// Agenda no sistema operacional, então dispara mesmo com a tela bloqueada ou o app fechado
-export const scheduleTimerNotification = async (timerType, endTime) => {
+// Agenda no sistema operacional, então dispara mesmo com a tela bloqueada ou o app fechado.
+// Cada item: { title, body, date }. Retorna os ids agendados.
+export const scheduleTimerNotifications = async (items) => {
   try {
     if (!(await ensurePermission())) {
-      return null;
+      return [];
     }
-    return await Notifications.scheduleNotificationAsync({
-      content: {
-        title: timerType.notification.title,
-        body: timerType.notification.body,
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: endTime,
-        channelId: CHANNEL_ID,
-      },
-    });
+    return await Promise.all(
+      items.map(({ title, body, date }) =>
+        Notifications.scheduleNotificationAsync({
+          content: { title, body, sound: true },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date,
+            channelId: CHANNEL_ID,
+          },
+        }),
+      ),
+    );
   } catch (e) {
-    console.warn("Erro ao agendar notificação", e);
-    return null;
+    console.warn("Erro ao agendar notificações", e);
+    return [];
   }
 };
 
-export const cancelTimerNotification = async (id) => {
+// Sem ids, cancela tudo o que o app agendou
+export const cancelTimerNotifications = async (ids) => {
   try {
-    if (id) {
-      await Notifications.cancelScheduledNotificationAsync(id);
+    if (ids) {
+      await Promise.all(
+        ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)),
+      );
     } else {
       await Notifications.cancelAllScheduledNotificationsAsync();
     }
   } catch (e) {
-    console.warn("Erro ao cancelar notificação", e);
+    console.warn("Erro ao cancelar notificações", e);
   }
 };

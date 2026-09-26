@@ -65,6 +65,14 @@ export function TasksProvider({ children }) {
     });
   };
 
+  const addPomodorosToTask = (id, amount) => {
+    setTasks((oldState) => {
+      return oldState.map((t) =>
+        t.id === id ? { ...t, pomodoros: (t.pomodoros ?? 0) + amount } : t,
+      );
+    });
+  };
+
   const deleteTask = (id) => {
     setTasks((oldState) => {
       return oldState.filter((t) => t.id !== id);
@@ -75,10 +83,12 @@ export function TasksProvider({ children }) {
     <TaskContext.Provider
       value={{
         tasks,
+        isLoaded,
         addTask,
         toggleTaskCompleted,
         updateTask,
         deleteTask,
+        addPomodorosToTask,
       }}
     >
       {children}

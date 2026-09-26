@@ -1,16 +1,30 @@
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActionButton } from "../components/ActionButton";
+import useSettingsContext from "../components/context/useSettingsContext";
+import useTaskContext from "../components/context/useTaskContext";
 import useTimerContext from "../components/context/useTimerContext";
 import { FokusButton } from "../components/FokusButton";
 import { IconPause, IconPlay } from "../components/Icons";
+import { PomodoroCounter } from "../components/PomodoroCounter";
+import { TaskPicker } from "../components/TaskPicker";
 import { Timer } from "../components/Timer";
 import { pomodoro } from "../constants/pomodoro";
-import { colors, fontSizes, radii } from "../constants/theme";
+import { colors, radii } from "../constants/theme";
 
 export default function Pomodoro() {
-  const { timerType, seconds, timerRunning, toggleTimer, toggleTimerType } =
-    useTimerContext();
+  const {
+    timerType,
+    seconds,
+    timerRunning,
+    todayCount,
+    currentTask,
+    setCurrentTaskId,
+    toggleTimer,
+    toggleTimerType,
+  } = useTimerContext();
+  const { tasks } = useTaskContext();
+  const { settings } = useSettingsContext();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -27,18 +41,21 @@ export default function Pomodoro() {
               />
             ))}
           </View>
+          <TaskPicker
+            tasks={tasks}
+            currentTask={currentTask}
+            onSelect={setCurrentTaskId}
+          />
           <Timer totalSeconds={seconds} />
           <FokusButton
             title={timerRunning ? "Pausar" : "Começar"}
             icon={timerRunning ? <IconPause /> : <IconPlay />}
             onPress={toggleTimer}
           />
-        </View>
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Projeto fictício e sem fins comerciais.
-          </Text>
-          <Text style={styles.footerText}>Desenvolvido por Alura.</Text>
+          <PomodoroCounter
+            count={todayCount}
+            longBreakInterval={settings.longBreakInterval}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -69,13 +86,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-  },
-  footer: {
-    width: "80%",
-  },
-  footerText: {
-    textAlign: "center",
-    color: colors.muted,
-    fontSize: fontSizes.sm,
   },
 });

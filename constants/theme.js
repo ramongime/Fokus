@@ -8,6 +8,7 @@ export const colors = {
   successDark: "#0F725C",
   muted: "#98A0A8",
   text: "#FFFFFF",
+  overlay: "#000000AA",
 };
 
 export const fontSizes = {

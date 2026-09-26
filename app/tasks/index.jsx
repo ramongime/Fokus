@@ -19,6 +19,7 @@ export default function Tasks() {
               <TaskItem
                 completed={item.completed}
                 text={item.description}
+                pomodoros={item.pomodoros}
                 onPressDelete={() => deleteTask(item.id)}
                 onToggleComplete={() => toggleTaskCompleted(item.id)}
                 onPressEdit={() => router.navigate(`/edit-task/${item.id}`)}
