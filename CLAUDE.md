@@ -1,130 +1,87 @@
-# Fokus
+# CLAUDE.md
 
-App de Pomodoro com lista de tarefas, em React Native + Expo (SDK 52), JavaScript/JSX.
-UI em português (pt-BR).
+## Overview
 
-## Comandos
+Fokus is an offline-first, client-side Pomodoro timer and task management application built with React Native 0.76.6, Expo SDK 52, and Expo Router v4. The user interface is in Brazilian Portuguese (`pt-BR`). State management is composed via lightweight, ordered React Context providers backed by AsyncStorage and decoupled pure functional logic engines.
+
+## Context Pointers
+
+- **Architecture & System Workflows**: Consult [`CONTEXT.md`](CONTEXT.md) for detailed runtime boundaries, the target timestamp background timer mechanism, and persistence lifecycles.
+- **Domain Language & Terms**: Consult [`GLOSSARY.md`](GLOSSARY.md) for ubiquitous domain definitions (Focus Cycles, Breaks, Streaks, Notification Channels) and avoided synonyms.
+- **Architectural Decision Records**: Consult [`ADRs/`](ADRs/) (`0001` through `0005`) for trade-offs on background projection, pure logic decoupling, provider ordering, offline storage guards, and SPA web export.
+
+## Repository Structure
+
+```
+app/                              # Expo Router v4 file-based routing
+  _layout.jsx                     # Root composition: Providers + GestureHandler + Drawer
+  index.jsx                       # Welcome landing (redirects to /pomodoro once seen)
+  pomodoro.jsx                    # Primary timer screen (active cycle, task link, daily count)
+  history.jsx                     # 7-day visual chart, weekly totals, streaks
+  settings.jsx                    # Phase durations, auto-advance, vibration preferences
+  tasks/index.jsx                 # Task list with pomodoro completion counters
+  add-task/index.jsx              # Task creation modal route (hidden from drawer)
+  edit-task/[id].jsx              # Task edit modal route (hidden from drawer)
+components/                       # Presentational UI components (prop-driven, zero context calls)
+  Icons/index.jsx                 # SVG icon registry using react-native-svg
+  context/                        # State providers and pure domain logic
+    SettingsProvider.jsx          # Settings state + AsyncStorage ("fokus-settings")
+    TaskProvider.jsx              # Task CRUD + AsyncStorage ("fokus-tasks")
+    TimerProvider.jsx             # Timer state machine + AsyncStorage ("fokus-timer")
+    timerLogic.js                 # Pure functions: plan generation, durations, phase progression
+    historyLogic.js               # Pure functions: 90-day retention, streak calculation, week buckets
+    timerNotifications.js         # Local native OS notification scheduler (expo-notifications)
+constants/                        # Design tokens and static presets
+  theme.js                        # Colors, typography scales, border radii
+  settings.js                     # Default settings limits and presets
+  pomodoro.js                     # Phase metadata (focus, short break, long break)
+ADRs/                             # Architectural Decision Records (0001 - 0005)
+Documentos/                       # Native iOS build and distribution walkthroughs
+docs/                             # Static banner and screenshots for documentation
+scripts/                          # Tooling scripts (e.g., screenshots.mjs)
+```
+
+## Non-Obvious Commands & Ports
 
 ```bash
-npm install
-npx expo start        # Expo Go, emulador ou web
-npx expo run:ios      # build nativo (passo a passo em Documentos/)
-npm test              # Jest (jest-expo); testes em *.test.js ao lado do código
-npm run lint          # ESLint (eslint-config-expo); precisa passar sem avisos
-npm run format        # Prettier em app/, components/, constants/ e scripts/
-npm run screenshots   # regenera docs/banner.png e docs/screenshots (Playwright)
+# Metro development bundler (defaults to port 8081)
+npx expo start
+
+# Run unit tests via Jest (jest-expo preset, executes *.test.js files)
+npm test
+
+# Continuous test watcher
+npm test -- --watchAll
+
+# Validate code styling via ESLint 9 (flat configuration)
+npm run lint
+
+# Auto-format codebase with Prettier
+npm run format
+
+# Headless screenshot generation via Playwright (regenerates docs/assets)
+# Requires one-time setup: npx playwright install chromium
+npm run screenshots
+
+# Build static Single Page Application web distribution
+npx expo export -p web
+
+# iOS native build verification
+npx expo run:ios
 ```
 
-O CI (`.github/workflows/ci.yml`) roda `npm ci`, lint, testes e o bundle Android a cada push
-na `main` e em PRs. Rode lint e testes antes de commitar.
+## Architecture Guardrails
 
-```bash
-npx playwright install chromium   # uma vez, antes do primeiro npm run screenshots
-```
+- **Ordered Provider Hierarchy**: The provider order in `app/_layout.jsx` is an invariant: `SettingsProvider` > `TasksProvider` > `TimerProvider`. Never invert or alter this tree; the Timer depends directly on upstream Settings for durations and Tasks for pomodoro increments.
+- **Pure Functional Logic Engines**: All temporal math and sequence progression reside in `components/context/timerLogic.js` and `historyLogic.js`. Keep these modules 100% free of React hooks, system clocks (`Date.now()`), or I/O side effects. Always pass epoch timestamps as explicit parameters (`now`).
+- **Presentational Decoupling**: Components in `components/` must remain pure presentational elements. Never import or call `useXContext` inside visual components; consume context exclusively at the route screen level (`app/`) and pass data/callbacks down via props.
+- **Storage Mount Barrier**: Every AsyncStorage consumer must gate persistence writes behind an `isLoaded` boolean flag. Writing to storage before initial data hydration finishes will clobber persisted user data with initial default state.
+- **Target Timestamp Projection**: Never implement interval countdowns via tick decrements (`remainingSeconds - 1`). Always project target deadlines (`endTime = now + duration`) and derive remaining time from `Date.now()` to survive mobile process suspension and device sleep.
 
-## Estrutura
+## Environment Gotchas
 
-```
-app/                       # rotas do expo-router (uma tela por arquivo)
-  _layout.jsx              # Providers + GestureHandlerRootView + Drawer
-  index.jsx                # landing, sem header e fora do menu
-  pomodoro.jsx             # tela do timer (tarefa do foco, contador do dia)
-  history.jsx              # histórico da semana (gráfico, tempo focado, sequência)
-  settings.jsx             # configurações (ciclos e durações)
-  tasks/index.jsx          # lista de tarefas
-  add-task/index.jsx       # criar tarefa (usa FormTask)
-  edit-task/[id].jsx       # editar tarefa (usa FormTask com defaultValue)
-components/
-  <Componente>/index.jsx   # componentes visuais, recebem dados e callbacks por props
-  Icons/index.jsx          # ícones SVG (react-native-svg), exports IconXxx
-  context/
-    TaskProvider.jsx       # estado das tarefas + AsyncStorage ("fokus-tasks")
-    useTaskContext.js
-    SettingsProvider.jsx   # configurações + AsyncStorage ("fokus-settings")
-    useSettingsContext.js
-    TimerProvider.jsx      # timer, ciclos, contador do dia + AsyncStorage ("fokus-timer")
-    useTimerContext.js
-    timerLogic.js          # funções puras do timer, testadas em timerLogic.test.js
-    historyLogic.js        # histórico por dia, semana e sequência (historyLogic.test.js)
-    timerNotifications.js  # agendar/cancelar notificações locais (expo-notifications)
-constants/
-  theme.js                 # cores (colors), tamanhos de fonte (fontSizes) e raios (radii)
-  settings.js              # configurações padrão e limites
-  pomodoro.js              # modos do timer: id, imagem, texto e notificação
-Documentos/                # tutoriais de build iOS
-docs/                      # banner e screenshots usados no README
-.claude/skills/expo-app-pattern/  # padrão de arquitetura para reutilizar em outros apps
-```
-
-## Como funciona
-
-- **Estado global**: cada domínio tem um `XProvider` (estado, persistência e ações) e um
-  hook `useXContext` que lança erro fora do Provider. Telas usam só o hook; componentes
-  visuais não acessam contexto.
-- **Persistência**: o Provider lê o AsyncStorage ao montar e só grava depois de
-  `isLoaded`, para não sobrescrever os dados salvos com o estado inicial.
-- **Ordem dos Providers** (`_layout.jsx`): `SettingsProvider` > `TasksProvider` > `TimerProvider`,
-  porque o timer lê as configurações e soma pomodoros nas tarefas.
-- **Timer**: ao dar play, `buildPlan` monta os ciclos com horário de término
-  (`segments: [{ typeId, endTime }]`): só o atual, ou os próximos 8 se "Emendar ciclos" estiver
-  ligado. O tempo exibido e o ciclo atual são derivados de `Date.now()` a cada tick e quando o
-  app volta para primeiro plano (`AppState`), então tudo continua certo com a tela bloqueada ou
-  o app fechado. Ciclos que terminaram são contabilizados uma vez só (`processed` + ref): somam
-  no histórico (`history`) e, se for foco, na tarefa escolhida (`pomodoros`).
-- **Histórico**: `history` no `fokus-timer` é `{ "AAAA-MM-DD": { count, minutes } }`, com os
-  últimos 90 dias. O dia é o do fim do foco e os minutos vêm de `startTime`/`endTime` do ciclo.
-  O antigo `stats` (`{ date, count }`, só de hoje) é convertido ao carregar. A tela de
-  histórico deriva semana, totais e sequência com `historyLogic.js`.
-- **Fim do plano**: o timer para no próximo modo sugerido (pausa longa a cada
-  `longBreakInterval` focos do dia).
-- **Durações**: vêm das configurações; `pausedSeconds = null` significa "duração cheia", então
-  mudar a configuração reflete na hora quando o timer não foi iniciado.
-- **Notificação**: uma por ciclo planejado, agendada no sistema operacional. Pausar ou trocar de
-  modo cancela todas. A permissão é pedida no primeiro play.
-- **Vibração**: com a tela bloqueada o JS não roda, então quem vibra é a notificação. No
-  Android há dois canais (`cycles`, com vibração, e `cycles-quiet`), porque um canal não muda
-  depois de criado; o canal antigo `timer` é apagado. Com o app aberto e sem notificações
-  agendadas (permissão negada ou web), o app vibra com `Vibration` (`shouldVibrateInApp`).
-- **Boas-vindas**: `app/index.jsx` aparece só até o primeiro "Quero iniciar!"
-  (`settings.hasSeenWelcome`); depois redireciona direto para `/pomodoro`.
-- **Navegação**: Drawer do expo-router. Telas de adicionar/editar ficam escondidas do menu
-  (`drawerItemStyle: { display: "none" }`) e têm `BackButtonDrawer` no header.
-
-## Android e iOS
-
-- Identificador `com.ramongime.fokus` nos dois (`ios.bundleIdentifier`, `android.package`).
-- Projetos nativos são gerados pelo `expo prebuild` (`/ios` e `/android` estão no `.gitignore`).
-- Permissões Android: `VIBRATE` e `SCHEDULE_EXACT_ALARM` no `app.json`; notificações vêm do
-  `expo-notifications`. Armazenamento e `SYSTEM_ALERT_WINDOW` do template estão em
-  `android.blockedPermissions`, porque o app não usa.
-- `eslint-config-expo` está em `expo.install.exclude`: é só do lint e usa a versão 9 de
-  propósito (a 8, do SDK 52, não tem configuração flat).
-
-## Ícone
-
-O símbolo de alvo do logo está em `assets/images/icon.svg`. `icon.png`, `adaptive-icon.png`,
-`splash-icon.png` e `favicon.png` foram gerados a partir dele, sobre o azul `#021123`
-(o mesmo fundo da tela de abertura e do ícone adaptativo no `app.json`).
-
-## Convenções
-
-- Estilos com `StyleSheet.create` no fim do arquivo, usando sempre `colors`, `fontSizes`
-  e `radii` de `constants/theme.js`; nada de hex solto nos componentes.
-- Código formatado com Prettier (aspas duplas, ponto e vírgula).
-- Comentários explicam o porquê. Arquivos de lógica (`timerLogic.js`, `TimerProvider.jsx`,
-  `timerNotifications.js`, `SettingsProvider.jsx`) têm um bloco no topo com o papel do
-  arquivo; funções exportadas de `timerLogic.js` têm uma linha dizendo o que fazem.
-- Ações destrutivas pedem confirmação com `ConfirmModal` (o `Alert` nativo não funciona na web).
-- `Pressable` só com ícone precisa de `accessibilityRole` e `accessibilityLabel`.
-- Quando a UI mudar, rode `npm run screenshots` para atualizar as imagens do README.
-- Variações visuais por prop booleana (`outline`, `active`, `completed`).
-- Configurações estáticas como array de objetos `{ id, display, ... }` em `constants/`.
-- IDs são strings (`Date.now().toString()`) e comparados com `===`. O `TaskProvider`
-  converte para string os IDs numéricos de tarefas salvas em versões antigas.
-- Mudanças de dependência nativa: use a versão de `node_modules/expo/bundledNativeModules.json`
-  (equivalente a `npx expo install`).
-
-## Web
-
-`app.json` usa `web.output: "single"` (SPA). Com `"static"`, a pré-renderização gera erros de
-hidratação, porque tarefas e timer vêm do armazenamento local só no cliente.
+- **Android Exact Alarms & Background Delivery**: Android 12+ requires `SCHEDULE_EXACT_ALARM` in `app.json` for timer notifications to trigger precisely when the phone is locked. Do not remove this permission.
+- **Immutable Notification Channels**: Android notification channels cannot be altered after creation. Fokus maintains two distinct channels: `cycles` (vibration enabled) and `cycles-quiet` (silent). The deprecated channel `timer` is purged on application startup.
+- **Web SPA Mode Requirement**: `app.json` enforces `web.output: "single"`. Do not change this to `"static"`; pre-rendered static HTML triggers React hydration mismatches with client-only AsyncStorage state.
+- **ESLint 9 Flat Configuration**: `eslint-config-expo` is intentionally listed under `expo.install.exclude` in `package.json` to lock ESLint flat configuration compatibility on ESLint 9.
+- **String Task Identifiers**: Task IDs must be strictly formatted and compared as strings (`Date.now().toString()`). Legacy numeric IDs are auto-coerced during hydration.
