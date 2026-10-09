@@ -8,7 +8,7 @@ module.exports = defineConfig([
     ignores: ['dist/*', '.claude/*'],
   },
   {
-    files: ['**/*.test.js'],
+    files: ['**/*.test.js', '**/*.test.jsx'],
     languageOptions: {
       globals: require('globals').jest,
     },
