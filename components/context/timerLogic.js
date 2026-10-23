@@ -103,10 +103,18 @@ export const normalizeSettings = (saved = {}) => {
       typeof saved.vibrate === "boolean"
         ? saved.vibrate
         : DEFAULT_SETTINGS.vibrate,
+    distinctSounds:
+      typeof saved.distinctSounds === "boolean"
+        ? saved.distinctSounds
+        : DEFAULT_SETTINGS.distinctSounds,
     hasSeenWelcome: saved.hasSeenWelcome === true,
     longBreakInterval: clamp(
       Number(saved.longBreakInterval) || DEFAULT_SETTINGS.longBreakInterval,
       SETTINGS_LIMITS.longBreakInterval,
+    ),
+    dailyFocusGoal: clamp(
+      Number(saved.dailyFocusGoal) || DEFAULT_SETTINGS.dailyFocusGoal,
+      SETTINGS_LIMITS.dailyFocusGoal,
     ),
     durations: Object.fromEntries(
       Object.keys(DEFAULT_SETTINGS.durations).map((id) => [

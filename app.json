@@ -42,7 +42,34 @@
           }
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": ["./assets/sounds/focus.wav", "./assets/sounds/break.wav"]
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "enableAndroid": true,
+          "widgets": [
+            {
+              "name": "FokusWidget",
+              "displayName": "Fokus",
+              "description": "Veja o ciclo atual e acompanhe sua meta diária.",
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium"],
+                "initialLayout": "widgets/FokusWidget.ios.jsx"
+              },
+              "android": {
+                "targetCellWidth": 2,
+                "targetCellHeight": 3,
+                "initialLayout": "widgets/FokusWidget.android.jsx"
+              }
+            }
+          ]
+        }
+      ],
       [
         "expo-splash-screen",
         {

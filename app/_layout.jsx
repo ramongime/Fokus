@@ -4,6 +4,7 @@ import { BackButtonDrawer } from "../components/BackButtonDrawer";
 import { SettingsProvider } from "../components/context/SettingsProvider";
 import { TasksProvider } from "../components/context/TaskProvider";
 import { TimerProvider } from "../components/context/TimerProvider";
+import WidgetSync from "../widgets/WidgetSync";
 import { colors } from "../constants/theme";
 
 export default function Layout() {
@@ -11,6 +12,7 @@ export default function Layout() {
     <SettingsProvider>
       <TasksProvider>
         <TimerProvider>
+          <WidgetSync />
           <GestureHandlerRootView style={{ flex: 1 }}>
             <Drawer
               screenOptions={{

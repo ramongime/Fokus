@@ -17,8 +17,8 @@ app/                              # Expo Router file-based routing
   _layout.jsx                     # Root composition: Providers + GestureHandler + Drawer
   index.jsx                       # Welcome landing (redirects to /pomodoro once seen)
   pomodoro.jsx                    # Primary timer screen (active cycle, task link, daily count)
-  history.jsx                     # 7-day visual chart, weekly totals, streaks
-  settings.jsx                    # Phase durations, auto-advance, vibration preferences
+  history.jsx                     # Week chart, monthly calendar, daily focus goals, streaks
+  settings.jsx                    # Phase durations, goals, auto-advance, vibration, and sounds
   tasks/index.jsx                 # Task list with pomodoro completion counters
   add-task/index.jsx              # Task creation modal route (hidden from drawer)
   edit-task/[id].jsx              # Task edit modal route (hidden from drawer)
@@ -29,7 +29,7 @@ components/                       # Presentational UI components (prop-driven, z
     TaskProvider.jsx              # Task CRUD + AsyncStorage ("fokus-tasks")
     TimerProvider.jsx             # Timer state machine + AsyncStorage ("fokus-timer")
     timerLogic.js                 # Pure functions: plan generation, durations, phase progression
-    historyLogic.js               # Pure functions: 90-day retention, streak calculation, week buckets
+    historyLogic.js               # Pure functions: 90-day retention, weekly/monthly buckets, daily goals
     timerNotifications.js         # Local native OS notification scheduler (expo-notifications)
 constants/                        # Design tokens and static presets
   theme.js                        # Colors, typography scales, border radii
@@ -39,6 +39,8 @@ ADRs/                             # Architectural Decision Records (0001 - 0005)
 Documentos/                       # Native iOS build and distribution walkthroughs
 docs/                             # Static banner and screenshots for documentation
 scripts/                          # Tooling scripts (e.g., screenshots.mjs)
+widgets/                          # Native iOS and Android home screen widget layouts
+  WidgetSync.jsx                  # Root side-effect bridge from app state to widgets
 ```
 
 ## Non-Obvious Commands & Ports
@@ -81,7 +83,7 @@ npx expo run:ios
 ## Environment Gotchas
 
 - **Android Exact Alarms & Background Delivery**: Android 12+ requires `SCHEDULE_EXACT_ALARM` in `app.json` for timer notifications to trigger precisely when the phone is locked. Do not remove this permission.
-- **Immutable Notification Channels**: Android notification channels cannot be altered after creation. Fokus maintains two distinct channels: `cycles` (vibration enabled) and `cycles-quiet` (silent). The deprecated channel `timer` is purged on application startup.
+- **Immutable Notification Channels**: Android notification channels cannot be altered after creation. Fokus keeps `cycles` and `cycles-quiet` for the default sound, plus dedicated focus and break channels for custom sounds. The deprecated channel `timer` is purged on application startup.
 - **Web SPA Mode Requirement**: `app.json` enforces `web.output: "single"`. Do not change this to `"static"`; pre-rendered static HTML triggers React hydration mismatches with client-only AsyncStorage state.
 - **Web SPA Shell**: `public/index.html` is the template for the single-page web export. It paints `colors.background` before the JS loads; keep the two in sync.
 - **Web Single Bundle**: `asyncRoutes.web` is `false` in the `expo-router` plugin. SDK 58 would otherwise split routes into chunks fetched on first visit, breaking offline navigation.

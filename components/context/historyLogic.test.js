@@ -3,9 +3,11 @@ import {
   formatMinutes,
   getStreak,
   getTodayCount,
+  getMonth,
   getWeek,
   HISTORY_DAYS,
   historyFromLegacyStats,
+  summarizeMonth,
   summarizeWeek,
   todayKey,
 } from "./historyLogic";
@@ -98,6 +100,42 @@ describe("getWeek", () => {
   it("lê o total de hoje", () => {
     expect(getTodayCount(history, NOW)).toBe(2);
     expect(getTodayCount(history, at(27))).toBe(0);
+  });
+});
+
+describe("getMonth", () => {
+  const history = {
+    "2026-09-20": { count: 1, minutes: 25 },
+    "2026-09-24": { count: 4, minutes: 100 },
+    "2026-09-26": { count: 2, minutes: 50 },
+  };
+
+  it("monta o calendário de segunda a domingo e identifica hoje e dias futuros", () => {
+    const month = getMonth(history, NOW);
+    expect(month).toMatchObject({
+      key: "2026-09",
+      title: "setembro 2026",
+      weekdays: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+    });
+    expect(month.days).toHaveLength(35);
+    expect(month.days[0]).toMatchObject({ empty: true });
+    expect(month.days.find((day) => day.key === "2026-09-26")).toMatchObject({
+      dayNumber: 26,
+      count: 2,
+      minutes: 50,
+      isToday: true,
+      isFuture: false,
+    });
+    expect(month.days.find((day) => day.key === "2026-09-27")).toMatchObject({
+      isFuture: true,
+    });
+  });
+
+  it("resume focos e minutos do mês sem contar as células vazias", () => {
+    expect(summarizeMonth(getMonth(history, NOW))).toEqual({
+      count: 7,
+      minutes: 175,
+    });
   });
 });
 

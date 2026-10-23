@@ -193,14 +193,18 @@ describe("normalizeSettings", () => {
       normalizeSettings({
         autoStartCycles: false,
         vibrate: "sim",
+        distinctSounds: false,
         longBreakInterval: 99,
+        dailyFocusGoal: 99,
         durations: { focus: 50, short: 0, long: "abc", extra: 3 },
       }),
     ).toEqual({
       autoStartCycles: false,
       vibrate: true,
+      distinctSounds: false,
       hasSeenWelcome: false,
       longBreakInterval: 8,
+      dailyFocusGoal: 12,
       durations: { focus: 50, short: 5, long: 15 },
     });
   });

@@ -20,7 +20,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![Web](https://img.shields.io/badge/Web-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![Jest](https://img.shields.io/badge/testes-31_passando-C21325?style=flat-square&logo=jest&logoColor=white)
+![Jest](https://img.shields.io/badge/testes-74_passando-C21325?style=flat-square&logo=jest&logoColor=white)
 [![CI](https://github.com/ramongime/Fokus/actions/workflows/ci.yml/badge.svg)](https://github.com/ramongime/Fokus/actions/workflows/ci.yml)
 
 [Funcionalidades](#-funcionalidades) •
@@ -41,12 +41,14 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 | ⏱️ **Três modos de timer** | Foco, Pausa curta e Pausa longa, com ilustração própria para cada um |
 | 🔁 **Ciclos emendados** | Acabou o foco, a pausa começa sozinha; acabou a pausa, volta o foco. Dá para desligar nas configurações |
 | 🍅 **Contador do dia** | Bolinhas mostram quanto falta para a pausa longa, que vem a cada 4 focos (configurável) |
-| 📊 **Histórico da semana** | Gráfico de focos por dia, tempo focado, total da semana e sequência de dias seguidos |
+| 📊 **Histórico semanal e mensal** | Gráfico da semana, calendário mensal, tempo focado, sequência de dias e metas diárias |
 | 🎯 **Foco em uma tarefa** | Escolha no que está trabalhando; cada foco concluído soma um 🍅 na tarefa |
-| ⚙️ **Configurações** | Durações de cada modo, intervalo da pausa longa, emendar ciclos e vibração |
+| ⚙️ **Configurações** | Durações, intervalo da pausa longa, emendar ciclos, vibração, sons e meta diária |
 | 🔒 **Funciona com a tela bloqueada** | O tempo é calculado a partir do horário de término, então nada se perde quando o celular dorme |
 | 📳 **Vibração no fim do ciclo** | O celular vibra junto com a notificação, mesmo com a tela bloqueada. Dá para desligar |
 | 🔔 **Notificação no fim do ciclo** | Agendada direto no sistema operacional: chega mesmo com o app em segundo plano ou fechado, avisando qual ciclo começou |
+| 🎵 **Sons por ciclo** | Um som no fim do foco e outro no fim da pausa; pode desligar nas configurações |
+| 📱 **Widget** | Mostra o ciclo atual e o progresso da meta diária na tela inicial do iPhone ou Android |
 | 💾 **Retoma de onde parou** | Fechou o app no meio do foco? Ao abrir, o timer continua certinho |
 | ✅ **Lista de tarefas completa** | Criar, editar, concluir e excluir (com confirmação), tudo salvo no aparelho |
 | ♿ **Acessível** | Botões de ícone com descrição para leitores de tela (TalkBack e VoiceOver) |
@@ -151,6 +153,11 @@ O identificador do app é `com.ramongime.fokus` nas duas plataformas.
 > No Android, a permissão de alarme exato (para a notificação chegar no segundo certo mesmo
 > em modo economia de bateria) só vale em build nativo (`npx expo run:android`).
 > O passo a passo de build no iPhone está em [`Documentos/`](Documentos/).
+>
+> O widget e os sons personalizados precisam de um build nativo atualizado. Depois de instalar,
+> adicione o widget **Fokus** pela galeria de widgets da tela inicial. No iOS, o timer do widget
+> continua contando enquanto o app está suspenso; no Android, o widget atualiza quando o app
+> envia um novo estado.
 
 ### 📜 Scripts
 
@@ -178,7 +185,7 @@ fokus/
 │   ├── _layout.jsx              #    Providers + menu lateral (Drawer)
 │   ├── index.jsx                #    Boas-vindas
 │   ├── pomodoro.jsx             #    Timer
-│   ├── history.jsx              #    Histórico da semana
+│   ├── history.jsx              #    Histórico semanal e mensal com metas diárias
 │   ├── settings.jsx             #    Configurações
 │   ├── tasks/index.jsx          #    Lista de tarefas
 │   ├── add-task/index.jsx       #    Nova tarefa
@@ -199,6 +206,7 @@ fokus/
 │   ├── settings.js              #    Configurações padrão e limites
 │   └── pomodoro.js              #    Modos do timer e textos das notificações
 ├── scripts/screenshots.mjs      # 📸 Gera as imagens do README
+├── widgets/                     # 📱 Widgets nativos + sincronização de estado
 ├── .github/workflows/ci.yml     # 🤖 Lint + testes + bundle a cada push
 └── docs/                        # 🖼️ Imagens deste README
 ```
@@ -251,11 +259,9 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 - [x] Confirmação antes de excluir e acessibilidade
 - [x] CI no GitHub Actions
 - [x] Vibrar no fim de cada ciclo
-- [x] Histórico da semana com gráfico
-- [ ] Histórico do mês e metas diárias
-- [ ] Sons diferentes para foco e pausa
-- [ ] Widget na tela inicial do celular
-- [ ] Build instalável com EAS
+- [x] Histórico da semana e do mês com metas diárias
+- [x] Sons diferentes para foco e pausa
+- [x] Widget na tela inicial do celular
 
 ---
 

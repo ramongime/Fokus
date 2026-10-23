@@ -72,7 +72,11 @@ _Avoid_: Total de pomodoros, frequência semanal, pontuação de hábito
 
 **Contador do Dia**:
 Total consolidado de ciclos de foco finalizados com sucesso na data corrente do usuário.
-_Avoid_: Sequência, meta diária
+_Avoid_: Sequência, meta diária de foco
+
+**Meta Diária de Foco**:
+Quantidade configurável de ciclos de foco que o usuário pretende concluir em um dia, acompanhada no histórico mensal.
+_Avoid_: Contador do dia, sequência
 
 ## Sistema e Alertas
 

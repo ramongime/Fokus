@@ -55,6 +55,10 @@ export function SettingsProvider({ children }) {
     setSettings((oldState) => ({ ...oldState, vibrate }));
   };
 
+  const setDistinctSounds = (distinctSounds) => {
+    setSettings((oldState) => ({ ...oldState, distinctSounds }));
+  };
+
   // Ex.: setDuration("focus", 50) -> foco de 50 minutos
   const setDuration = (typeId, minutes) => {
     setSettings((oldState) =>
@@ -71,6 +75,12 @@ export function SettingsProvider({ children }) {
     );
   };
 
+  const setDailyFocusGoal = (dailyFocusGoal) => {
+    setSettings((oldState) =>
+      normalizeSettings({ ...oldState, dailyFocusGoal }),
+    );
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -78,9 +88,11 @@ export function SettingsProvider({ children }) {
         isLoaded,
         setAutoStartCycles,
         setVibrate,
+        setDistinctSounds,
         markWelcomeSeen,
         setDuration,
         setLongBreakInterval,
+        setDailyFocusGoal,
       }}
     >
       {children}

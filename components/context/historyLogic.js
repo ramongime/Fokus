@@ -9,6 +9,21 @@
 export const HISTORY_DAYS = 90;
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const MONTHS = [
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
+const MONTH_WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 const pad = (value) => String(value).padStart(2, "0");
 
@@ -77,6 +92,59 @@ export const summarizeWeek = (week) => ({
   count: week.reduce((total, day) => total + day.count, 0),
   minutes: week.reduce((total, day) => total + day.minutes, 0),
 });
+
+// Dias do mês em uma grade de calendário iniciada na segunda-feira.
+export const getMonth = (history, now, offset = 0) => {
+  const date = new Date(now);
+  date.setDate(1);
+  date.setHours(0, 0, 0, 0);
+  date.setMonth(date.getMonth() + offset);
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingDays = (new Date(year, month, 1).getDay() + 6) % 7;
+  const cellCount = Math.ceil((leadingDays + daysInMonth) / 7) * 7;
+  const today = todayKey(now);
+  const days = Array.from({ length: cellCount }, (_, index) => {
+    const dayNumber = index - leadingDays + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) {
+      return { key: `empty-${index}`, empty: true };
+    }
+
+    const key = `${year}-${pad(month + 1)}-${pad(dayNumber)}`;
+    const stats = getDay(history, key);
+    return {
+      key,
+      dayNumber,
+      count: stats.count,
+      minutes: stats.minutes,
+      isToday: key === today,
+      isFuture: key > today,
+      dateLabel: `${pad(dayNumber)}/${pad(month + 1)}`,
+    };
+  });
+
+  return {
+    key: `${year}-${pad(month + 1)}`,
+    title: `${MONTHS[month]} ${year}`,
+    year,
+    month,
+    weekdays: MONTH_WEEKDAYS,
+    days,
+  };
+};
+
+export const summarizeMonth = (month) => {
+  const validDays = month.days.filter((day) => !day.empty);
+  return {
+    count: validDays.reduce((total, day) => total + day.count, 0),
+    minutes: validDays.reduce((total, day) => total + day.minutes, 0),
+  };
+};
+
+export const getOldestHistoryMonthKey = (now) =>
+  todayKey(daysBefore(now, HISTORY_DAYS - 1)).slice(0, 7);
 
 // 45 -> "45 min", 125 -> "2h05", 120 -> "2h"
 export const formatMinutes = (minutes) => {

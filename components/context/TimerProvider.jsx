@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useEffect, useRef, useState } from "react";
-import { AppState, Vibration } from "react-native";
+import { AppState, Platform, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 import {
   addFocusSessions,
@@ -20,6 +20,8 @@ import {
 } from "./timerLogic";
 import {
   cancelTimerNotifications,
+  playCycleSound,
+  prepareCycleSounds,
   scheduleTimerNotifications,
   VIBRATION_PATTERN,
 } from "./timerNotifications";
@@ -202,6 +204,15 @@ export function TimerProvider({ children }) {
         ) {
           Vibration.vibrate(VIBRATION_PATTERN);
         }
+        if (Platform.OS === "web" && settings.distinctSounds) {
+          const recentSegments = finishedSegments.filter(
+            (segment) => now - segment.endTime <= 5000,
+          );
+          const lastRecentSegment = recentSegments[recentSegments.length - 1];
+          if (lastRecentSegment) {
+            playCycleSound(lastRecentSegment.typeId);
+          }
+        }
         processedRef.current = finished;
         setProcessed(finished);
         if (focusDone > 0) {
@@ -254,6 +265,9 @@ export function TimerProvider({ children }) {
 
   // Play: planeja os ciclos a partir do tempo atual e agenda as notificações
   const startTimer = async () => {
+    if (Platform.OS === "web" && settings.distinctSounds) {
+      prepareCycleSounds();
+    }
     const plan = buildPlan({
       typeId,
       seconds,
@@ -268,9 +282,13 @@ export function TimerProvider({ children }) {
     const ids = await scheduleTimerNotifications(
       plan.map((segment, index) => ({
         ...getSegmentNotification(plan, index, settings, currentTask),
+        typeId: segment.typeId,
         date: segment.endTime,
       })),
-      { vibrate: settings.vibrate },
+      {
+        vibrate: settings.vibrate,
+        distinctSounds: settings.distinctSounds,
+      },
     );
     // Pausou ou trocou de modo enquanto as notificações eram agendadas
     if (segmentsRef.current !== plan) {
@@ -317,6 +335,7 @@ export function TimerProvider({ children }) {
         seconds,
         timerRunning,
         todayCount,
+        segments,
         history,
         clock,
         currentTask,

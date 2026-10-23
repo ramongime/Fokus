@@ -10,13 +10,14 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "lint": "eslint .",
-    "format": "prettier --write app components constants scripts",
+    "format": "prettier --write app components constants scripts widgets",
     "screenshots": "node scripts/screenshots.mjs"
   },
   "jest": {
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@expo/ui": "~58.0.22",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "^58.0.0",
@@ -28,6 +29,7 @@
     "expo-router": "~58.0.25",
     "expo-splash-screen": "~58.0.11",
     "expo-system-ui": "~58.0.6",
+    "expo-widgets": "~58.0.22",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.0",

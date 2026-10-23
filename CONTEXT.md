@@ -55,8 +55,8 @@ Powered by Expo Router and its built-in Drawer (`expo-router/drawer`):
 - `app/pomodoro.jsx`: Primary operational interface presenting the timer countdown, phase indicator (Focus, Short Break, Long Break), active task assignment, and daily focus counter.
 - `app/tasks/index.jsx`: Task list displaying completed and pending tasks with pomodoro progress badges and status toggles.
 - `app/add-task/index.jsx` & `app/edit-task/[id].jsx`: Modal-style task entry and modification forms. Hidden from the Drawer menu (`drawerItemStyle: { display: "none" }`) with custom back navigation (`BackButtonDrawer`).
-- `app/history.jsx`: 7-day visual bar chart, weekly summaries, total focused hours, and daily streak counters.
-- `app/settings.jsx`: Customization panel for focus, short break, and long break durations, continuous cycle chaining, and vibration preferences.
+- `app/history.jsx`: Weekly chart, monthly calendar, daily goal progress, focused time summaries, and streak counters.
+- `app/settings.jsx`: Customization panel for phase durations, continuous cycle chaining, vibration, distinct cycle sounds, and the daily focus goal.
 
 ### 2.2 Visual Presentation Components (`components/`)
 - Stateless and prop-driven presentation modules (`Button`, `Card`, `ConfirmModal`, `Header`, `Input`, `Timer`, `TaskItem`, etc.).
@@ -67,13 +67,15 @@ Powered by Expo Router and its built-in Drawer (`expo-router/drawer`):
 ### 2.3 Pure Functional Logic Engines (`components/context/`)
 All temporal mathematics, state derivations, and cycle planning logic are isolated in side-effect-free JavaScript modules:
 - `timerLogic.js`: Pure functions for phase determination, duration calculation, end timestamp projection (`buildPlan`), segment counting, settings normalization, and notification copy generation.
-- `historyLogic.js`: Pure functions for daily bucket aggregation, 90-day retention filtering, 7-day rolling window structuring, and consecutive day streak calculations.
+- `historyLogic.js`: Pure functions for daily bucket aggregation, 90-day retention filtering, weekly and monthly calendar structuring, daily goal progress, and consecutive day streak calculations.
 - Because these engines receive the current timestamp (`now`) as an explicit parameter and perform zero I/O, 100% of domain transitions are verifiable in unit tests without mocking timers or system clocks.
 
 ### 2.4 Native Device Abstraction (`components/context/timerNotifications.js`)
 - Interfaces with `expo-notifications` to schedule and cancel local OS alerts.
 - Configures persistent Android notification channels with dedicated vibration and sound policies.
 - Encapsulates OS permission checks and gracefully degrades functionality if notifications are rejected.
+
+`widgets/WidgetSync.jsx` is mounted at the root layout and projects timer state into the native home screen widget without adding widget APIs to the timer provider.
 
 ---
 
@@ -172,7 +174,7 @@ Persistence is managed via `@react-native-async-storage/async-storage` using ded
 
 | Storage Key | Managed Data Structure | Invariant / Defaults |
 |---|---|---|
-| `"fokus-settings"` | `{ autoStartCycles, vibrate, hasSeenWelcome, longBreakInterval, durations: { focus, short, long } }` | Clamped to `SETTINGS_LIMITS` (focus: 1-90 min, short: 1-30 min, long: 1-60 min). |
+| `"fokus-settings"` | `{ autoStartCycles, vibrate, distinctSounds, dailyFocusGoal, hasSeenWelcome, longBreakInterval, durations: { focus, short, long } }` | Settings are normalized on load; durations and daily goal are clamped to `SETTINGS_LIMITS`. |
 | `"fokus-tasks"` | Array of Task objects: `[{ id: string, description: string, pomodoros: number, estimatedPomodoros: number, completed: boolean }]` | IDs are strictly strings. Auto-migrates legacy numeric IDs. |
 | `"fokus-timer"` | `{ segments, pausedSeconds, history: { [date: string]: { count, minutes } }, currentTaskId }` | Retains active segment queue and 90-day focus analytics. |
 
@@ -195,20 +197,23 @@ Fokus provides defensive parsing and forward-compatible migration:
 ## 6. External Integrations & Native Security Model
 
 ### 6.1 Native OS Notification Channels (Android)
-Android requires explicit notification channels to govern alert behavior. Because channel sound and vibration parameters cannot be modified once created, Fokus registers two distinct channels:
-- Channel `cycles` (`"Fim do ciclo"`): High importance, default sound, vibration pattern `[0, 400, 200, 400]`.
-- Channel `cycles-quiet` (`"Fim do ciclo (sem vibrar)"`): High importance, default sound, zero vibration.
+Android requires explicit notification channels to govern alert behavior. Because channel sound and vibration parameters cannot be modified once created, Fokus registers default-sound channels and separate channels for each custom sound/vibration combination:
+- Channels `cycles` and `cycles-quiet`: High importance, default sound, with and without vibration.
+- Channels `cycles-focus-*` and `cycles-break-*`: High importance, custom focus or break sound, with and without vibration.
 - Deprecated channels (`LEGACY_CHANNEL_ID = "timer"`) are deleted asynchronously during permission setup.
 
-### 6.2 Android Permissions & Alarm Precision
+### 6.2 Home Screen Widgets
+`expo-widgets` provides an iOS and Android home screen widget showing the current phase, timer, and daily focus goal. iOS receives a timeline for planned segments and uses a native countdown while the app is suspended. Android widgets receive snapshots from the app and update when the app sends new state.
+
+### 6.3 Android Permissions & Alarm Precision
 - `SCHEDULE_EXACT_ALARM`: Declared in `app.json` to allow Android 12+ to trigger local notifications at exact segment end timestamps rather than in delayed power-saving battery batches.
 - `VIBRATE`: Declared for physical haptic notification delivery.
 - Unnecessary permissions (such as `SYSTEM_ALERT_WINDOW` or external storage access) are explicitly blocked in `android.blockedPermissions`.
 
-### 6.3 Haptic & Vibration In-App Fallback
+### 6.4 Haptic & Vibration In-App Fallback
 When the application is in the foreground, or when running in web environments where native notifications are unavailable, `shouldVibrateInApp` evaluates whether the app should trigger `Vibration.vibrate()`. To prevent unexpected buzzing when users open the app hours after a timer expired, vibration is strictly limited to an active window of 5,000 milliseconds (`VIBRATION_WINDOW_MS`) following segment completion.
 
-### 6.4 Security & Privacy Architecture
+### 6.5 Security & Privacy Architecture
 - **Zero Network Transmission**: The application makes no outbound HTTP/HTTPS requests.
 - **Zero Authentication**: No usernames, passwords, or personal data collected.
 - **Offline Isolation**: All user tasks and habit patterns remain entirely on the local device.

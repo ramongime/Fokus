@@ -11,8 +11,10 @@ export default function Settings() {
     settings,
     setAutoStartCycles,
     setVibrate,
+    setDistinctSounds,
     setDuration,
     setLongBreakInterval,
+    setDailyFocusGoal,
   } = useSettingsContext();
 
   return (
@@ -46,6 +48,18 @@ export default function Settings() {
           />
         </SettingRow>
         <SettingRow
+          label="Sons diferentes por ciclo"
+          description="Usa um som para o foco e outro para as pausas."
+        >
+          <Switch
+            value={settings.distinctSounds}
+            onValueChange={setDistinctSounds}
+            accessibilityLabel="Sons diferentes por ciclo"
+            trackColor={{ false: colors.muted, true: colors.primary }}
+            thumbColor={colors.text}
+          />
+        </SettingRow>
+        <SettingRow
           label="Pausa longa a cada"
           description="Quantos focos até a pausa longa."
         >
@@ -54,6 +68,22 @@ export default function Settings() {
             onChange={setLongBreakInterval}
             min={SETTINGS_LIMITS.longBreakInterval.min}
             max={SETTINGS_LIMITS.longBreakInterval.max}
+            suffix=" focos"
+          />
+        </SettingRow>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.section}>Metas</Text>
+        <SettingRow
+          label="Meta diária de focos"
+          description="Acompanhe no histórico quantos focos faltam para a meta."
+        >
+          <Stepper
+            value={settings.dailyFocusGoal}
+            onChange={setDailyFocusGoal}
+            min={SETTINGS_LIMITS.dailyFocusGoal.min}
+            max={SETTINGS_LIMITS.dailyFocusGoal.max}
             suffix=" focos"
           />
         </SettingRow>

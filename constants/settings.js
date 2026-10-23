@@ -1,9 +1,11 @@
 export const DEFAULT_SETTINGS = {
   autoStartCycles: true,
   vibrate: true,
+  distinctSounds: true,
   // A tela de boas-vindas aparece só até o primeiro "Quero iniciar!"
   hasSeenWelcome: false,
   longBreakInterval: 4,
+  dailyFocusGoal: 4,
   // Em minutos
   durations: {
     focus: 25,
@@ -19,4 +21,5 @@ export const SETTINGS_LIMITS = {
     long: { min: 1, max: 60 },
   },
   longBreakInterval: { min: 2, max: 8 },
+  dailyFocusGoal: { min: 1, max: 12 },
 };
