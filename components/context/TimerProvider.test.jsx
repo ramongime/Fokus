@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import React from "react";
 import { AppState, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
+import { todayKey } from "./historyLogic";
 import { SettingsProvider } from "./SettingsProvider";
 import { TasksProvider } from "./TaskProvider";
 import {
@@ -80,7 +81,7 @@ describe("TimerProvider & useTimerContext", () => {
       typeId: "short",
       pausedSeconds: 180,
       history: {
-        "2026-10-09": { count: 3, minutes: 75 },
+        [todayKey(Date.now())]: { count: 3, minutes: 75 },
       },
       currentTaskId: "task-123",
     };
@@ -118,7 +119,7 @@ describe("TimerProvider & useTimerContext", () => {
       timerTypeId: "focus",
       endTime: now + 500000,
       stats: {
-        date: "2026-10-09",
+        date: todayKey(now),
         count: 2,
       },
     };
