@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-import React from "react";
 import { AppState, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 import { todayKey } from "./historyLogic";

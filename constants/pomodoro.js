@@ -1,7 +1,6 @@
 export const pomodoro = [
   {
     id: "focus",
-    initialValue: 25 * 60,
     image: require("../assets/images/pomodoro.png"),
     display: "Foco",
     notification: {
@@ -11,7 +10,6 @@ export const pomodoro = [
   },
   {
     id: "short",
-    initialValue: 5 * 60,
     image: require("../assets/images/short.png"),
     display: "Pausa curta",
     notification: {
@@ -21,7 +19,6 @@ export const pomodoro = [
   },
   {
     id: "long",
-    initialValue: 15 * 60,
     image: require("../assets/images/long.png"),
     display: "Pausa longa",
     notification: {
