@@ -45,7 +45,9 @@
           "backgroundColor": "#021123"
         }
       ],
-      "./withIosSceneLifecycle"
+      "./withIosSceneLifecycle",
+      "expo-font",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
