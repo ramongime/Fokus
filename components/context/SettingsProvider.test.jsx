@@ -15,13 +15,13 @@ describe("SettingsProvider & useSettingsContext", () => {
     jest.clearAllMocks();
   });
 
-  it("throws descriptive error when useSettingsContext is used outside SettingsProvider", () => {
+  it("throws descriptive error when useSettingsContext is used outside SettingsProvider", async () => {
     // Suppress React error boundary console.error during expected throw
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
-    expect(() => {
-      renderHook(() => useSettingsContext());
-    }).toThrow("Tentando acessar o contexto fora do SettingsProvider");
+    await expect(renderHook(() => useSettingsContext())).rejects.toThrow(
+      "Tentando acessar o contexto fora do SettingsProvider",
+    );
 
     errorSpy.mockRestore();
   });
@@ -29,7 +29,7 @@ describe("SettingsProvider & useSettingsContext", () => {
   it("hydrates with DEFAULT_SETTINGS when AsyncStorage is empty", async () => {
     AsyncStorage.getItem.mockResolvedValueOnce(null);
 
-    const { result } = renderHook(() => useSettingsContext(), {
+    const { result } = await renderHook(() => useSettingsContext(), {
       wrapper: ({ children }) => (
         <SettingsProvider>{children}</SettingsProvider>
       ),
@@ -57,7 +57,7 @@ describe("SettingsProvider & useSettingsContext", () => {
     };
     AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(saved));
 
-    const { result } = renderHook(() => useSettingsContext(), {
+    const { result } = await renderHook(() => useSettingsContext(), {
       wrapper: ({ children }) => (
         <SettingsProvider>{children}</SettingsProvider>
       ),
@@ -78,7 +78,7 @@ describe("SettingsProvider & useSettingsContext", () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     AsyncStorage.getItem.mockRejectedValueOnce(new Error("Disk error"));
 
-    const { result } = renderHook(() => useSettingsContext(), {
+    const { result } = await renderHook(() => useSettingsContext(), {
       wrapper: ({ children }) => (
         <SettingsProvider>{children}</SettingsProvider>
       ),
@@ -99,7 +99,7 @@ describe("SettingsProvider & useSettingsContext", () => {
   it("respects the storage mount barrier and persists mutations only after isLoaded", async () => {
     AsyncStorage.getItem.mockResolvedValueOnce(null);
 
-    const { result } = renderHook(() => useSettingsContext(), {
+    const { result } = await renderHook(() => useSettingsContext(), {
       wrapper: ({ children }) => (
         <SettingsProvider>{children}</SettingsProvider>
       ),
@@ -116,7 +116,7 @@ describe("SettingsProvider & useSettingsContext", () => {
     );
     AsyncStorage.setItem.mockClear();
 
-    act(() => {
+    await act(() => {
       result.current.setAutoStartCycles(false);
     });
 
@@ -131,7 +131,7 @@ describe("SettingsProvider & useSettingsContext", () => {
   it("updates vibrate, markWelcomeSeen, duration, and longBreakInterval correctly", async () => {
     AsyncStorage.getItem.mockResolvedValueOnce(null);
 
-    const { result } = renderHook(() => useSettingsContext(), {
+    const { result } = await renderHook(() => useSettingsContext(), {
       wrapper: ({ children }) => (
         <SettingsProvider>{children}</SettingsProvider>
       ),
@@ -141,39 +141,39 @@ describe("SettingsProvider & useSettingsContext", () => {
       expect(result.current.isLoaded).toBe(true);
     });
 
-    act(() => {
+    await act(() => {
       result.current.setVibrate(false);
     });
     expect(result.current.settings.vibrate).toBe(false);
 
-    act(() => {
+    await act(() => {
       result.current.markWelcomeSeen();
     });
     expect(result.current.settings.hasSeenWelcome).toBe(true);
 
-    act(() => {
+    await act(() => {
       result.current.setDuration("focus", 50);
     });
     expect(result.current.settings.durations.focus).toBe(50);
 
-    act(() => {
+    await act(() => {
       // Clamps to max 90 min per SETTINGS_LIMITS
       result.current.setDuration("focus", 999);
     });
     expect(result.current.settings.durations.focus).toBe(90);
 
-    act(() => {
+    await act(() => {
       result.current.setLongBreakInterval(6);
     });
     expect(result.current.settings.longBreakInterval).toBe(6);
 
-    act(() => {
+    await act(() => {
       // Clamps to max 8 per SETTINGS_LIMITS
       result.current.setLongBreakInterval(99);
     });
     expect(result.current.settings.longBreakInterval).toBe(8);
 
-    act(() => {
+    await act(() => {
       // Clamps to min 2 per SETTINGS_LIMITS
       result.current.setLongBreakInterval(1);
     });
@@ -185,7 +185,7 @@ describe("SettingsProvider & useSettingsContext", () => {
     AsyncStorage.getItem.mockResolvedValueOnce(null);
     AsyncStorage.setItem.mockRejectedValue(new Error("Write error"));
 
-    const { result } = renderHook(() => useSettingsContext(), {
+    const { result } = await renderHook(() => useSettingsContext(), {
       wrapper: ({ children }) => (
         <SettingsProvider>{children}</SettingsProvider>
       ),
@@ -195,7 +195,7 @@ describe("SettingsProvider & useSettingsContext", () => {
       expect(result.current.isLoaded).toBe(true);
     });
 
-    act(() => {
+    await act(() => {
       result.current.setVibrate(false);
     });
 

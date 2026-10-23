@@ -48,18 +48,18 @@ describe("TimerProvider & useTimerContext", () => {
     });
   });
 
-  it("throws descriptive error when useTimerContext is used outside TimerProvider", () => {
+  it("throws descriptive error when useTimerContext is used outside TimerProvider", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
-    expect(() => {
-      renderHook(() => useTimerContext());
-    }).toThrow("Tentando acessar o contexto fora do TimerProvider");
+    await expect(renderHook(() => useTimerContext())).rejects.toThrow(
+      "Tentando acessar o contexto fora do TimerProvider",
+    );
 
     errorSpy.mockRestore();
   });
 
   it("hydrates with default state when AsyncStorage is empty", async () => {
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -95,7 +95,7 @@ describe("TimerProvider & useTimerContext", () => {
       return null;
     });
 
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -129,7 +129,7 @@ describe("TimerProvider & useTimerContext", () => {
       return null;
     });
 
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -147,7 +147,7 @@ describe("TimerProvider & useTimerContext", () => {
       return null;
     });
 
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -166,7 +166,7 @@ describe("TimerProvider & useTimerContext", () => {
   });
 
   it("switches timer type via toggleTimerType, resets paused time and cancels running timer", async () => {
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -174,7 +174,7 @@ describe("TimerProvider & useTimerContext", () => {
       expect(result.current.timerType.id).toBe("focus");
     });
 
-    act(() => {
+    await act(() => {
       result.current.toggleTimerType({ id: "short" });
     });
 
@@ -182,7 +182,7 @@ describe("TimerProvider & useTimerContext", () => {
     expect(result.current.seconds).toBe(DEFAULT_SETTINGS.durations.short * 60);
     expect(result.current.timerRunning).toBe(false);
 
-    act(() => {
+    await act(() => {
       result.current.toggleTimerType({ id: "long" });
     });
 
@@ -191,7 +191,7 @@ describe("TimerProvider & useTimerContext", () => {
   });
 
   it("cancels notifications if toggleTimerType is called while timer is running", async () => {
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -204,7 +204,7 @@ describe("TimerProvider & useTimerContext", () => {
     });
     expect(result.current.timerRunning).toBe(true);
 
-    act(() => {
+    await act(() => {
       result.current.toggleTimerType({ id: "short" });
     });
 
@@ -222,7 +222,7 @@ describe("TimerProvider & useTimerContext", () => {
         }),
     );
 
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -230,12 +230,12 @@ describe("TimerProvider & useTimerContext", () => {
       expect(result.current.timerRunning).toBe(false);
     });
 
-    act(() => {
+    await act(() => {
       result.current.toggleTimer();
     });
 
     // While scheduling is unresolved, pause or change mode
-    act(() => {
+    await act(() => {
       result.current.toggleTimerType({ id: "long" });
     });
 
@@ -248,7 +248,7 @@ describe("TimerProvider & useTimerContext", () => {
   });
 
   it("links currentTask when setCurrentTaskId is called", async () => {
-    const { result } = renderHook(
+    const { result } = await renderHook(
       () => ({
         timer: useTimerContext(),
         tasks: useTaskContext(),
@@ -261,7 +261,7 @@ describe("TimerProvider & useTimerContext", () => {
     });
 
     let createdId;
-    act(() => {
+    await act(() => {
       result.current.tasks.addTask("Escrever relatório diagnóstico");
     });
 
@@ -270,7 +270,7 @@ describe("TimerProvider & useTimerContext", () => {
     });
     createdId = result.current.tasks.tasks[0].id;
 
-    act(() => {
+    await act(() => {
       result.current.timer.setCurrentTaskId(createdId);
     });
 
@@ -285,7 +285,7 @@ describe("TimerProvider & useTimerContext", () => {
   });
 
   it("starts the timer and schedules notifications when toggleTimer is called", async () => {
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -302,7 +302,7 @@ describe("TimerProvider & useTimerContext", () => {
   });
 
   it("pauses the running timer, saves pausedSeconds, and cancels notifications", async () => {
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -315,7 +315,7 @@ describe("TimerProvider & useTimerContext", () => {
     });
     expect(result.current.timerRunning).toBe(true);
 
-    act(() => {
+    await act(() => {
       result.current.toggleTimer();
     });
 
@@ -348,7 +348,7 @@ describe("TimerProvider & useTimerContext", () => {
       return null;
     });
 
-    const { result } = renderHook(
+    const { result } = await renderHook(
       () => ({
         timer: useTimerContext(),
         tasks: useTaskContext(),
@@ -380,7 +380,7 @@ describe("TimerProvider & useTimerContext", () => {
       .mockImplementation(() => {});
     scheduleTimerNotifications.mockResolvedValueOnce([]); // No OS notifications scheduled
 
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -398,7 +398,7 @@ describe("TimerProvider & useTimerContext", () => {
   });
 
   it("updates clock and syncs on AppState active event", async () => {
-    const { result } = renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
@@ -406,7 +406,7 @@ describe("TimerProvider & useTimerContext", () => {
       expect(result.current.timerType.id).toBe("focus");
     });
 
-    act(() => {
+    await act(() => {
       AppState.emit?.("change", "active");
     });
 

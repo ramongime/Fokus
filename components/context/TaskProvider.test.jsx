@@ -14,12 +14,12 @@ describe("TasksProvider & useTaskContext", () => {
     jest.clearAllMocks();
   });
 
-  it("throws descriptive error when useTaskContext is used outside TasksProvider", () => {
+  it("throws descriptive error when useTaskContext is used outside TasksProvider", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
-    expect(() => {
-      renderHook(() => useTaskContext());
-    }).toThrow("Tentando acessar o contexto fora do TasksProvider");
+    await expect(renderHook(() => useTaskContext())).rejects.toThrow(
+      "Tentando acessar o contexto fora do TasksProvider",
+    );
 
     errorSpy.mockRestore();
   });
@@ -27,7 +27,7 @@ describe("TasksProvider & useTaskContext", () => {
   it("hydrates with empty tasks list when AsyncStorage is empty", async () => {
     AsyncStorage.getItem.mockResolvedValueOnce(null);
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -46,7 +46,7 @@ describe("TasksProvider & useTaskContext", () => {
     ];
     AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(legacyTasks));
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -63,7 +63,7 @@ describe("TasksProvider & useTaskContext", () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     AsyncStorage.getItem.mockRejectedValueOnce(new Error("Storage corrupted"));
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -82,7 +82,7 @@ describe("TasksProvider & useTaskContext", () => {
   it("respects the storage mount barrier and persists task changes to AsyncStorage", async () => {
     AsyncStorage.getItem.mockResolvedValueOnce(null);
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -92,7 +92,7 @@ describe("TasksProvider & useTaskContext", () => {
 
     AsyncStorage.setItem.mockClear();
 
-    act(() => {
+    await act(() => {
       result.current.addTask("Nova tarefa de teste");
     });
 
@@ -115,7 +115,7 @@ describe("TasksProvider & useTaskContext", () => {
     ];
     AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(initialTasks));
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -123,7 +123,7 @@ describe("TasksProvider & useTaskContext", () => {
       expect(result.current.isLoaded).toBe(true);
     });
 
-    act(() => {
+    await act(() => {
       result.current.toggleTaskCompleted("1");
     });
     expect(result.current.tasks.find((t) => t.id === "1")?.completed).toBe(
@@ -133,7 +133,7 @@ describe("TasksProvider & useTaskContext", () => {
       true,
     );
 
-    act(() => {
+    await act(() => {
       result.current.toggleTaskCompleted("1");
     });
     expect(result.current.tasks.find((t) => t.id === "1")?.completed).toBe(
@@ -148,7 +148,7 @@ describe("TasksProvider & useTaskContext", () => {
     ];
     AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(initialTasks));
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -156,14 +156,14 @@ describe("TasksProvider & useTaskContext", () => {
       expect(result.current.isLoaded).toBe(true);
     });
 
-    act(() => {
+    await act(() => {
       result.current.updateTask("10", "Updated title");
     });
     expect(result.current.tasks.find((t) => t.id === "10")?.description).toBe(
       "Updated title",
     );
 
-    act(() => {
+    await act(() => {
       result.current.deleteTask("20");
     });
     expect(result.current.tasks).toHaveLength(1);
@@ -177,7 +177,7 @@ describe("TasksProvider & useTaskContext", () => {
     ];
     AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(initialTasks));
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -185,14 +185,14 @@ describe("TasksProvider & useTaskContext", () => {
       expect(result.current.isLoaded).toBe(true);
     });
 
-    act(() => {
+    await act(() => {
       result.current.addPomodorosToTask("task-a", 1);
     });
     expect(result.current.tasks.find((t) => t.id === "task-a")?.pomodoros).toBe(
       1,
     );
 
-    act(() => {
+    await act(() => {
       result.current.addPomodorosToTask("task-b", 3);
     });
     expect(result.current.tasks.find((t) => t.id === "task-b")?.pomodoros).toBe(
@@ -205,7 +205,7 @@ describe("TasksProvider & useTaskContext", () => {
     AsyncStorage.getItem.mockResolvedValueOnce(null);
     AsyncStorage.setItem.mockRejectedValue(new Error("Write error"));
 
-    const { result } = renderHook(() => useTaskContext(), {
+    const { result } = await renderHook(() => useTaskContext(), {
       wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
     });
 
@@ -213,7 +213,7 @@ describe("TasksProvider & useTaskContext", () => {
       expect(result.current.isLoaded).toBe(true);
     });
 
-    act(() => {
+    await act(() => {
       result.current.addTask("Falha ao salvar");
     });
 
