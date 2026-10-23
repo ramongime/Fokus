@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "fokus",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ramongime.fokus"
@@ -45,7 +44,6 @@
           "backgroundColor": "#021123"
         }
       ],
-      "./withIosSceneLifecycle",
       "expo-font",
       "expo-asset"
     ],
