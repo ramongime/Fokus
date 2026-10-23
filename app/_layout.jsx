@@ -19,6 +19,10 @@ export default function Layout() {
                 },
                 headerTintColor: colors.text,
                 headerShadowVisible: false,
+                // Sem isso, o fundo claro padrão do navegador aparece na troca de telas
+                sceneStyle: {
+                  backgroundColor: colors.background,
+                },
                 drawerStyle: {
                   backgroundColor: colors.background,
                 },
