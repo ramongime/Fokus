@@ -2,7 +2,11 @@
 // Keeps this native migration reproducible after Expo prebuild.
 const fs = require("fs");
 const path = require("path");
-const { withAppDelegate, withInfoPlist } = require("@expo/config-plugins");
+const {
+  withAppDelegate,
+  withInfoPlist,
+  withPodfile,
+} = require("expo/config-plugins");
 
 const legacySwiftWindow = `#if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)
@@ -110,6 +114,25 @@ const objcSceneDelegate = `
 @end
 `;
 
+// The iOS 27 SDK rejects targets below iOS 15. Pod resource bundles (e.g. AsyncStorage's)
+// inherit the pod's own minimum, so align them with the app's deployment target.
+const resourceBundleSigning =
+  "config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'";
+const resourceBundleTarget =
+  "config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = podfile_properties['ios.deploymentTarget'] || '15.1'";
+
+// fmt 11 (bundled with React Native 0.76) fails consteval checks under the iOS 27 toolchain
+// in C++20; compiling only that pod as C++17 keeps its format strings runtime-checked.
+const xcode14Comment = "    # This is necessary for Xcode 14";
+const fmtCxx17 = `    installer.pods_project.targets.each do |target|
+      next unless target.name == 'fmt'
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+      end
+    end
+
+`;
+
 module.exports = function withIosSceneLifecycle(config) {
   const expoRoot = path.dirname(require.resolve("expo/package.json"));
   const expoMajor = Number(
@@ -118,6 +141,26 @@ module.exports = function withIosSceneLifecycle(config) {
   const nativeExpoScenes = fs.existsSync(
     path.join(expoRoot, "ios/AppDelegates/ExpoAppSceneDelegate.swift"),
   );
+
+  config = withPodfile(config, (mod) => {
+    let podfile = mod.modResults.contents;
+    if (
+      !podfile.includes(resourceBundleSigning) ||
+      !podfile.includes(xcode14Comment)
+    )
+      throw new Error(
+        "withIosSceneLifecycle: inspect the Podfile post_install before migrating.",
+      );
+    if (!podfile.includes(resourceBundleTarget))
+      podfile = podfile.replace(
+        resourceBundleSigning,
+        `${resourceBundleSigning}\n          ${resourceBundleTarget}`,
+      );
+    if (!podfile.includes(fmtCxx17))
+      podfile = podfile.replace(xcode14Comment, fmtCxx17 + xcode14Comment);
+    mod.modResults.contents = podfile;
+    return mod;
+  });
 
   config = withInfoPlist(config, (mod) => {
     if (mod.modResults.UIApplicationSceneManifest?.UISceneConfigurations)
