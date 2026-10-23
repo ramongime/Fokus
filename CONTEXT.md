@@ -15,7 +15,7 @@ The application operates under a strict **local-first, zero-backend architecture
 │                        FOKUS APPLICATION BOUNDARY                      │
 │                                                                        │
 │   ┌────────────────────────────────────────────────────────────────┐   │
-│   │                     Expo Router v4 Shell                       │   │
+│   │                     Expo Router Shell                          │   │
 │   │    (Drawer Navigation: /pomodoro, /tasks, /history, /settings) │   │
 │   └────────────────────────────────┬───────────────────────────────┘   │
 │                                    │                                   │
@@ -49,7 +49,7 @@ The application operates under a strict **local-first, zero-backend architecture
 The application is structured into four distinct, loosely coupled layers following deep module principles:
 
 ### 2.1 File-Based Routing & Shell (`app/`)
-Powered by Expo Router v4 and React Navigation Drawer:
+Powered by Expo Router and its built-in Drawer (`expo-router/drawer`):
 - `app/_layout.jsx`: Root layout configuring gesture handling, provider nesting, Drawer navigation options, and the global theme palette.
 - `app/index.jsx`: Onboarding landing screen. Shown strictly until the user completes the first welcome interaction (`settings.hasSeenWelcome`); automatically redirects to `/pomodoro` on subsequent launches.
 - `app/pomodoro.jsx`: Primary operational interface presenting the timer countdown, phase indicator (Focus, Short Break, Long Break), active task assignment, and daily focus counter.
@@ -218,9 +218,9 @@ When the application is in the foreground, or when running in web environments w
 ## 7. Development, Tooling & Verification Workflows
 
 ### 7.1 Environment Prerequisites
-- Node.js: >= 20.x
+- Node.js: >= 22.13 (`.nvmrc` pins 24)
 - Package Manager: npm (configured with lockfile `package-lock.json`)
-- Expo CLI: Expo SDK 52 / React Native 0.76.6
+- Expo CLI: Expo SDK 58 / React Native 0.88 / React 19.3
 
 ### 7.2 Core Commands
 ```bash

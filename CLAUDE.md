@@ -2,7 +2,7 @@
 
 ## Overview
 
-Fokus is an offline-first, client-side Pomodoro timer and task management application built with React Native 0.76.6, Expo SDK 52, and Expo Router v4. The user interface is in Brazilian Portuguese (`pt-BR`). State management is composed via lightweight, ordered React Context providers backed by AsyncStorage and decoupled pure functional logic engines.
+Fokus is an offline-first, client-side Pomodoro timer and task management application built with React Native 0.88, React 19.3, Expo SDK 58, and Expo Router 58. The user interface is in Brazilian Portuguese (`pt-BR`). State management is composed via lightweight, ordered React Context providers backed by AsyncStorage and decoupled pure functional logic engines.
 
 ## Context Pointers
 
@@ -13,7 +13,7 @@ Fokus is an offline-first, client-side Pomodoro timer and task management applic
 ## Repository Structure
 
 ```
-app/                              # Expo Router v4 file-based routing
+app/                              # Expo Router file-based routing
   _layout.jsx                     # Root composition: Providers + GestureHandler + Drawer
   index.jsx                       # Welcome landing (redirects to /pomodoro once seen)
   pomodoro.jsx                    # Primary timer screen (active cycle, task link, daily count)
@@ -83,5 +83,7 @@ npx expo run:ios
 - **Android Exact Alarms & Background Delivery**: Android 12+ requires `SCHEDULE_EXACT_ALARM` in `app.json` for timer notifications to trigger precisely when the phone is locked. Do not remove this permission.
 - **Immutable Notification Channels**: Android notification channels cannot be altered after creation. Fokus maintains two distinct channels: `cycles` (vibration enabled) and `cycles-quiet` (silent). The deprecated channel `timer` is purged on application startup.
 - **Web SPA Mode Requirement**: `app.json` enforces `web.output: "single"`. Do not change this to `"static"`; pre-rendered static HTML triggers React hydration mismatches with client-only AsyncStorage state.
-- **ESLint 9 Flat Configuration**: `eslint-config-expo` is intentionally listed under `expo.install.exclude` in `package.json` to lock ESLint flat configuration compatibility on ESLint 9.
+- **Web SPA Shell**: `public/index.html` is the template for the single-page web export. It paints `colors.background` before the JS loads; keep the two in sync.
+- **Node 24**: Expo SDK 58 requires Node 22.13+ (`.nvmrc` pins 24, matching CI). Run `nvm use` before `npm install`.
+- **Async Test APIs**: React Native Testing Library 14 makes `render`, `renderHook`, `act` and `fireEvent` async. Always `await` them.
 - **String Task Identifiers**: Task IDs must be strictly formatted and compared as strings (`Date.now().toString()`). Legacy numeric IDs are auto-coerced during hydration.

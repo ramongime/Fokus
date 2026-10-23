@@ -10,9 +10,9 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 
 <br>
 
-![React Native](https://img.shields.io/badge/React_Native-0.76-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Expo](https://img.shields.io/badge/Expo-SDK_52-000020?style=for-the-badge&logo=expo&logoColor=white)
-![Expo Router](https://img.shields.io/badge/Expo_Router-4-B872FF?style=for-the-badge&logo=expo&logoColor=white)
+![React Native](https://img.shields.io/badge/React_Native-0.88-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?style=for-the-badge&logo=expo&logoColor=white)
+![Expo Router](https://img.shields.io/badge/Expo_Router-58-B872FF?style=for-the-badge&logo=expo&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2023-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
 ![Android](https://img.shields.io/badge/Android-✓-3DDC84?style=flat-square&logo=android&logoColor=white)
@@ -115,7 +115,7 @@ A lógica pura (planejar ciclos, decidir a próxima pausa, contar focos do dia) 
 
 ## 🚀 Rodando o projeto
 
-**Pré-requisitos:** [Node.js](https://nodejs.org/) 18+ e o app
+**Pré-requisitos:** [Node.js](https://nodejs.org/) 22.13+ (o `.nvmrc` fixa a 24) e o app
 [Expo Go](https://expo.dev/go) no celular (ou um emulador Android/iOS).
 
 ```bash
