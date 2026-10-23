@@ -51,7 +51,7 @@ describe("timerNotifications", () => {
   });
 
   describe("setNotificationHandler", () => {
-    it("configures the notification handler to show alert and play sound", async () => {
+    it("configures the notification handler to show banner/list and play sound", async () => {
       expect(Notifications.setNotificationHandler).toHaveBeenCalledWith({
         handleNotification: expect.any(Function),
       });
@@ -59,7 +59,8 @@ describe("timerNotifications", () => {
       const config = Notifications.setNotificationHandler.mock.calls[0][0];
       const result = await config.handleNotification();
       expect(result).toEqual({
-        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
       });

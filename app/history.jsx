@@ -12,8 +12,8 @@ import { WeekChart } from "../components/WeekChart";
 import { colors, fontSizes, radii } from "../constants/theme";
 
 export default function History() {
-  const { history } = useTimerContext();
-  const now = Date.now();
+  // `clock` vira a cada minuto, então a semana muda de dia sem reabrir a tela
+  const { history, clock: now } = useTimerContext();
   const week = getWeek(history, now);
   const total = summarizeWeek(week);
   const streak = getStreak(history, now);

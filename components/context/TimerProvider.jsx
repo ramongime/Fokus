@@ -60,7 +60,7 @@ export function TimerProvider({ children }) {
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   // Atualizado a cada minuto para o contador do dia virar à meia-noite
-  const [clock, setClock] = useState(Date.now());
+  const [clock, setClock] = useState(() => Date.now());
 
   // Cópias em ref para o tick ler o valor mais recente sem esperar um novo render.
   // Evita contar o mesmo ciclo duas vezes se dois ticks rodarem seguidos.
@@ -318,6 +318,7 @@ export function TimerProvider({ children }) {
         timerRunning,
         todayCount,
         history,
+        clock,
         currentTask,
         setCurrentTaskId,
         toggleTimer,

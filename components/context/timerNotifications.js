@@ -25,7 +25,8 @@ const LEGACY_CHANNEL_ID = "timer";
 // Mostra a notificação mesmo com o app aberto
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -39,6 +40,8 @@ const ensurePermission = async () => {
     for (const channel of Object.values(CHANNELS)) {
       await Notifications.setNotificationChannelAsync(channel.id, {
         name: channel.name,
+        // O enum existe no build do expo-notifications; o plugin import não o enxerga
+        // eslint-disable-next-line import/namespace
         importance: Notifications.AndroidImportance.HIGH,
         sound: "default",
         enableVibrate: channel.vibrate,
