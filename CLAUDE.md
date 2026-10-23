@@ -84,6 +84,8 @@ npx expo run:ios
 - **Immutable Notification Channels**: Android notification channels cannot be altered after creation. Fokus maintains two distinct channels: `cycles` (vibration enabled) and `cycles-quiet` (silent). The deprecated channel `timer` is purged on application startup.
 - **Web SPA Mode Requirement**: `app.json` enforces `web.output: "single"`. Do not change this to `"static"`; pre-rendered static HTML triggers React hydration mismatches with client-only AsyncStorage state.
 - **Web SPA Shell**: `public/index.html` is the template for the single-page web export. It paints `colors.background` before the JS loads; keep the two in sync.
+- **Web Single Bundle**: `asyncRoutes.web` is `false` in the `expo-router` plugin. SDK 58 would otherwise split routes into chunks fetched on first visit, breaking offline navigation.
+- **Web Notifications**: `timerNotifications.web.js` replaces the native module in the browser (no local notifications on web). Keep its exports in sync with `timerNotifications.js`.
 - **Node 24**: Expo SDK 58 requires Node 22.13+ (`.nvmrc` pins 24, matching CI). Run `nvm use` before `npm install`.
 - **Async Test APIs**: React Native Testing Library 14 makes `render`, `renderHook`, `act` and `fireEvent` async. Always `await` them.
 - **String Task Identifiers**: Task IDs must be strictly formatted and compared as strings (`Date.now().toString()`). Legacy numeric IDs are auto-coerced during hydration.
