@@ -8,7 +8,9 @@ export const Stepper = ({ value, onChange, min, max, suffix = "" }) => {
         style={[styles.button, value <= min && styles.disabled]}
         disabled={value <= min}
         onPress={() => onChange(value - 1)}
+        accessibilityRole="button"
         accessibilityLabel="Diminuir"
+        accessibilityState={{ disabled: value <= min }}
       >
         <Text style={styles.buttonText}>−</Text>
       </Pressable>
@@ -20,7 +22,9 @@ export const Stepper = ({ value, onChange, min, max, suffix = "" }) => {
         style={[styles.button, value >= max && styles.disabled]}
         disabled={value >= max}
         onPress={() => onChange(value + 1)}
+        accessibilityRole="button"
         accessibilityLabel="Aumentar"
+        accessibilityState={{ disabled: value >= max }}
       >
         <Text style={styles.buttonText}>+</Text>
       </Pressable>
