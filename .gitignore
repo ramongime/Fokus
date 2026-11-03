@@ -45,3 +45,6 @@ app-example
 
 # test coverage
 coverage/
+
+# Antigravity agent customizations
+.agents/
