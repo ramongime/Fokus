@@ -7,9 +7,13 @@ import { colors, fontSizes } from "../constants/theme";
 export default function Index() {
   const { settings, isLoaded, markWelcomeSeen } = useSettingsContext();
 
-  // Enquanto as configurações carregam, só o fundo (evita piscar as boas-vindas)
+  // Enquanto as configurações carregam, mantém a logo na tela (evita piscar fundo vazio)
   if (!isLoaded) {
-    return <View style={styles.container} />;
+    return (
+      <View style={styles.container}>
+        <Image source={require("../assets/images/logo.png")} />
+      </View>
+    );
   }
   // Depois do primeiro uso, o app abre direto no timer
   if (settings.hasSeenWelcome) {

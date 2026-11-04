@@ -42,7 +42,7 @@ const FokusWidget = (props) => {
 export default createWidget("FokusWidget", FokusWidget, {
   typeLabel: "Foco",
   timerText: "25:00",
-  timerEndTime: null,
+  timerEndTime: 0,
   timerRunning: false,
   focusCount: 0,
   dailyGoal: 4,

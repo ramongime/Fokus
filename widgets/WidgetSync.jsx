@@ -54,7 +54,14 @@ export default function WidgetSync() {
       ? countFinishedSegments(segments ?? [], Date.now())
       : 0;
     const currentSegment = timerRunning ? segments?.[currentIndex] : null;
-    FokusWidget.updateSnapshot(makeWidgetProps(currentSegment, todayCount));
+    try {
+      const p = FokusWidget.updateSnapshot(makeWidgetProps(currentSegment, todayCount));
+      if (p && typeof p.catch === "function") {
+        p.catch((e) => console.warn("FokusWidget updateSnapshot async error:", e));
+      }
+    } catch (e) {
+      console.warn("FokusWidget updateSnapshot error:", e);
+    }
 
     if (
       timerRunning &&
@@ -113,7 +120,14 @@ export default function WidgetSync() {
           timerEndTime: null,
         },
       });
-      FokusWidget.updateTimeline(timeline);
+      try {
+        const p = FokusWidget.updateTimeline(timeline);
+        if (p && typeof p.catch === "function") {
+          p.catch((e) => console.warn("FokusWidget updateTimeline async error:", e));
+        }
+      } catch (e) {
+        console.warn("FokusWidget updateTimeline error:", e);
+      }
     }
   }, [
     settingsLoaded,
