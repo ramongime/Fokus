@@ -21,10 +21,10 @@ const styles = StyleSheet.create({
     borderColor: colors.surface,
     borderWidth: 2,
     borderRadius: radii.sm,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
     alignItems: "center",
-    gap: 4,
+    gap: 2,
   },
   value: {
     color: colors.text,
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.muted,
-    fontSize: fontSizes.sm,
+    fontSize: 11,
     textAlign: "center",
   },
 });
