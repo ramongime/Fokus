@@ -55,9 +55,13 @@ export default function WidgetSync() {
       : 0;
     const currentSegment = timerRunning ? segments?.[currentIndex] : null;
     try {
-      const p = FokusWidget.updateSnapshot(makeWidgetProps(currentSegment, todayCount));
+      const p = FokusWidget.updateSnapshot(
+        makeWidgetProps(currentSegment, todayCount),
+      );
       if (p && typeof p.catch === "function") {
-        p.catch((e) => console.warn("FokusWidget updateSnapshot async error:", e));
+        p.catch((e) =>
+          console.warn("FokusWidget updateSnapshot async error:", e),
+        );
       }
     } catch (e) {
       console.warn("FokusWidget updateSnapshot error:", e);
@@ -123,7 +127,9 @@ export default function WidgetSync() {
       try {
         const p = FokusWidget.updateTimeline(timeline);
         if (p && typeof p.catch === "function") {
-          p.catch((e) => console.warn("FokusWidget updateTimeline async error:", e));
+          p.catch((e) =>
+            console.warn("FokusWidget updateTimeline async error:", e),
+          );
         }
       } catch (e) {
         console.warn("FokusWidget updateTimeline error:", e);
