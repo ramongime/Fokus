@@ -20,5 +20,6 @@ export const fontSizes = {
 
 export const radii = {
   sm: 8,
+  md: 20,
   lg: 32,
 };

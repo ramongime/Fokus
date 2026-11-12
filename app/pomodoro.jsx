@@ -23,13 +23,13 @@ export default function Pomodoro() {
     toggleTimer,
     toggleTimerType,
   } = useTimerContext();
-  const { tasks } = useTaskContext();
+  const { tasks, addTask } = useTaskContext();
   const { settings } = useSettingsContext();
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.inner}>
-        <Image source={timerType.image} />
+        <Image source={timerType.image} style={styles.image} />
         <View style={styles.actions}>
           <View style={styles.context}>
             {pomodoro.map((p) => (
@@ -45,9 +45,11 @@ export default function Pomodoro() {
             tasks={tasks}
             currentTask={currentTask}
             onSelect={setCurrentTaskId}
+            onCreate={(description) => setCurrentTaskId(addTask(description))}
           />
           <Timer totalSeconds={seconds} />
           <FokusButton
+            running={timerRunning}
             title={timerRunning ? "Pausar" : "Começar"}
             icon={timerRunning ? <IconPause /> : <IconPlay />}
             onPress={toggleTimer}
@@ -72,13 +74,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 40,
   },
+  image: {
+    width: 312,
+    height: 267,
+    resizeMode: "contain",
+  },
   actions: {
     paddingVertical: 24,
     paddingHorizontal: 24,
     backgroundColor: colors.surfaceTranslucent,
-    width: "80%",
-    borderRadius: radii.lg,
-    borderWidth: 2,
+    width: "90%",
+    maxWidth: 420,
+    borderRadius: radii.md,
+    borderWidth: 1,
     borderColor: colors.surface,
     gap: 32,
   },

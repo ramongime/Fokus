@@ -1,0 +1,3 @@
+# Presença em Segundo Plano e Alarmes de Conclusão Unificados
+
+Para viabilizar o acompanhamento do temporizador na barra superior (Dynamic Island no iOS e Notificação Fixa no Android) sem drenar a bateria com serviços contínuos em segundo plano, adotamos uma estratégia baseada em referências temporais absolutas (`endTime`). Em vez de manter timers contínuos em background, registramos o suporte a Live Activities (`NSSupportsLiveActivities`) e despachamos uma `Ongoing Notification` no Android vinculada ao horário previsto de término. No momento exato da conclusão (`00:00`), tanto em primeiro plano quanto em segundo plano, o alarme sonoro e vibratório é disparado via agendamento imediato do sistema operacional, garantindo consistência audiovisual entre Web, iOS e Android.

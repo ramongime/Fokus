@@ -53,6 +53,10 @@ const ALL_CHANNELS = [...LEGACY_CHANNELS, ...CUSTOM_SOUND_CHANNELS];
 // Canal da versão inicial, criado sem vibração
 const LEGACY_CHANNEL_ID = "timer";
 
+// Canal e identificador da notificação fixa contínua do Android
+export const ONGOING_CHANNEL_ID = "timer-active";
+export const ONGOING_NOTIFICATION_ID = "fokus-timer-ongoing";
+
 // Mostra a notificação mesmo com o app aberto
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -79,6 +83,13 @@ const ensurePermission = async () => {
         vibrationPattern: channel.vibrate ? VIBRATION_PATTERN : null,
       });
     }
+    await Notifications.setNotificationChannelAsync(ONGOING_CHANNEL_ID, {
+      name: "Ciclo em andamento",
+      // eslint-disable-next-line import/namespace
+      importance: Notifications.AndroidImportance.LOW,
+      sound: null,
+      enableVibrate: false,
+    });
   }
 
   const { granted } = await Notifications.getPermissionsAsync();
@@ -141,12 +152,90 @@ export const cancelTimerNotifications = async (ids) => {
     } else {
       await Notifications.cancelAllScheduledNotificationsAsync();
     }
+    await dismissOngoingNotification();
   } catch (e) {
     console.warn("Erro ao cancelar notificações", e);
   }
 };
 
-// Os avisos nativos tocam o som anexado à notificação; não reproduza um segundo som no app.
-export const playCycleSound = async () => {};
+// Exibe a notificação fixa na barra de status do Android enquanto o timer roda
+export const showOngoingNotification = async ({ typeLabel, endTime }) => {
+  if (Platform.OS !== "android") {
+    return;
+  }
+  try {
+    const hasPermission = await ensurePermission();
+    if (!hasPermission) {
+      return;
+    }
+    const endDate = new Date(endTime);
+    const timeString = endDate.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: ONGOING_NOTIFICATION_ID,
+      content: {
+        title: `Fokus • ${typeLabel}`,
+        body: `Em andamento. Término previsto às ${timeString}`,
+        sticky: true,
+        priority: "low",
+      },
+      trigger: { channelId: ONGOING_CHANNEL_ID },
+    });
+  } catch (e) {
+    console.warn("Erro ao exibir notificação contínua:", e);
+  }
+};
+
+// Remove a notificação fixa da barra de status quando pausado ou finalizado
+export const dismissOngoingNotification = async () => {
+  if (Platform.OS !== "android") {
+    return;
+  }
+  try {
+    await Notifications.dismissNotificationAsync(ONGOING_NOTIFICATION_ID);
+  } catch {
+    // Ignora se já descartada
+  }
+};
+
+// Emite aviso sonoro e vibratório imediato ao atingir 00:00 (primeiro plano)
+export const playCycleSound = async (
+  typeId,
+  { distinctSounds = true, vibrate = true } = {},
+) => {
+  try {
+    const hasPermission = await ensurePermission();
+    if (!hasPermission) {
+      return;
+    }
+    const soundPhase = typeId === "focus" ? "focus" : "break";
+    const customSound = distinctSounds && typeId != null;
+    const channelId = customSound
+      ? `cycles-${soundPhase}-${vibrate ? "vibrate" : "quiet"}`
+      : vibrate
+        ? "cycles"
+        : "cycles-quiet";
+    const sound = customSound ? `${soundPhase}.wav` : true;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title:
+          typeId === "focus" ? "Ciclo de foco concluído!" : "Pausa concluída!",
+        body:
+          typeId === "focus"
+            ? "Excelente foco! Hora de relaxar a mente."
+            : "Pausa finalizada. Pronto para focar novamente?",
+        sound,
+        vibrate: vibrate ? VIBRATION_PATTERN : undefined,
+      },
+      trigger: channelId ? { channelId } : null,
+    });
+  } catch (e) {
+    console.warn("Erro ao emitir alerta sonoro de conclusão:", e);
+  }
+};
 
 export const prepareCycleSounds = async () => {};

@@ -20,9 +20,11 @@ import {
 } from "./timerLogic";
 import {
   cancelTimerNotifications,
+  dismissOngoingNotification,
   playCycleSound,
   prepareCycleSounds,
   scheduleTimerNotifications,
+  showOngoingNotification,
   VIBRATION_PATTERN,
 } from "./timerNotifications";
 import useSettingsContext from "./useSettingsContext";
@@ -119,10 +121,10 @@ export function TimerProvider({ children }) {
             updateRun([{ typeId: savedTypeId, endTime: saved.endTime }], 0);
           }
         }
-      } catch (e) {
-        console.warn("Erro ao carregar o timer", e);
-      } finally {
         setIsLoaded(true);
+      } catch (e) {
+        // Sem isLoaded, nada é gravado e o timer salvo não é sobrescrito
+        console.warn("Erro ao carregar o timer", e);
       }
     };
     getData();
@@ -204,14 +206,15 @@ export function TimerProvider({ children }) {
         ) {
           Vibration.vibrate(VIBRATION_PATTERN);
         }
-        if (Platform.OS === "web" && settings.distinctSounds) {
-          const recentSegments = finishedSegments.filter(
-            (segment) => now - segment.endTime <= 5000,
-          );
-          const lastRecentSegment = recentSegments[recentSegments.length - 1];
-          if (lastRecentSegment) {
-            playCycleSound(lastRecentSegment.typeId);
-          }
+        const recentSegments = finishedSegments.filter(
+          (segment) => now - segment.endTime <= 5000,
+        );
+        const lastRecentSegment = recentSegments[recentSegments.length - 1];
+        if (lastRecentSegment) {
+          playCycleSound(lastRecentSegment.typeId, {
+            distinctSounds: settings.distinctSounds,
+            vibrate: settings.vibrate,
+          });
         }
         processedRef.current = finished;
         setProcessed(finished);
@@ -240,6 +243,7 @@ export function TimerProvider({ children }) {
         updateRun(null, 0);
         setTypeId(getNextTypeId(last.typeId, count, settings));
         setPausedSeconds(null);
+        dismissOngoingNotification();
         return;
       }
 
@@ -278,6 +282,10 @@ export function TimerProvider({ children }) {
     updateRun(plan, 0);
     setLiveSeconds(seconds);
     notificationsScheduledRef.current = false;
+    showOngoingNotification({
+      typeLabel: getTypeById(typeId).display,
+      endTime: plan[0].endTime,
+    });
 
     const ids = await scheduleTimerNotifications(
       plan.map((segment, index) => ({
@@ -308,6 +316,7 @@ export function TimerProvider({ children }) {
     setPausedSeconds(getRemainingSeconds(current.endTime, now));
     updateRun(null, 0);
     cancelTimerNotifications();
+    dismissOngoingNotification();
   };
 
   const toggleTimer = () => {

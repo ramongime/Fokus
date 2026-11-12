@@ -17,10 +17,11 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
   const [description, setDescription] = useState(defaultValue);
 
   const submitTask = () => {
-    if (!description) {
+    const clean = description.trim();
+    if (!clean) {
       return;
     }
-    onFormSubmit(description);
+    onFormSubmit(clean);
     setDescription("");
   };
 
@@ -39,6 +40,7 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
             <TextInput
               accessibilityLabel="Descrição da tarefa"
               style={styles.input}
+              maxLength={120}
               numberOfLines={10}
               multiline={true}
               value={description}
@@ -69,16 +71,16 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   title: {
-    textAlign: "center",
     color: colors.text,
     fontSize: fontSizes.lg,
+    fontWeight: "bold",
     marginTop: 16,
   },
   card: {
     backgroundColor: colors.surfaceTranslucent,
     borderColor: colors.surface,
-    borderWidth: 2,
-    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderRadius: radii.md,
     padding: 20,
     gap: 16,
   },
@@ -89,7 +91,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.background,
     borderColor: colors.surface,
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: radii.sm,
     color: colors.text,
     fontSize: fontSizes.md,

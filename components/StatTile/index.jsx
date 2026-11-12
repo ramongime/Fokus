@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surfaceTranslucent,
     borderColor: colors.surface,
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: radii.sm,
     paddingVertical: 8,
     paddingHorizontal: 6,

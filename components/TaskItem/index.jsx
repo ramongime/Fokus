@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { IconCheck, IconPencil, IconTrash } from "../Icons";
-import { colors, fontSizes, radii } from "../../constants/theme";
+import { colors, fontSizes } from "../../constants/theme";
 
+// Linha de tarefa sem cartão: check, texto, focos e ações discretas
 const TaskItem = ({
   completed,
   text,
@@ -10,16 +11,11 @@ const TaskItem = ({
   onPressEdit,
   onPressDelete,
 }) => {
-  const cardStyles = [styles.card];
-
-  if (completed) {
-    cardStyles.push(styles.cardCompleted);
-  }
-
   return (
-    <View style={cardStyles}>
+    <View style={styles.row}>
       <Pressable
         onPress={onToggleComplete}
+        hitSlop={8}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: !!completed }}
         accessibilityLabel={`Concluir "${text}"`}
@@ -27,57 +23,65 @@ const TaskItem = ({
         <IconCheck checked={completed} />
       </Pressable>
       <View style={styles.content}>
-        <Text style={styles.text}>{text}</Text>
+        <Text style={[styles.text, completed && styles.textCompleted]}>
+          {text}
+        </Text>
         {pomodoros > 0 && (
           <Text style={styles.pomodoros}>
-            🍅 {pomodoros} {pomodoros === 1 ? "pomodoro" : "pomodoros"}
+            {pomodoros} {pomodoros === 1 ? "foco" : "focos"}
           </Text>
         )}
       </View>
-      <Pressable
-        onPress={onPressEdit}
-        accessibilityRole="button"
-        accessibilityLabel={`Editar "${text}"`}
-      >
-        <IconPencil />
-      </Pressable>
-      <Pressable
-        onPress={onPressDelete}
-        accessibilityRole="button"
-        accessibilityLabel={`Excluir "${text}"`}
-      >
-        <IconTrash />
-      </Pressable>
+      <View style={styles.actions}>
+        <Pressable
+          onPress={onPressEdit}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Editar "${text}"`}
+        >
+          <IconPencil color={colors.muted} />
+        </Pressable>
+        <Pressable
+          onPress={onPressDelete}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Excluir "${text}"`}
+        >
+          <IconTrash color={colors.muted} />
+        </Pressable>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
+  row: {
     flexDirection: "row",
-    backgroundColor: colors.muted,
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingVertical: 18,
-    borderRadius: radii.sm,
-    gap: 8,
-  },
-  cardCompleted: {
-    backgroundColor: colors.successDark,
+    paddingVertical: 16,
+    gap: 14,
   },
   content: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
   text: {
-    color: colors.background,
+    color: colors.text,
     fontSize: fontSizes.md,
-    fontWeight: "bold",
+  },
+  textCompleted: {
+    color: colors.muted,
+    textDecorationLine: "line-through",
   },
   pomodoros: {
-    color: colors.background,
+    color: colors.muted,
     fontSize: fontSizes.sm,
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 18,
+    opacity: 0.7,
   },
 });
 

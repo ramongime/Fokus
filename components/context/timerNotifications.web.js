@@ -12,6 +12,10 @@ export const scheduleTimerNotifications = async () => [];
 
 export const cancelTimerNotifications = async () => {};
 
+export const showOngoingNotification = async () => {};
+
+export const dismissOngoingNotification = async () => {};
+
 let audioContext;
 
 const getAudioContext = () => {

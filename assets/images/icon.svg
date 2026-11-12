@@ -1,16 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- Símbolo de alvo do logo do Fokus: anel interno, anel externo em 4 arcos e a mira -->
-  <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
-    <circle cx="512" cy="512" r="150" stroke-width="44"/>
-    <path stroke-width="40" d="
-      M 553 213 A 300 300 0 0 1 811 471
-      M 811 553 A 300 300 0 0 1 553 811
-      M 471 811 A 300 300 0 0 1 213 553
-      M 213 471 A 300 300 0 0 1 471 213"/>
-    <path stroke-width="40" d="
-      M 512 150 V 362
-      M 512 662 V 874
-      M 150 512 H 362
-      M 662 512 H 874"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B872FF"/>
+      <stop offset="1" stop-color="#00F4BF"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="0.5" cy="0.4" r="0.75">
+      <stop offset="0" stop-color="#0A2A55"/>
+      <stop offset="1" stop-color="#021123"/>
+    </radialGradient>
+  </defs><rect width="1024" height="1024" fill="url(#bg)"/>
+  <g transform="translate(512 512) scale(0.92) translate(-512 -512)">
+    <circle cx="512" cy="512" r="330" fill="none" stroke="#144480" stroke-width="64"/>
+    <path d="M 512 182 A 330 330 0 1 1 182 512" fill="none"
+      stroke="#B872FF" stroke-width="64" stroke-linecap="round"/>
+    <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
+      <circle cx="512" cy="512" r="118" stroke-width="40"/>
+      <path stroke-width="36" d="M 512 300 V 352 M 512 672 V 724 M 300 512 H 352 M 672 512 H 724"/>
+    </g>
+    <circle cx="512" cy="512" r="38" fill="#00F4BF"/>
+  </g></svg>

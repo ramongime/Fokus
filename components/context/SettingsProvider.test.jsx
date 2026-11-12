@@ -73,7 +73,7 @@ describe("SettingsProvider & useSettingsContext", () => {
     expect(result.current.settings.durations.focus).toBe(45);
   });
 
-  it("handles AsyncStorage.getItem errors defensively and still marks isLoaded", async () => {
+  it("keeps isLoaded false and prevents disk overwrite when loading throws", async () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     AsyncStorage.getItem.mockRejectedValueOnce(new Error("Disk error"));
 
@@ -83,10 +83,11 @@ describe("SettingsProvider & useSettingsContext", () => {
       ),
     });
 
-    await waitFor(() => {
-      expect(result.current.isLoaded).toBe(true);
-    });
+    // Wait a tick for async error catch to execute
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
+    expect(result.current.isLoaded).toBe(false);
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
     expect(result.current.settings).toEqual(DEFAULT_SETTINGS);
     expect(warnSpy).toHaveBeenCalledWith(
       "Erro ao carregar configurações",

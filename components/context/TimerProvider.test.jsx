@@ -7,6 +7,7 @@ import { SettingsProvider } from "./SettingsProvider";
 import { TasksProvider } from "./TaskProvider";
 import {
   cancelTimerNotifications,
+  playCycleSound,
   scheduleTimerNotifications,
 } from "./timerNotifications";
 import { TimerProvider } from "./TimerProvider";
@@ -23,6 +24,9 @@ jest.mock("./timerNotifications", () => ({
     Promise.resolve(["notif-1", "notif-2"]),
   ),
   cancelTimerNotifications: jest.fn(() => Promise.resolve()),
+  showOngoingNotification: jest.fn(() => Promise.resolve()),
+  dismissOngoingNotification: jest.fn(() => Promise.resolve()),
+  playCycleSound: jest.fn(() => Promise.resolve()),
   VIBRATION_PATTERN: [0, 400, 200, 400],
 }));
 
@@ -157,11 +161,51 @@ describe("TimerProvider & useTimerContext", () => {
       );
     });
 
+    expect(AsyncStorage.setItem).not.toHaveBeenCalledWith(
+      "fokus-timer",
+      expect.anything(),
+    );
     expect(warnSpy).toHaveBeenCalledWith(
       "Erro ao carregar o timer",
       expect.any(Error),
     );
     warnSpy.mockRestore();
+  });
+
+  it("calls playCycleSound even when distinctSounds is false", async () => {
+    const now = Date.now();
+    const pastSegmentTimer = {
+      typeId: "focus",
+      segments: [
+        { typeId: "focus", startTime: now - 1500000, endTime: now - 100 },
+      ],
+      processed: 0,
+      currentTaskId: null,
+    };
+    const settingsWithoutDistinct = {
+      ...DEFAULT_SETTINGS,
+      distinctSounds: false,
+    };
+
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") return JSON.stringify(pastSegmentTimer);
+      if (key === "fokus-settings") return JSON.stringify(settingsWithoutDistinct);
+      return null;
+    });
+
+    await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+
+    await waitFor(
+      () => {
+        expect(playCycleSound).toHaveBeenCalledWith(
+          "focus",
+          expect.objectContaining({ distinctSounds: false }),
+        );
+      },
+      { timeout: 2000 },
+    );
   });
 
   it("switches timer type via toggleTimerType, resets paused time and cancels running timer", async () => {

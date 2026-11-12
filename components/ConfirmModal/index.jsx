@@ -53,10 +53,11 @@ const styles = StyleSheet.create({
   dialog: {
     backgroundColor: colors.background,
     borderColor: colors.surface,
-    borderWidth: 2,
-    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderRadius: radii.md,
     padding: 24,
     width: "85%",
+    maxWidth: 360,
     gap: 12,
   },
   title: {
@@ -78,20 +79,22 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: radii.lg,
-    borderWidth: 2,
-    borderColor: colors.primary,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.surface,
     alignItems: "center",
   },
   confirmButton: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   cancelText: {
-    color: colors.primary,
+    color: colors.muted,
     fontSize: fontSizes.md,
   },
   confirmText: {
     color: colors.background,
     fontSize: fontSizes.md,
+    fontWeight: "bold",
   },
 });

@@ -100,7 +100,7 @@ describe("CustomDrawerContent", () => {
   });
 
   it("displays today's focus progress and version in footer", async () => {
-    const { getByText } = await render(
+    const { getByText, getAllByText } = await render(
       <CustomDrawerContent
         state={mockState}
         navigation={mockNavigation}
@@ -112,7 +112,7 @@ describe("CustomDrawerContent", () => {
     );
 
     expect(getByText("3/5 focos")).toBeTruthy();
-    expect(getByText("Fokus • Offline-first")).toBeTruthy();
+    expect(getAllByText("Fokus").length).toBeGreaterThanOrEqual(1);
   });
 
   it("navigates to route when pressed", async () => {

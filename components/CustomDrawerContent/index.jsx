@@ -46,12 +46,14 @@ export const CustomDrawerContent = ({
       <View style={styles.topSection}>
         {/* Bloco 1: Cabeçalho com Logo e Status */}
         <View style={styles.header}>
-          <Image
-            source={require("../../assets/images/logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-            accessibilityLabel="Fokus"
-          />
+          <View style={styles.brandRow}>
+            <Image
+              source={require("../../assets/images/icon.png")}
+              style={styles.brandIcon}
+              accessibilityLabel="Fokus"
+            />
+            <Text style={styles.brandName}>Fokus</Text>
+          </View>
           <View style={styles.statusPill}>
             <View
               style={[
@@ -151,7 +153,7 @@ export const CustomDrawerContent = ({
           </View>
         </View>
 
-        <Text style={styles.versionText}>Fokus • Offline-first</Text>
+        <Text style={styles.versionText}>Fokus</Text>
       </View>
     </DrawerContentScrollView>
   );
@@ -179,9 +181,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.surfaceTranslucent,
   },
-  logo: {
-    width: 120,
-    height: 30,
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  brandIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+  },
+  brandName: {
+    color: colors.text,
+    fontSize: fontSizes.lg,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
   },
   statusPill: {
     flexDirection: "row",

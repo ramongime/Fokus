@@ -2,7 +2,11 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import {
   cancelTimerNotifications,
+  dismissOngoingNotification,
+  ONGOING_NOTIFICATION_ID,
+  playCycleSound,
   scheduleTimerNotifications,
+  showOngoingNotification,
   VIBRATION_PATTERN,
 } from "./timerNotifications";
 
@@ -15,8 +19,10 @@ jest.mock("expo-notifications", () => ({
   scheduleNotificationAsync: jest.fn(),
   cancelScheduledNotificationAsync: jest.fn(),
   cancelAllScheduledNotificationsAsync: jest.fn(),
+  dismissNotificationAsync: jest.fn(),
   AndroidImportance: {
     HIGH: 4,
+    LOW: 2,
   },
   SchedulableTriggerInputTypes: {
     DATE: "date",
@@ -36,7 +42,7 @@ describe("timerNotifications", () => {
     Notifications.deleteNotificationChannelAsync.mockReset();
     Notifications.setNotificationChannelAsync.mockReset();
     Notifications.scheduleNotificationAsync.mockImplementation(
-      async ({ trigger }) => `notif-id-${trigger.date}`,
+      async ({ trigger }) => `notif-id-${trigger?.date ?? "immediate"}`,
     );
   });
 
@@ -254,6 +260,77 @@ describe("timerNotifications", () => {
         expect.any(Error),
       );
       warnSpy.mockRestore();
+    });
+  });
+
+  describe("Ongoing notification on Android", () => {
+    it("posts ongoing notification when platform is android", async () => {
+      Platform.OS = "android";
+      await showOngoingNotification({
+        typeLabel: "Foco",
+        endTime: Date.now() + 1500000,
+      });
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: ONGOING_NOTIFICATION_ID,
+          content: expect.objectContaining({
+            title: "Fokus • Foco",
+            sticky: true,
+          }),
+          trigger: { channelId: "timer-active" },
+        }),
+      );
+    });
+
+    it("skips ongoing notification when platform is ios", async () => {
+      Platform.OS = "ios";
+      await showOngoingNotification({
+        typeLabel: "Foco",
+        endTime: Date.now() + 1500000,
+      });
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it("dismisses ongoing notification on android", async () => {
+      Platform.OS = "android";
+      await dismissOngoingNotification();
+
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith(
+        ONGOING_NOTIFICATION_ID,
+      );
+    });
+  });
+
+  describe("playCycleSound", () => {
+    it("schedules immediate notification with sound and vibration", async () => {
+      await playCycleSound("focus", { distinctSounds: true, vibrate: true });
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith({
+        content: expect.objectContaining({
+          title: "Ciclo de foco concluído!",
+          sound: "focus.wav",
+          vibrate: VIBRATION_PATTERN,
+        }),
+        trigger: { channelId: "cycles-focus-vibrate" },
+      });
+    });
+
+    it("schedules break sound for break cycles", async () => {
+      await playCycleSound("shortBreak", {
+        distinctSounds: true,
+        vibrate: false,
+      });
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith({
+        content: expect.objectContaining({
+          title: "Pausa concluída!",
+          sound: "break.wav",
+          vibrate: undefined,
+        }),
+        trigger: { channelId: "cycles-break-quiet" },
+      });
     });
   });
 });

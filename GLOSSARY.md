@@ -38,6 +38,10 @@ _Avoid_: Tarefa avulsa, intervalo flexível
 Determinação exata do instante no tempo em que um segmento ou ciclo deve ser concluído, servindo como referência horária para o encerramento do bloco.
 _Avoid_: Contagem regressiva local, atraso acumulado
 
+**Transição de Ciclo**:
+Passagem automática do temporizador para o ciclo subsequente recomendado (ex.: de foco para pausa curta) imediatamente ao zerar (00:00), posicionando o próximo segmento pausado e pronto para início (salvo com Emendar Ciclos ativo).
+_Avoid_: Reset forçado, reinício automático indesejado, zeramento cego
+
 ## Gestão de Tarefas
 
 **Tarefa**:
@@ -79,6 +83,18 @@ Quantidade configurável de ciclos de foco que o usuário pretende concluir em u
 _Avoid_: Contador do dia, sequência
 
 ## Sistema e Alertas
+
+**Atividade ao Vivo (Live Activity)**:
+Apresentação em tempo real do temporizador ativo na Dynamic Island e na Tela de Bloqueio do iOS, permitindo acompanhar a contagem regressiva sem abrir o aplicativo.
+_Avoid_: Widget comum de tela inicial, push remoto, alerta pop-up
+
+**Notificação Fixa (Ongoing Notification)**:
+Aviso persistente exibido na barra de status e na central de notificações do Android durante um ciclo em andamento, mantendo o horário de conclusão acessível sem interrupções sonoras contínuas.
+_Avoid_: Notificação descartável, alarme invasivo, toast efêmero
+
+**Alarme de Conclusão de Ciclo**:
+Alerta audiovisual e háptico disparado no exato instante em que a contagem atinge 00:00, atuando de maneira idêntica tanto em primeiro plano (app aberto na mão do usuário) quanto em segundo plano.
+_Avoid_: Bipe contínuo, som de clique, notificação genérica sem áudio
 
 **Canal de Notificação**:
 Configuração do sistema operacional para entrega de avisos visuais, sonoros e táteis que demarcam o término de ciclos de trabalho ou repouso.

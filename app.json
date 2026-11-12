@@ -9,7 +9,11 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ramongime.fokus"
+      "bundleIdentifier": "com.ramongime.fokus",
+      "infoPlist": {
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": true
+      }
     },
     "android": {
       "package": "com.ramongime.fokus",
@@ -19,6 +23,7 @@
       },
       "permissions": [
         "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
         "android.permission.VIBRATE"
       ],
       "blockedPermissions": [
@@ -58,7 +63,13 @@
               "displayName": "Fokus",
               "description": "Veja o ciclo atual e acompanhe sua meta diária.",
               "ios": {
-                "supportedFamilies": ["systemSmall", "systemMedium"],
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryRectangular",
+                  "accessoryCircular",
+                  "accessoryInline"
+                ],
                 "initialLayout": "widgets/FokusWidget.ios.jsx"
               },
               "android": {

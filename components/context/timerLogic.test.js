@@ -174,6 +174,14 @@ describe("getSegmentNotification", () => {
     );
   });
 
+  it("trunca a descrição da tarefa em 80 caracteres", () => {
+    const longDescription = "x".repeat(100);
+    const task = { description: longDescription };
+    expect(getSegmentNotification(plan, 0, settings, task).body).toBe(
+      `Tarefa: ${"x".repeat(80)}. Pausa curta começou: 5 min.`,
+    );
+  });
+
   it("usa o texto padrão no último ciclo", () => {
     const single = [{ typeId: "short", endTime: NOW }];
     expect(getSegmentNotification(single, 0, settings)).toEqual({

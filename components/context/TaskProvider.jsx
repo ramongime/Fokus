@@ -39,16 +39,21 @@ export function TasksProvider({ children }) {
     }
   }, [tasks, isLoaded]);
 
+  // Devolve o id para quem cria já poder vincular a tarefa (ex.: ao foco atual)
   const addTask = (description) => {
+    const clean = description?.trim().slice(0, 120);
+    if (!clean) return null;
+    const id = Date.now().toString();
     setTasks((oldState) => {
       return [
         ...oldState,
         {
-          description,
-          id: Date.now().toString(),
+          description: clean,
+          id,
         },
       ];
     });
+    return id;
   };
 
   const toggleTaskCompleted = (id) => {
@@ -60,8 +65,12 @@ export function TasksProvider({ children }) {
   };
 
   const updateTask = (id, description) => {
+    const clean = description?.trim().slice(0, 120);
+    if (!clean) return;
     setTasks((oldState) => {
-      return oldState.map((t) => (t.id === id ? { ...t, description } : t));
+      return oldState.map((t) =>
+        t.id === id ? { ...t, description: clean } : t,
+      );
     });
   };
 

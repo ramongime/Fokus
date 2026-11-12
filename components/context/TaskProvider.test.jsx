@@ -107,6 +107,50 @@ describe("TasksProvider & useTaskContext", () => {
     expect(typeof result.current.tasks[0].id).toBe("string");
   });
 
+  it("returns the new task id from addTask so callers can link it", async () => {
+    AsyncStorage.getItem.mockResolvedValueOnce(null);
+
+    const { result } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    let newId;
+    await act(() => {
+      newId = result.current.addTask("Tarefa criada pelo foco");
+    });
+
+    expect(typeof newId).toBe("string");
+    expect(result.current.tasks[0].id).toBe(newId);
+  });
+
+  it("trims task descriptions and rejects whitespace-only tasks", async () => {
+    AsyncStorage.getItem.mockResolvedValueOnce(null);
+
+    const { result } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    let res;
+    await act(() => {
+      res = result.current.addTask("   ");
+    });
+    expect(res).toBeNull();
+    expect(result.current.tasks).toHaveLength(0);
+
+    await act(() => {
+      result.current.addTask("  Tarefa com espaços  ");
+    });
+    expect(result.current.tasks[0].description).toBe("Tarefa com espaços");
+  });
+
   it("handles toggleTaskCompleted correctly", async () => {
     const initialTasks = [
       { id: "1", description: "Task 1", completed: false },
@@ -224,5 +268,32 @@ describe("TasksProvider & useTaskContext", () => {
     });
 
     warnSpy.mockRestore();
+  });
+
+  it("truncates task descriptions to 120 characters on addTask and updateTask", async () => {
+    AsyncStorage.getItem.mockResolvedValueOnce(null);
+
+    const { result } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    const longDesc = "a".repeat(150);
+    let id;
+    await act(() => {
+      id = result.current.addTask(longDesc);
+    });
+    expect(result.current.tasks[0].description).toHaveLength(120);
+    expect(result.current.tasks[0].description).toBe("a".repeat(120));
+
+    const updateLong = "b".repeat(150);
+    await act(() => {
+      result.current.updateTask(id, updateLong);
+    });
+    expect(result.current.tasks[0].description).toHaveLength(120);
+    expect(result.current.tasks[0].description).toBe("b".repeat(120));
   });
 });

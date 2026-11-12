@@ -24,10 +24,10 @@ export function SettingsProvider({ children }) {
         if (jsonValue != null) {
           setSettings(normalizeSettings(JSON.parse(jsonValue)));
         }
-      } catch (e) {
-        console.warn("Erro ao carregar configurações", e);
-      } finally {
         setIsLoaded(true);
+      } catch (e) {
+        // Sem isLoaded, nada é gravado e as configurações salvas não são sobrescritas
+        console.warn("Erro ao carregar configurações", e);
       }
     };
     getData();

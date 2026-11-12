@@ -18,7 +18,7 @@ import { colors, fontSizes, radii } from "../constants/theme";
 export default function History() {
   const { history, clock: now } = useTimerContext();
   const { settings } = useSettingsContext();
-  const [view, setView] = useState("month");
+  const [view, setView] = useState("week");
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedKey, setSelectedKey] = useState(null);
 
@@ -136,9 +136,6 @@ export default function History() {
             </Pressable>
             <View style={styles.monthHeading}>
               <Text style={styles.cardTitle}>{month.title}</Text>
-              <Text style={styles.cardSubtitle}>
-                90 dias de dados; mês mais antigo parcial
-              </Text>
             </View>
             <Pressable
               style={styles.monthArrow}
@@ -285,9 +282,9 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   title: {
-    textAlign: "center",
     color: colors.text,
     fontSize: fontSizes.lg,
+    fontWeight: "bold",
     marginTop: 8,
   },
   tabs: {
@@ -320,8 +317,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceTranslucent,
     borderColor: colors.surface,
-    borderWidth: 2,
-    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderRadius: radii.md,
     padding: 12,
     gap: 8,
   },

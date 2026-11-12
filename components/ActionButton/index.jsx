@@ -4,24 +4,38 @@ import { colors, fontSizes, radii } from "../../constants/theme";
 export const ActionButton = ({ active, onPress, display }) => {
   return (
     <Pressable
-      style={active ? styles.contextButtonActive : null}
+      style={[styles.button, active && styles.buttonActive]}
       onPress={onPress}
+      hitSlop={6}
       accessibilityRole="tab"
       accessibilityState={{ selected: !!active }}
     >
-      <Text style={styles.contextButtonText}>{display}</Text>
+      <Text
+        style={[styles.text, active ? styles.textActive : styles.textInactive]}
+      >
+        {display}
+      </Text>
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  contextButtonActive: {
-    backgroundColor: colors.surface,
+  button: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
     borderRadius: radii.sm,
   },
-  contextButtonText: {
+  buttonActive: {
+    backgroundColor: colors.surface,
+  },
+  text: {
     fontSize: fontSizes.sm,
+  },
+  textActive: {
     color: colors.text,
-    padding: 8,
+    fontWeight: "bold",
+  },
+  textInactive: {
+    color: colors.muted,
   },
 });

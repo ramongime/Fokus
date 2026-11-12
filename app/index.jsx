@@ -4,14 +4,16 @@ import useSettingsContext from "../components/context/useSettingsContext";
 import { FokusButton } from "../components/FokusButton";
 import { colors, fontSizes } from "../constants/theme";
 
+const appIcon = require("../assets/images/icon.png");
+
 export default function Index() {
   const { settings, isLoaded, markWelcomeSeen } = useSettingsContext();
 
-  // Enquanto as configurações carregam, mantém a logo na tela (evita piscar fundo vazio)
+  // Enquanto as configurações carregam, mantém o ícone na tela (evita piscar fundo vazio)
   if (!isLoaded) {
     return (
       <View style={styles.container}>
-        <Image source={require("../assets/images/logo.png")} />
+        <Image source={appIcon} style={styles.icon} />
       </View>
     );
   }
@@ -27,7 +29,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Image source={require("../assets/images/logo.png")} />
+      <Image source={appIcon} style={styles.icon} />
       <View style={styles.inner}>
         <Text style={styles.title}>
           Otimize sua {"\n"}produtividade,{"\n"}
@@ -47,6 +49,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.background,
     gap: 40,
+  },
+  // Mesmo ícone do app, com cantos arredondados como na tela inicial do iOS
+  icon: {
+    width: 96,
+    height: 96,
+    borderRadius: 22,
   },
   inner: {
     gap: 16,
