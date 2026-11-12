@@ -74,9 +74,11 @@ export const getSegmentMinutes = (segment, settings) =>
 export const getSegmentNotification = (segments, index, settings, task) => {
   const finished = getTypeById(segments[index].typeId);
   const next = segments[index + 1];
+  const taskDesc =
+    typeof task?.description === "string" ? task.description.trim() : "";
   const taskLine =
-    finished.id === "focus" && task
-      ? `Tarefa: ${task.description.slice(0, 80)}. `
+    finished.id === "focus" && taskDesc
+      ? `Tarefa: ${taskDesc.slice(0, 80)}. `
       : "";
 
   if (!next) {

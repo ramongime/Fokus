@@ -49,4 +49,18 @@ describe("FokusButton", () => {
     expect(getByText("Salvar")).toBeTruthy();
     expect(getByText("IconCustom")).toBeTruthy();
   });
+
+  it("applies outline styles with borderWidth 1 and radii.md", async () => {
+    const { getByRole } = await render(
+      <FokusButton title="Outline" outline onPress={() => {}} />,
+    );
+
+    const button = getByRole("button");
+    expect(button.props.style).toEqual(
+      expect.objectContaining({
+        borderWidth: 1,
+        borderRadius: 20,
+      }),
+    );
+  });
 });

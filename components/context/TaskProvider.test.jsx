@@ -58,6 +58,26 @@ describe("TasksProvider & useTaskContext", () => {
     expect(result.current.tasks[1].id).toBe("202");
   });
 
+  it("truncates task descriptions to 120 chars on hydration from storage", async () => {
+    const storedTasks = [
+      { id: "1", description: "d".repeat(150) },
+      { id: "2", description: null },
+    ];
+    AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(storedTasks));
+
+    const { result } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    expect(result.current.tasks).toHaveLength(2);
+    expect(result.current.tasks[0].description).toBe("d".repeat(120));
+    expect(result.current.tasks[1].description).toBe("");
+  });
+
   it("keeps isLoaded false and prevents disk overwrite when loading throws", async () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     AsyncStorage.getItem.mockRejectedValueOnce(new Error("Storage corrupted"));

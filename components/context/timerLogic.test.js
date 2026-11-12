@@ -182,6 +182,23 @@ describe("getSegmentNotification", () => {
     );
   });
 
+  it("ignora tarefa inválida ou vazia sem produzir 'Tarefa: . '", () => {
+    const emptyCases = [
+      null,
+      undefined,
+      {},
+      { description: "" },
+      { description: "   " },
+      { description: null },
+      { description: 123 },
+    ];
+    for (const emptyTask of emptyCases) {
+      const res = getSegmentNotification(plan, 0, settings, emptyTask);
+      expect(res.body).toBe("Pausa curta começou: 5 min.");
+      expect(res.body).not.toContain("Tarefa:");
+    }
+  });
+
   it("usa o texto padrão no último ciclo", () => {
     const single = [{ typeId: "short", endTime: NOW }];
     expect(getSegmentNotification(single, 0, settings)).toEqual({

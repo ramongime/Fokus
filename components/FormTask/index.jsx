@@ -17,7 +17,7 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
   const [description, setDescription] = useState(defaultValue);
 
   const submitTask = () => {
-    const clean = description.trim();
+    const clean = description.trim().slice(0, 120);
     if (!clean) {
       return;
     }

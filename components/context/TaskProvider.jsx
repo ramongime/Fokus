@@ -10,19 +10,28 @@ export function TasksProvider({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const getData = async () => {
+    const loadTasks = async () => {
       try {
         const jsonValue = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
         const loadedData = jsonValue != null ? JSON.parse(jsonValue) : [];
         // Tarefas antigas foram salvas com id numérico
-        setTasks(loadedData.map((t) => ({ ...t, id: String(t.id) })));
+        setTasks(
+          loadedData.map((t) => ({
+            ...t,
+            id: String(t.id),
+            description:
+              typeof t?.description === "string"
+                ? t.description.slice(0, 120)
+                : "",
+          })),
+        );
         setIsLoaded(true);
       } catch (e) {
         // Sem isLoaded, nada é gravado e as tarefas salvas não são sobrescritas
         console.warn("Erro ao carregar tarefas", e);
       }
     };
-    getData();
+    loadTasks();
   }, []);
 
   useEffect(() => {

@@ -166,7 +166,8 @@ const styles = StyleSheet.create({
   outlineButton: {
     backgroundColor: "transparent",
     borderColor: colors.primary,
-    borderWidth: 2,
+    borderWidth: 1,
+    borderRadius: radii.md,
   },
   container: {
     width: "100%",

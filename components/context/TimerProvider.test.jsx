@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-import { AppState, Vibration } from "react-native";
+import { AppState, Platform, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 import { todayKey } from "./historyLogic";
 import { SettingsProvider } from "./SettingsProvider";
@@ -438,6 +438,43 @@ describe("TimerProvider & useTimerContext", () => {
     expect(result.current.timerRunning).toBe(true);
 
     vibrateSpy.mockRestore();
+  });
+
+  it("suppresses in-app vibration on Android to avoid duplicate concurrent vibration", async () => {
+    const originalOS = Platform.OS;
+    Platform.OS = "android";
+    const vibrateSpy = jest
+      .spyOn(Vibration, "vibrate")
+      .mockImplementation(() => {});
+    const now = Date.now();
+    const pastSegmentTimer = {
+      typeId: "focus",
+      segments: [
+        { typeId: "focus", startTime: now - 1500000, endTime: now - 100 },
+      ],
+      processed: 0,
+      currentTaskId: null,
+    };
+
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") return JSON.stringify(pastSegmentTimer);
+      return null;
+    });
+
+    await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+
+    await waitFor(
+      () => {
+        expect(playCycleSound).toHaveBeenCalled();
+      },
+      { timeout: 2000 },
+    );
+
+    expect(vibrateSpy).not.toHaveBeenCalled();
+    vibrateSpy.mockRestore();
+    Platform.OS = originalOS;
   });
 
   it("updates clock and syncs on AppState active event", async () => {

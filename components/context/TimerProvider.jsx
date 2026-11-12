@@ -196,6 +196,7 @@ export function TimerProvider({ children }) {
         );
         const focusDone = focusSegments.length;
         if (
+          Platform.OS !== "android" &&
           shouldVibrateInApp({
             finishedSegments,
             now,
