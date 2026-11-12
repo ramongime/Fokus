@@ -112,6 +112,7 @@ describe("CustomDrawerContent", () => {
     );
 
     expect(getByText("3/5 focos")).toBeTruthy();
+    expect(getByText("Fokus v1.0.0")).toBeTruthy();
     expect(getAllByText("Fokus").length).toBeGreaterThanOrEqual(1);
   });
 

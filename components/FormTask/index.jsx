@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: fontSizes.md,
     padding: 16,
+    paddingTop: 16,
     height: 120,
     textAlignVertical: "top",
   },

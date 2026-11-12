@@ -189,7 +189,8 @@ describe("TimerProvider & useTimerContext", () => {
 
     AsyncStorage.getItem.mockImplementation(async (key) => {
       if (key === "fokus-timer") return JSON.stringify(pastSegmentTimer);
-      if (key === "fokus-settings") return JSON.stringify(settingsWithoutDistinct);
+      if (key === "fokus-settings")
+        return JSON.stringify(settingsWithoutDistinct);
       return null;
     });
 

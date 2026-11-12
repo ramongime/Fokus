@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
@@ -16,9 +17,11 @@ import { WeekChart } from "../components/WeekChart";
 import { colors, fontSizes, radii } from "../constants/theme";
 
 export default function History() {
+  const params = useLocalSearchParams();
   const { history, clock: now } = useTimerContext();
   const { settings } = useSettingsContext();
-  const [view, setView] = useState("week");
+  const [selectedView, setSelectedView] = useState(null);
+  const view = selectedView ?? (params?.view === "month" ? "month" : "week");
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedKey, setSelectedKey] = useState(null);
 
@@ -44,7 +47,7 @@ export default function History() {
       <View style={styles.tabs} accessibilityRole="tablist">
         <Pressable
           style={[styles.tab, view === "week" && styles.tabSelected]}
-          onPress={() => setView("week")}
+          onPress={() => setSelectedView("week")}
           accessibilityRole="tab"
           accessibilityState={{ selected: view === "week" }}
         >
@@ -56,7 +59,7 @@ export default function History() {
         </Pressable>
         <Pressable
           style={[styles.tab, view === "month" && styles.tabSelected]}
-          onPress={() => setView("month")}
+          onPress={() => setSelectedView("month")}
           accessibilityRole="tab"
           accessibilityState={{ selected: view === "month" }}
         >
@@ -135,7 +138,7 @@ export default function History() {
               </Text>
             </Pressable>
             <View style={styles.monthHeading}>
-              <Text style={styles.cardTitle}>{month.title}</Text>
+              <Text style={styles.monthTitle}>{month.title}</Text>
             </View>
             <Pressable
               style={styles.monthArrow}
@@ -323,6 +326,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardTitle: {
+    color: colors.text,
+    fontSize: fontSizes.sm,
+    fontWeight: "bold",
+  },
+  monthTitle: {
     color: colors.text,
     fontSize: fontSizes.sm,
     fontWeight: "bold",

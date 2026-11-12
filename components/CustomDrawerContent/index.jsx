@@ -153,7 +153,7 @@ export const CustomDrawerContent = ({
           </View>
         </View>
 
-        <Text style={styles.versionText}>Fokus</Text>
+        <Text style={styles.versionText}>Fokus v1.0.0</Text>
       </View>
     </DrawerContentScrollView>
   );
