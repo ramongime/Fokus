@@ -131,4 +131,22 @@ describe("CustomDrawerContent", () => {
     await fireEvent.press(getByText("Tarefas"));
     expect(mockNavigation.navigate).toHaveBeenCalledWith("tasks/index");
   });
+
+  it("navigates to history month view when daily goal card is pressed", async () => {
+    const { getByText } = await render(
+      <CustomDrawerContent
+        state={mockState}
+        navigation={mockNavigation}
+        descriptors={mockDescriptors}
+        todayCount={2}
+        dailyGoal={4}
+        timerRunning={false}
+      />,
+    );
+
+    await fireEvent.press(getByText("Meta diária"));
+    expect(mockNavigation.navigate).toHaveBeenCalledWith("history", {
+      view: "month",
+    });
+  });
 });

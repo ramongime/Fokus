@@ -20,10 +20,19 @@ export default function History() {
   const params = useLocalSearchParams();
   const { history, clock: now } = useTimerContext();
   const { settings } = useSettingsContext();
-  const [selectedView, setSelectedView] = useState(null);
-  const view = selectedView ?? (params?.view === "month" ? "month" : "week");
+  const [prevParamView, setPrevParamView] = useState(params?.view);
+  const [view, setView] = useState(
+    params?.view === "month" ? "month" : "week",
+  );
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedKey, setSelectedKey] = useState(null);
+
+  if (params?.view !== prevParamView) {
+    setPrevParamView(params?.view);
+    if (params?.view === "month" || params?.view === "week") {
+      setView(params.view);
+    }
+  }
 
   const week = getWeek(history, now);
   const weekTotal = summarizeWeek(week);
@@ -31,6 +40,8 @@ export default function History() {
   const monthTotal = summarizeMonth(month);
   const streak = getStreak(history, now);
   const oldestMonthKey = getOldestHistoryMonthKey(now);
+  const selectedWeekDay =
+    week.find((day) => day.key === selectedKey) ?? week[6];
   const selectedDay =
     month.days.find((day) => day.key === selectedKey) ??
     month.days.find((day) => day.isToday) ??
@@ -47,7 +58,7 @@ export default function History() {
       <View style={styles.tabs} accessibilityRole="tablist">
         <Pressable
           style={[styles.tab, view === "week" && styles.tabSelected]}
-          onPress={() => setSelectedView("week")}
+          onPress={() => setView("week")}
           accessibilityRole="tab"
           accessibilityState={{ selected: view === "week" }}
         >
@@ -59,7 +70,7 @@ export default function History() {
         </Pressable>
         <Pressable
           style={[styles.tab, view === "month" && styles.tabSelected]}
-          onPress={() => setSelectedView("month")}
+          onPress={() => setView("month")}
           accessibilityRole="tab"
           accessibilityState={{ selected: view === "month" }}
         >
@@ -94,25 +105,20 @@ export default function History() {
           <Text style={styles.cardSubtitle}>Últimos 7 dias</Text>
           <WeekChart
             days={week}
-            selectedKey={selectedKey ?? week[6].key}
+            selectedKey={selectedWeekDay.key}
             onSelect={setSelectedKey}
           />
-          {(() => {
-            const selected =
-              week.find((day) => day.key === selectedKey) ?? week[6];
-            return (
-              <View style={styles.detail}>
-                <Text style={styles.detailDay}>
-                  {selected.isToday ? "Hoje" : selected.weekday},{" "}
-                  {selected.dateLabel}
-                </Text>
-                <Text style={styles.detailValue}>
-                  {selected.count} {selected.count === 1 ? "foco" : "focos"} ·{" "}
-                  {formatMinutes(selected.minutes)}
-                </Text>
-              </View>
-            );
-          })()}
+          <View style={styles.detail}>
+            <Text style={styles.detailDay}>
+              {selectedWeekDay.isToday ? "Hoje" : selectedWeekDay.weekday},{" "}
+              {selectedWeekDay.dateLabel}
+            </Text>
+            <Text style={styles.detailValue}>
+              {selectedWeekDay.count}{" "}
+              {selectedWeekDay.count === 1 ? "foco" : "focos"} ·{" "}
+              {formatMinutes(selectedWeekDay.minutes)}
+            </Text>
+          </View>
         </View>
       ) : (
         <View style={styles.card}>

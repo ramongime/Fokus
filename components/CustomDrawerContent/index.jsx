@@ -139,7 +139,14 @@ export const CustomDrawerContent = ({
 
       {/* Bloco 3: Rodapé com Meta do Dia e Versão */}
       <View style={styles.footerSection}>
-        <View style={styles.goalCard}>
+        <Pressable
+          style={styles.goalCard}
+          onPress={() => {
+            navigation?.navigate("history", { view: "month" });
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Meta diária: ${todayCount} de ${dailyGoal} focos. Ver no histórico.`}
+        >
           <View style={styles.goalHeader}>
             <Text style={styles.goalTitle}>Meta diária</Text>
             <Text style={styles.goalValue}>
@@ -151,7 +158,7 @@ export const CustomDrawerContent = ({
               style={[styles.progressFill, { width: `${progressPercent}%` }]}
             />
           </View>
-        </View>
+        </Pressable>
 
         <Text style={styles.versionText}>Fokus v1.0.0</Text>
       </View>
