@@ -8,7 +8,8 @@ Fokus is an offline-first, client-side Pomodoro timer and task management applic
 
 - **Architecture & System Workflows**: Consult [`CONTEXT.md`](CONTEXT.md) for detailed runtime boundaries, the target timestamp background timer mechanism, and persistence lifecycles.
 - **Domain Language & Terms**: Consult [`GLOSSARY.md`](GLOSSARY.md) for ubiquitous domain definitions (Focus Cycles, Breaks, Streaks, Notification Channels) and avoided synonyms.
-- **Architectural Decision Records**: Consult [`ADRs/`](ADRs/) (`0001` through `0005`) for trade-offs on background projection, pure logic decoupling, provider ordering, offline storage guards, and SPA web export.
+- **Architectural Decision Records**: Consult [`ADRs/`](ADRs/) (`0001` through `0007`) for trade-offs on background projection, pure logic decoupling, provider ordering, offline storage guards, SPA web export, drawer navigation, and background presence/alarms.
+- **Roadmap & Architectural Opportunities**: Consult [`ROADMAP.md`](ROADMAP.md) for planned improvements including foreground audio decoupling and native platform integrations.
 
 ## Repository Structure
 
@@ -35,9 +36,10 @@ constants/                        # Design tokens and static presets
   theme.js                        # Colors, typography scales, border radii
   settings.js                     # Default settings limits and presets
   pomodoro.js                     # Phase metadata (focus, short break, long break)
-ADRs/                             # Architectural Decision Records (0001 - 0005)
+ADRs/                             # Architectural Decision Records (0001 - 0007)
 Documentos/                       # Native iOS build and distribution walkthroughs
 docs/                             # Static banner and screenshots for documentation
+ROADMAP.md                        # Architectural roadmap and upcoming technical opportunities
 scripts/                          # Tooling scripts (e.g., screenshots.mjs)
 widgets/                          # Native iOS and Android home screen widget layouts
   WidgetSync.jsx                  # Root side-effect bridge from app state to widgets
