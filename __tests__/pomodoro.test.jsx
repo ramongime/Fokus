@@ -1,6 +1,7 @@
 import { fireEvent, render } from "@testing-library/react-native";
 import Pomodoro from "../app/pomodoro";
 import { pomodoro } from "../constants/pomodoro";
+import { colors } from "../constants/theme";
 import useSettingsContext from "../components/context/useSettingsContext";
 import useTaskContext from "../components/context/useTaskContext";
 import useTimerContext from "../components/context/useTimerContext";
@@ -52,6 +53,17 @@ describe("Pomodoro screen", () => {
     expect(queryByText("Pausa curta")).toBeNull();
   });
 
+  it("fills the ring with the elapsed share of the phase", async () => {
+    mockTimer({ seconds: 375 });
+    const { getByRole } = await render(<Pomodoro />);
+
+    expect(getByRole("progressbar").props.accessibilityValue).toEqual({
+      min: 0,
+      max: 100,
+      now: 75,
+    });
+  });
+
   it("skips from focus to the short break", async () => {
     const toggleTimerType = mockTimer({ todayCount: 1 });
     const { getByText } = await render(<Pomodoro />);
@@ -76,7 +88,7 @@ describe("Pomodoro screen", () => {
     await fireEvent.press(getByText("Pular para o foco"));
     expect(toggleTimerType).toHaveBeenCalledWith(focus);
     expect(mockSetOptions).toHaveBeenCalledWith({
-      headerStyle: { backgroundColor: "#02191C" },
+      headerStyle: { backgroundColor: colors.backgroundBreak },
     });
   });
 });

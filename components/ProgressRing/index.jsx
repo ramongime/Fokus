@@ -19,6 +19,8 @@ export const ProgressRing = ({
   return (
     <View
       style={[styles.container, { width: size, height: size }]}
+      // Um só elemento para leitores de tela: lê o tempo (children) e o progresso
+      accessible
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped * 100) }}
     >

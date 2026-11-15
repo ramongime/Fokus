@@ -11,6 +11,8 @@ export default function EditTask() {
   const { id } = useLocalSearchParams();
   const { tasks, updateTask, deleteTask } = useTaskContext();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Excluída por aqui: não mostra "não existe mais" enquanto volta para a lista
+  const [deleted, setDeleted] = useState(false);
 
   const task = tasks.find((t) => t.id === id);
 
@@ -21,9 +23,14 @@ export default function EditTask() {
 
   const confirmDelete = () => {
     setConfirmingDelete(false);
+    setDeleted(true);
     deleteTask(id);
     router.navigate("/tasks");
   };
+
+  if (!task && deleted) {
+    return <View style={styles.blank} />;
+  }
 
   if (!task) {
     return (
@@ -74,6 +81,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     padding: 24,
     alignItems: "center",
+  },
+  blank: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
   notFound: {
     color: colors.muted,

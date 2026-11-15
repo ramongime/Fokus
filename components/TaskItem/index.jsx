@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { IconCheck, IconTrash } from "../Icons";
@@ -13,10 +14,18 @@ const TaskItem = ({
   onPressEdit,
   onPressDelete,
 }) => {
+  const swipeRef = useRef(null);
+
+  // Fecha a linha antes de perguntar: se a exclusão for cancelada, ela não fica aberta
+  const handleSwipeDelete = () => {
+    swipeRef.current?.close();
+    onPressDelete();
+  };
+
   const renderDeleteAction = () => (
     <Pressable
       style={styles.deleteAction}
-      onPress={onPressDelete}
+      onPress={handleSwipeDelete}
       accessibilityRole="button"
       accessibilityLabel={`Excluir "${text}"`}
     >
@@ -27,6 +36,7 @@ const TaskItem = ({
 
   return (
     <Swipeable
+      ref={swipeRef}
       renderRightActions={renderDeleteAction}
       rightThreshold={40}
       overshootRight={false}

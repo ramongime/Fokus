@@ -1,7 +1,6 @@
 export const pomodoro = [
   {
     id: "focus",
-    image: require("../assets/images/pomodoro.png"),
     display: "Foco",
     notification: {
       title: "Foco concluído! 🍅",
@@ -10,7 +9,6 @@ export const pomodoro = [
   },
   {
     id: "short",
-    image: require("../assets/images/short.png"),
     display: "Pausa curta",
     notification: {
       title: "Pausa curta encerrada",
@@ -19,7 +17,6 @@ export const pomodoro = [
   },
   {
     id: "long",
-    image: require("../assets/images/long.png"),
     display: "Pausa longa",
     notification: {
       title: "Pausa longa encerrada",
