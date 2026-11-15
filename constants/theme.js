@@ -1,7 +1,10 @@
 export const colors = {
   background: "#021123",
-  surface: "#144480",
-  surfaceTranslucent: "#14448080",
+  // Azul quase neutro: superfícies não competem com a cor de destaque (primary)
+  surface: "#1B2A40",
+  surfaceTranslucent: "#1B2A4080",
+  // Fundo levemente esverdeado durante as pausas
+  backgroundBreak: "#02191C",
   surfaceLight: "#FFFFFF",
   primary: "#B872FF",
   success: "#00F4BF",
@@ -16,6 +19,7 @@ export const fontSizes = {
   md: 18,
   lg: 26,
   xl: 54,
+  timer: 84,
 };
 
 export const radii = {
