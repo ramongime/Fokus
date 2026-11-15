@@ -21,9 +21,7 @@ export default function History() {
   const { history, clock: now } = useTimerContext();
   const { settings } = useSettingsContext();
   const [prevParamView, setPrevParamView] = useState(params?.view);
-  const [view, setView] = useState(
-    params?.view === "month" ? "month" : "week",
-  );
+  const [view, setView] = useState(params?.view === "month" ? "month" : "week");
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedKey, setSelectedKey] = useState(null);
 

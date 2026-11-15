@@ -10,6 +10,8 @@ export const colors = {
   success: "#00F4BF",
   successDark: "#0F725C",
   muted: "#98A0A8",
+  // Só para ações destrutivas (excluir)
+  danger: "#C2414B",
   text: "#FFFFFF",
   overlay: "#000000AA",
 };

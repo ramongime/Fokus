@@ -13,7 +13,12 @@ import { FokusButton } from "../../components/FokusButton";
 import { IconSave } from "../../components/Icons";
 import { colors, fontSizes, radii } from "../../constants/theme";
 
-export default function FormTask({ onFormSubmit, defaultValue = "" }) {
+// footer (opcional): conteúdo extra abaixo do cartão, ex.: "Excluir tarefa" na edição
+export default function FormTask({
+  onFormSubmit,
+  defaultValue = "",
+  footer = null,
+}) {
   const [description, setDescription] = useState(defaultValue);
 
   const submitTask = () => {
@@ -54,6 +59,7 @@ export default function FormTask({ onFormSubmit, defaultValue = "" }) {
               onPress={submitTask}
             />
           </View>
+          {footer}
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
