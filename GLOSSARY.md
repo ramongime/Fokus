@@ -42,6 +42,10 @@ _Avoid_: Contagem regressiva local, atraso acumulado
 Passagem automática do temporizador para o ciclo subsequente recomendado (ex.: de foco para pausa curta) imediatamente ao zerar (00:00), posicionando o próximo segmento pausado e pronto para início (salvo com Emendar Ciclos ativo).
 _Avoid_: Reset forçado, reinício automático indesejado, zeramento cego
 
+**Pular Fase**:
+Ação manual do usuário que encerra a fase atual sem concluí-la e posiciona o temporizador, pausado e com a duração cheia, na fase que viria a seguir na série. Um foco pulado não conta como ciclo de foco concluído.
+_Avoid_: Trocar aba, concluir ciclo, transição de ciclo
+
 ## Gestão de Tarefas
 
 **Tarefa**:
