@@ -130,10 +130,11 @@ const captureScreens = async (browser) => {
   await shot("escolher-tarefa");
 
   await open("/pomodoro");
-  await page.getByText("Pausa longa").click();
+  // Com 3 focos no dia, pular o 4º leva à pausa longa
+  await page.getByText("Pular para a pausa").click();
   await page.waitForTimeout(600);
   await shot("pausa-longa");
-  await page.getByText("Foco", { exact: true }).click();
+  await page.getByText("Pular para o foco").click();
 
   await open("/tasks");
   await shot("tarefas");

@@ -30,6 +30,8 @@ const TaskItem = ({
       renderRightActions={renderDeleteAction}
       rightThreshold={40}
       overshootRight={false}
+      // Mantém a ação "Excluir" recortada dentro da linha durante o gesto
+      containerStyle={styles.swipeContainer}
     >
       <View style={styles.row}>
         <Pressable
@@ -68,6 +70,9 @@ const TaskItem = ({
 };
 
 const styles = StyleSheet.create({
+  swipeContainer: {
+    overflow: "hidden",
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
