@@ -135,8 +135,8 @@ npx expo start
 Escaneie o QR code com o Expo Go e pronto. 🎉
 
 > [!TIP]
-> Quer ver a notificação sem esperar 25 minutos? Troque temporariamente `25 * 60` por `10`
-> em [`constants/pomodoro.js`](constants/pomodoro.js), dê play e bloqueie a tela.
+> Quer ver a notificação sem esperar 25 minutos? Troque temporariamente `focus: 25` por `focus: 1`
+> em [`constants/settings.js`](constants/settings.js), dê play e bloqueie a tela.
 
 ### 📦 Build nativo
 

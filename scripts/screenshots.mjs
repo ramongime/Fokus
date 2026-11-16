@@ -9,7 +9,7 @@
  *   npx playwright install chromium   # só na primeira vez
  *   npm run screenshots
  */
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import {
   createReadStream,
   existsSync,
@@ -41,7 +41,14 @@ const MIME = {
 const serve = () =>
   new Promise((done) => {
     const server = http.createServer((req, res) => {
-      const requestPath = decodeURIComponent(req.url.split("?")[0]);
+      let requestPath;
+      try {
+        requestPath = decodeURIComponent((req.url ?? "/").split("?")[0]);
+      } catch {
+        res.writeHead(400);
+        res.end("Bad Request");
+        return;
+      }
       let file = resolve(webDir, "." + requestPath);
       if (
         !file.startsWith(webDir + sep) ||
@@ -56,7 +63,7 @@ const serve = () =>
       );
       createReadStream(file).pipe(res);
     });
-    server.listen(PORT, () => done(server));
+    server.listen(PORT, "127.0.0.1", () => done(server));
   });
 
 // Data local de `daysAgo` dias atrás, no formato "2026-09-26"
@@ -205,10 +212,14 @@ const renderBanner = async (browser) => {
 
 console.log("Exportando a versão web...");
 rmSync(webDir, { recursive: true, force: true });
-execSync(`npx expo export --platform web --output-dir ${webDir}`, {
-  cwd: root,
-  stdio: "inherit",
-});
+execFileSync(
+  "npx",
+  ["expo", "export", "--platform", "web", "--output-dir", webDir],
+  {
+    cwd: root,
+    stdio: "inherit",
+  },
+);
 
 mkdirSync(shotsDir, { recursive: true });
 const server = await serve();
