@@ -247,7 +247,8 @@ describe("timerNotifications", () => {
       ).not.toHaveBeenCalled();
     });
 
-    it("logs warning without throwing when cancellation fails", async () => {
+    it("logs warning without throwing when cancellation fails and still dismisses ongoing notification", async () => {
+      Platform.OS = "android";
       const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       Notifications.cancelAllScheduledNotificationsAsync.mockRejectedValueOnce(
         new Error("Cancel failed"),
@@ -259,7 +260,39 @@ describe("timerNotifications", () => {
         "Erro ao cancelar notificações",
         expect.any(Error),
       );
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith(
+        ONGOING_NOTIFICATION_ID,
+      );
       warnSpy.mockRestore();
+    });
+
+    it("can skip dismissing ongoing notification when dismissOngoing is false", async () => {
+      Platform.OS = "android";
+      Notifications.dismissNotificationAsync.mockClear();
+
+      await cancelTimerNotifications(["id-1"], { dismissOngoing: false });
+
+      expect(
+        Notifications.cancelScheduledNotificationAsync,
+      ).toHaveBeenCalledWith("id-1");
+      expect(Notifications.dismissNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it("coalesces concurrent ensurePermission calls into a single permission flow", async () => {
+      Platform.OS = "android";
+      Notifications.getPermissionsAsync.mockClear();
+
+      await Promise.all([
+        showOngoingNotification({
+          typeLabel: "Foco",
+          endTime: Date.now() + 60000,
+        }),
+        scheduleTimerNotifications([
+          { title: "Foco", body: "Fim", date: Date.now() + 60000 },
+        ]),
+      ]);
+
+      expect(Notifications.getPermissionsAsync).toHaveBeenCalledTimes(1);
     });
   });
 

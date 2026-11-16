@@ -40,4 +40,19 @@ describe("FormTask", () => {
 
     expect(onFormSubmit).not.toHaveBeenCalled();
   });
+
+  it("updates input value when defaultValue changes across edits", async () => {
+    const onFormSubmit = jest.fn();
+    const { getByDisplayValue, rerender } = await render(
+      <FormTask defaultValue="Tarefa A" onFormSubmit={onFormSubmit} />,
+    );
+
+    expect(getByDisplayValue("Tarefa A")).toBeTruthy();
+
+    await rerender(
+      <FormTask defaultValue="Tarefa B" onFormSubmit={onFormSubmit} />,
+    );
+
+    expect(getByDisplayValue("Tarefa B")).toBeTruthy();
+  });
 });

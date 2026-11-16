@@ -13,6 +13,13 @@ const pad = (value) => String(value).padStart(2, "0");
 
 const clamp = (value, { min, max }) => Math.min(max, Math.max(min, value));
 
+const toBoundedInt = (raw, fallback, limits) => {
+  const numeric = Number(raw);
+  const valid =
+    Number.isFinite(numeric) && numeric !== 0 ? Math.round(numeric) : fallback;
+  return clamp(valid, limits);
+};
+
 // Modo do timer pelo id ("focus", "short", "long"); cai no foco se o id for desconhecido
 export const getTypeById = (id) =>
   pomodoro.find((p) => p.id === id) ?? pomodoro[0];
@@ -97,34 +104,44 @@ export const getSegmentNotification = (segments, index, settings, task) => {
 
 // Completa com os padrões e corrige valores fora dos limites (ex.: dados antigos)
 export const normalizeSettings = (saved = {}) => {
-  const savedDurations = saved.durations ?? {};
+  const source =
+    saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+  const savedDurations =
+    source.durations &&
+    typeof source.durations === "object" &&
+    !Array.isArray(source.durations)
+      ? source.durations
+      : {};
   return {
     autoStartCycles:
-      typeof saved.autoStartCycles === "boolean"
-        ? saved.autoStartCycles
+      typeof source.autoStartCycles === "boolean"
+        ? source.autoStartCycles
         : DEFAULT_SETTINGS.autoStartCycles,
     vibrate:
-      typeof saved.vibrate === "boolean"
-        ? saved.vibrate
+      typeof source.vibrate === "boolean"
+        ? source.vibrate
         : DEFAULT_SETTINGS.vibrate,
     distinctSounds:
-      typeof saved.distinctSounds === "boolean"
-        ? saved.distinctSounds
+      typeof source.distinctSounds === "boolean"
+        ? source.distinctSounds
         : DEFAULT_SETTINGS.distinctSounds,
-    hasSeenWelcome: saved.hasSeenWelcome === true,
-    longBreakInterval: clamp(
-      Number(saved.longBreakInterval) || DEFAULT_SETTINGS.longBreakInterval,
+    hasSeenWelcome: source.hasSeenWelcome === true,
+    longBreakInterval: toBoundedInt(
+      source.longBreakInterval,
+      DEFAULT_SETTINGS.longBreakInterval,
       SETTINGS_LIMITS.longBreakInterval,
     ),
-    dailyFocusGoal: clamp(
-      Number(saved.dailyFocusGoal) || DEFAULT_SETTINGS.dailyFocusGoal,
+    dailyFocusGoal: toBoundedInt(
+      source.dailyFocusGoal,
+      DEFAULT_SETTINGS.dailyFocusGoal,
       SETTINGS_LIMITS.dailyFocusGoal,
     ),
     durations: Object.fromEntries(
       Object.keys(DEFAULT_SETTINGS.durations).map((id) => [
         id,
-        clamp(
-          Number(savedDurations[id]) || DEFAULT_SETTINGS.durations[id],
+        toBoundedInt(
+          savedDurations[id],
+          DEFAULT_SETTINGS.durations[id],
           SETTINGS_LIMITS.durations[id],
         ),
       ]),

@@ -208,4 +208,36 @@ describe("SettingsProvider & useSettingsContext", () => {
 
     warnSpy.mockRestore();
   });
+
+  it("recovers to DEFAULT_SETTINGS when stored JSON is null or malformed", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    AsyncStorage.getItem.mockResolvedValueOnce("{not-valid-json");
+
+    const { result } = await renderHook(() => useSettingsContext(), {
+      wrapper: ({ children }) => (
+        <SettingsProvider>{children}</SettingsProvider>
+      ),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+    expect(result.current.settings).toEqual(DEFAULT_SETTINGS);
+
+    AsyncStorage.getItem.mockResolvedValueOnce("null");
+    const { result: nullResult } = await renderHook(
+      () => useSettingsContext(),
+      {
+        wrapper: ({ children }) => (
+          <SettingsProvider>{children}</SettingsProvider>
+        ),
+      },
+    );
+
+    await waitFor(() => {
+      expect(nullResult.current.isLoaded).toBe(true);
+    });
+    expect(nullResult.current.settings).toEqual(DEFAULT_SETTINGS);
+    warnSpy.mockRestore();
+  });
 });

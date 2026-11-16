@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, fontSizes, radii } from "../../constants/theme";
 
-export const Stepper = ({ value, onChange, min, max, suffix = "" }) => {
+export const Stepper = ({ value, onChange, min, max, suffix = "", label }) => {
   return (
     <View style={styles.container}>
       <Pressable
@@ -9,7 +9,7 @@ export const Stepper = ({ value, onChange, min, max, suffix = "" }) => {
         disabled={value <= min}
         onPress={() => onChange(value - 1)}
         accessibilityRole="button"
-        accessibilityLabel="Diminuir"
+        accessibilityLabel={label ? `Diminuir ${label}` : "Diminuir"}
         accessibilityState={{ disabled: value <= min }}
       >
         <Text style={styles.buttonText}>−</Text>
@@ -23,7 +23,7 @@ export const Stepper = ({ value, onChange, min, max, suffix = "" }) => {
         disabled={value >= max}
         onPress={() => onChange(value + 1)}
         accessibilityRole="button"
-        accessibilityLabel="Aumentar"
+        accessibilityLabel={label ? `Aumentar ${label}` : "Aumentar"}
         accessibilityState={{ disabled: value >= max }}
       >
         <Text style={styles.buttonText}>+</Text>

@@ -9,26 +9,31 @@ import { colors, fontSizes } from "../../constants/theme";
 
 export default function EditTask() {
   const { id } = useLocalSearchParams();
-  const { tasks, updateTask, deleteTask } = useTaskContext();
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const taskId = Array.isArray(id) ? id[0] : id;
+  const { tasks, isLoaded, updateTask, deleteTask } = useTaskContext();
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   // Excluída por aqui: não mostra "não existe mais" enquanto volta para a lista
-  const [deleted, setDeleted] = useState(false);
+  const [deletedId, setDeletedId] = useState(null);
 
-  const task = tasks.find((t) => t.id === id);
+  const task = tasks.find((t) => t.id === taskId);
+  const deleted = deletedId === taskId;
+  const confirmingDelete = confirmingDeleteId === taskId;
 
   const submitTask = (description) => {
-    updateTask(id, description);
+    if (!task) return;
+    updateTask(task.id, description);
     router.navigate("/tasks");
   };
 
   const confirmDelete = () => {
-    setConfirmingDelete(false);
-    setDeleted(true);
-    deleteTask(id);
+    if (!task || deleted) return;
+    setConfirmingDeleteId(null);
+    setDeletedId(task.id);
+    deleteTask(task.id);
     router.navigate("/tasks");
   };
 
-  if (!task && deleted) {
+  if (!isLoaded || (!task && deleted)) {
     return <View style={styles.blank} />;
   }
 
@@ -50,12 +55,13 @@ export default function EditTask() {
   return (
     <>
       <FormTask
+        key={task.id}
         defaultValue={task.description}
         onFormSubmit={submitTask}
         footer={
           <Pressable
             style={styles.deleteButton}
-            onPress={() => setConfirmingDelete(true)}
+            onPress={() => setConfirmingDeleteId(task.id)}
             hitSlop={10}
             accessibilityRole="button"
           >
@@ -69,7 +75,7 @@ export default function EditTask() {
         message={`"${task.description}" vai sumir da sua lista.`}
         confirmLabel="Excluir"
         onConfirm={confirmDelete}
-        onCancel={() => setConfirmingDelete(false)}
+        onCancel={() => setConfirmingDeleteId(null)}
       />
     </>
   );

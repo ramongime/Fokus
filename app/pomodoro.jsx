@@ -62,12 +62,19 @@ export default function Pomodoro() {
     >
       <ScrollView contentContainerStyle={styles.inner}>
         <Text style={[styles.phase, { color: accent }]}>{phaseLabel}</Text>
-        <TaskPicker
-          tasks={tasks}
-          currentTask={currentTask}
-          onSelect={setCurrentTaskId}
-          onCreate={(description) => setCurrentTaskId(addTask(description))}
-        />
+        <View style={styles.pickerWrapper}>
+          <TaskPicker
+            tasks={tasks}
+            currentTask={currentTask}
+            onSelect={setCurrentTaskId}
+            onCreate={(description) => {
+              const id = addTask(description);
+              if (id) {
+                setCurrentTaskId(id);
+              }
+            }}
+          />
+        </View>
         <ProgressRing progress={progress} color={accent}>
           <Timer totalSeconds={seconds} />
         </ProgressRing>
@@ -114,6 +121,11 @@ const styles = StyleSheet.create({
     width: "85%",
     maxWidth: 380,
     gap: 18,
+  },
+  pickerWrapper: {
+    width: "90%",
+    maxWidth: 480,
+    alignItems: "center",
   },
   skipButton: {
     alignSelf: "center",

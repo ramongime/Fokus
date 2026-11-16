@@ -13,6 +13,8 @@ import {
 import Svg, { Path } from "react-native-svg";
 import { colors, fontSizes, radii } from "../../constants/theme";
 
+const OptionSeparator = () => <View style={styles.optionSeparator} />;
+
 // Escolhe a tarefa em que o foco está sendo feito
 // onCreate (opcional): cria uma tarefa nova ali mesmo e já vincula ao foco
 export const TaskPicker = ({ tasks, currentTask, onSelect, onCreate }) => {
@@ -105,6 +107,7 @@ export const TaskPicker = ({ tasks, currentTask, onSelect, onCreate }) => {
                   disabled={!draft.trim()}
                   accessibilityRole="button"
                   accessibilityLabel="Criar tarefa e focar nela"
+                  accessibilityState={{ disabled: !draft.trim() }}
                 >
                   <Text style={styles.createButtonText}>＋</Text>
                 </Pressable>
@@ -113,7 +116,8 @@ export const TaskPicker = ({ tasks, currentTask, onSelect, onCreate }) => {
             <FlatList
               data={pendingTasks}
               keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              keyboardShouldPersistTaps="handled"
+              ItemSeparatorComponent={OptionSeparator}
               renderItem={({ item }) => (
                 <Pressable
                   style={[
@@ -121,6 +125,8 @@ export const TaskPicker = ({ tasks, currentTask, onSelect, onCreate }) => {
                     currentTask?.id === item.id && styles.optionActive,
                   ]}
                   onPress={() => select(item.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: currentTask?.id === item.id }}
                 >
                   <Text style={styles.optionText}>{item.description}</Text>
                 </Pressable>
@@ -134,7 +140,11 @@ export const TaskPicker = ({ tasks, currentTask, onSelect, onCreate }) => {
               }
               ListFooterComponent={
                 currentTask ? (
-                  <Pressable style={styles.clear} onPress={() => select(null)}>
+                  <Pressable
+                    style={styles.clear}
+                    onPress={() => select(null)}
+                    accessibilityRole="button"
+                  >
                     <Text style={styles.clearText}>Focar sem tarefa</Text>
                   </Pressable>
                 ) : null
@@ -156,6 +166,9 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     gap: 8,
     paddingVertical: 6,
+  },
+  optionSeparator: {
+    height: 8,
   },
   triggerDot: {
     width: 6,

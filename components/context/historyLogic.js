@@ -40,7 +40,10 @@ const daysBefore = (now, days) => {
   return date.getTime();
 };
 
-const getDay = (history, key) => history[key] ?? { count: 0, minutes: 0 };
+const getDay = (history, key) =>
+  history && Object.prototype.hasOwnProperty.call(history, key)
+    ? history[key]
+    : { count: 0, minutes: 0 };
 
 // Focos concluídos hoje
 export const getTodayCount = (history, now) =>
@@ -51,9 +54,16 @@ export const getTodayCount = (history, now) =>
 export const addFocusSessions = (history, sessions, now) => {
   const next = { ...history };
   for (const { endTime, minutes } of sessions) {
+    if (!Number.isFinite(endTime)) {
+      continue;
+    }
     const key = todayKey(endTime);
     const day = getDay(next, key);
-    next[key] = { count: day.count + 1, minutes: day.minutes + minutes };
+    const safeMinutes =
+      typeof minutes === "number" && Number.isFinite(minutes) && minutes >= 0
+        ? minutes
+        : 0;
+    next[key] = { count: day.count + 1, minutes: day.minutes + safeMinutes };
   }
   const oldestKey = todayKey(daysBefore(now, HISTORY_DAYS - 1));
   return Object.fromEntries(
@@ -156,18 +166,34 @@ export const formatMinutes = (minutes) => {
   return rest === 0 ? `${hours}h` : `${hours}h${pad(rest)}`;
 };
 
-// Converte o contador diário da versão anterior ({ date, count }) em histórico
-export const historyFromLegacyStats = (stats, focusMinutes) =>
-  stats?.date && stats.count > 0
-    ? {
-        [stats.date]: {
-          count: stats.count,
-          minutes: stats.count * focusMinutes,
-        },
-      }
-    : {};
-
 const DAY_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// Converte o contador diário da versão anterior ({ date, count }) em histórico
+export const historyFromLegacyStats = (stats, focusMinutes) => {
+  if (
+    !stats ||
+    typeof stats !== "object" ||
+    typeof stats.date !== "string" ||
+    !DAY_KEY_PATTERN.test(stats.date) ||
+    typeof stats.count !== "number" ||
+    !Number.isFinite(stats.count) ||
+    stats.count <= 0
+  ) {
+    return {};
+  }
+  const safeFocusMinutes =
+    typeof focusMinutes === "number" &&
+    Number.isFinite(focusMinutes) &&
+    focusMinutes >= 0
+      ? focusMinutes
+      : 0;
+  return {
+    [stats.date]: {
+      count: stats.count,
+      minutes: stats.count * safeFocusMinutes,
+    },
+  };
+};
 
 // Filtra entradas corrompidas ao carregar o histórico salvo no dispositivo
 export const normalizeHistory = (raw) => {

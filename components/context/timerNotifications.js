@@ -67,37 +67,50 @@ Notifications.setNotificationHandler({
   }),
 });
 
+let permissionPromise = null;
+
 // Cria os canais (Android) e pede permissão só se ainda não foi concedida.
 // Se a pessoa negar, o timer funciona normalmente, só sem os avisos.
-const ensurePermission = async () => {
-  if (Platform.OS === "android") {
-    await Notifications.deleteNotificationChannelAsync(LEGACY_CHANNEL_ID);
-    for (const channel of ALL_CHANNELS) {
-      await Notifications.setNotificationChannelAsync(channel.id, {
-        name: channel.name,
-        // O enum existe no build do expo-notifications; o plugin import não o enxerga
-        // eslint-disable-next-line import/namespace
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: channel.sound,
-        enableVibrate: channel.vibrate,
-        vibrationPattern: channel.vibrate ? VIBRATION_PATTERN : null,
-      });
-    }
-    await Notifications.setNotificationChannelAsync(ONGOING_CHANNEL_ID, {
-      name: "Ciclo em andamento",
-      // eslint-disable-next-line import/namespace
-      importance: Notifications.AndroidImportance.LOW,
-      sound: null,
-      enableVibrate: false,
-    });
+// Coalesce chamadas concorrentes (ex.: ongoing + scheduleTimerNotifications no Play).
+const ensurePermission = () => {
+  if (permissionPromise) {
+    return permissionPromise;
   }
+  permissionPromise = (async () => {
+    try {
+      if (Platform.OS === "android") {
+        await Notifications.deleteNotificationChannelAsync(LEGACY_CHANNEL_ID);
+        for (const channel of ALL_CHANNELS) {
+          await Notifications.setNotificationChannelAsync(channel.id, {
+            name: channel.name,
+            // O enum existe no build do expo-notifications; o plugin import não o enxerga
+            // eslint-disable-next-line import/namespace
+            importance: Notifications.AndroidImportance.HIGH,
+            sound: channel.sound,
+            enableVibrate: channel.vibrate,
+            vibrationPattern: channel.vibrate ? VIBRATION_PATTERN : null,
+          });
+        }
+        await Notifications.setNotificationChannelAsync(ONGOING_CHANNEL_ID, {
+          name: "Ciclo em andamento",
+          // eslint-disable-next-line import/namespace
+          importance: Notifications.AndroidImportance.LOW,
+          sound: null,
+          enableVibrate: false,
+        });
+      }
 
-  const { granted } = await Notifications.getPermissionsAsync();
-  if (granted) {
-    return true;
-  }
-  const request = await Notifications.requestPermissionsAsync();
-  return request.granted;
+      const { granted } = await Notifications.getPermissionsAsync();
+      if (granted) {
+        return true;
+      }
+      const request = await Notifications.requestPermissionsAsync();
+      return request.granted;
+    } finally {
+      permissionPromise = null;
+    }
+  })();
+  return permissionPromise;
 };
 
 // Agenda no sistema operacional, então dispara mesmo com a tela bloqueada ou o app fechado.
@@ -143,7 +156,10 @@ export const scheduleTimerNotifications = async (
 };
 
 // Sem ids, cancela tudo o que o app agendou
-export const cancelTimerNotifications = async (ids) => {
+export const cancelTimerNotifications = async (
+  ids,
+  { dismissOngoing = true } = {},
+) => {
   try {
     if (ids) {
       await Promise.all(
@@ -152,9 +168,12 @@ export const cancelTimerNotifications = async (ids) => {
     } else {
       await Notifications.cancelAllScheduledNotificationsAsync();
     }
-    await dismissOngoingNotification();
   } catch (e) {
     console.warn("Erro ao cancelar notificações", e);
+  } finally {
+    if (dismissOngoing) {
+      await dismissOngoingNotification();
+    }
   }
 };
 

@@ -7,9 +7,11 @@ import { SettingsProvider } from "./SettingsProvider";
 import { TasksProvider } from "./TaskProvider";
 import {
   cancelTimerNotifications,
+  dismissOngoingNotification,
   playCycleSound,
   prepareCycleSounds,
   scheduleTimerNotifications,
+  showOngoingNotification,
   VIBRATION_PATTERN,
 } from "./timerNotifications";
 import { TimerProvider } from "./TimerProvider";
@@ -315,7 +317,120 @@ describe("TimerProvider & useTimerContext", () => {
       resolveSchedule(["delayed-id-1"]);
     });
 
-    expect(cancelTimerNotifications).toHaveBeenCalledWith(["delayed-id-1"]);
+    expect(cancelTimerNotifications).toHaveBeenCalledWith(
+      ["delayed-id-1"],
+      undefined,
+    );
+  });
+
+  it("dismisses ongoing notification even if paused before showOngoingNotification resolves", async () => {
+    let resolveOngoing;
+    let resolveSchedule;
+    showOngoingNotification.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOngoing = resolve;
+        }),
+    );
+    scheduleTimerNotifications.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSchedule = resolve;
+        }),
+    );
+
+    const { result } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+
+    await waitFor(() => {
+      expect(result.current.timerRunning).toBe(false);
+    });
+
+    await act(() => {
+      result.current.toggleTimer();
+    });
+    await act(() => {
+      result.current.toggleTimer();
+    });
+
+    dismissOngoingNotification.mockClear();
+    cancelTimerNotifications.mockClear();
+
+    await act(async () => {
+      resolveSchedule(["late-id"]);
+      resolveOngoing();
+    });
+
+    expect(cancelTimerNotifications).toHaveBeenCalledWith(
+      ["late-id"],
+      undefined,
+    );
+  });
+
+  it("updates ongoing notification when continuous cycles advance in foreground", async () => {
+    const now = Date.now();
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") {
+        return JSON.stringify({
+          typeId: "focus",
+          segments: [
+            { typeId: "focus", startTime: now - 1500000, endTime: now - 100 },
+            { typeId: "short", startTime: now - 100, endTime: now + 300000 },
+          ],
+          processed: 0,
+        });
+      }
+      return null;
+    });
+
+    const { result } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+
+    await waitFor(() => {
+      expect(result.current.timerType.id).toBe("short");
+      expect(showOngoingNotification).toHaveBeenCalledWith({
+        typeLabel: "Pausa curta",
+        endTime: now + 300000,
+      });
+    });
+  });
+
+  it("clears orphaned currentTaskId when the selected task is deleted", async () => {
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") {
+        return JSON.stringify({ currentTaskId: "task-1" });
+      }
+      if (key === "fokus-tasks") {
+        return JSON.stringify([{ id: "task-1", description: "Temporária" }]);
+      }
+      return null;
+    });
+
+    const { result } = await renderHook(
+      () => ({
+        timer: useTimerContext(),
+        tasks: useTaskContext(),
+      }),
+      { wrapper: AllProviders },
+    );
+
+    await waitFor(() => {
+      expect(result.current.timer.currentTask?.id).toBe("task-1");
+    });
+
+    await act(() => {
+      result.current.tasks.deleteTask("task-1");
+    });
+
+    await waitFor(() => {
+      expect(result.current.timer.currentTask).toBeNull();
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        "fokus-timer",
+        expect.stringContaining('"currentTaskId":null'),
+      );
+    });
   });
 
   it("links currentTask when setCurrentTaskId is called", async () => {
@@ -634,5 +749,27 @@ describe("TimerProvider & useTimerContext", () => {
     });
 
     expect(result.current.timerType).toBeDefined();
+  });
+
+  it("recovers to default state when stored timer JSON is malformed", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") return "{corrupted-json";
+      return null;
+    });
+
+    const { result } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+
+    await waitFor(() => {
+      expect(warnSpy).toHaveBeenCalledWith(
+        "Estado do timer inválido, usando padrão",
+        expect.any(Error),
+      );
+      expect(result.current.timerType.id).toBe("focus");
+      expect(result.current.timerRunning).toBe(false);
+    });
+    warnSpy.mockRestore();
   });
 });

@@ -183,6 +183,12 @@ describe("historyFromLegacyStats", () => {
     });
     expect(historyFromLegacyStats({ date: null, count: 0 }, 25)).toEqual({});
     expect(historyFromLegacyStats(undefined, 25)).toEqual({});
+    expect(historyFromLegacyStats({ date: "__proto__", count: 2 }, 25)).toEqual(
+      {},
+    );
+    expect(
+      historyFromLegacyStats({ date: "2026-09-26", count: Infinity }, 25),
+    ).toEqual({});
   });
 });
 

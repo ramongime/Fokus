@@ -1,5 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AppState, Platform, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 import {
@@ -70,9 +77,14 @@ export function TimerProvider({ children }) {
   const [clock, setClock] = useState(() => Date.now());
 
   // Cópias em ref para o tick ler o valor mais recente sem esperar um novo render.
-  // Evita contar o mesmo ciclo duas vezes se dois ticks rodarem seguidos.
+  // Evita contar o mesmo ciclo duas vezes se dois ticks rodarem seguidos e evita
+  // recriar o setInterval durante o ciclo quando history ou currentTaskId mudam.
   const segmentsRef = useRef(null);
   const processedRef = useRef(0);
+  const historyRef = useRef(history);
+  const settingsRef = useRef(settings);
+  const currentTaskIdRef = useRef(currentTaskId);
+  const ongoingEndTimeRef = useRef(null);
   // Se há notificações agendadas para este plano, elas já vibram; o app não vibra junto.
   // Começa true para um plano restaurado ao abrir o app, que teve notificações agendadas.
   const notificationsScheduledRef = useRef(true);
@@ -96,6 +108,14 @@ export function TimerProvider({ children }) {
   // Só processa ciclos depois de tudo carregado, senão os pomodoros somados numa tarefa
   // seriam sobrescritos quando a lista de tarefas terminasse de carregar
   const ready = isLoaded && settingsLoaded && tasksLoaded;
+  const persistedTaskId =
+    ready && currentTaskId != null && !currentTask ? null : currentTaskId;
+
+  useEffect(() => {
+    historyRef.current = history;
+    settingsRef.current = settings;
+    currentTaskIdRef.current = persistedTaskId;
+  }, [history, settings, persistedTaskId]);
 
   // Carrega o estado salvo ao abrir o app
 
@@ -104,7 +124,12 @@ export function TimerProvider({ children }) {
       try {
         const jsonValue = await AsyncStorage.getItem(TIMER_STORAGE_KEY);
         if (jsonValue != null) {
-          const saved = JSON.parse(jsonValue);
+          let saved = null;
+          try {
+            saved = JSON.parse(jsonValue);
+          } catch (parseError) {
+            console.warn("Estado do timer inválido, usando padrão", parseError);
+          }
           if (saved && typeof saved === "object" && !Array.isArray(saved)) {
             // timerTypeId, seconds e endTime vêm da versão anterior do timer
             const savedTypeId = getTypeById(
@@ -120,21 +145,24 @@ export function TimerProvider({ children }) {
                 : null,
             );
             // `stats` é o contador só de hoje da versão anterior
-            setHistory(
+            const initialHistory =
               saved.history &&
-                typeof saved.history === "object" &&
-                !Array.isArray(saved.history)
+              typeof saved.history === "object" &&
+              !Array.isArray(saved.history)
                 ? normalizeHistory(saved.history)
                 : historyFromLegacyStats(
                     saved.stats,
                     DEFAULT_SETTINGS.durations.focus,
-                  ),
-            );
-            setCurrentTaskId(
-              saved.currentTaskId != null && saved.currentTaskId !== ""
+                  );
+            historyRef.current = initialHistory;
+            setHistory(initialHistory);
+            const normalizedTaskId =
+              saved.currentTaskId != null &&
+              String(saved.currentTaskId).trim() !== ""
                 ? String(saved.currentTaskId)
-                : null,
-            );
+                : null;
+            currentTaskIdRef.current = normalizedTaskId;
+            setCurrentTaskId(normalizedTaskId);
             const validSegments = normalizeSavedSegments(saved.segments);
             if (validSegments) {
               const savedProcessed =
@@ -185,7 +213,7 @@ export function TimerProvider({ children }) {
       segments,
       processed,
       history,
-      currentTaskId,
+      currentTaskId: persistedTaskId,
     });
     AsyncStorage.setItem(TIMER_STORAGE_KEY, jsonValue).catch((e) =>
       console.warn("Erro ao salvar o timer", e),
@@ -196,15 +224,16 @@ export function TimerProvider({ children }) {
     segments,
     processed,
     history,
-    currentTaskId,
+    persistedTaskId,
     isLoaded,
   ]);
 
   const reconcileFinished = useCallback(
     (plan, finished, now) => {
-      let count = getTodayCount(history, now);
+      const currentSettings = settingsRef.current;
+      const currentHistory = historyRef.current;
       if (finished <= processedRef.current) {
-        return count;
+        return getTodayCount(currentHistory, now);
       }
 
       const finishedSegments = plan.slice(processedRef.current, finished);
@@ -217,7 +246,7 @@ export function TimerProvider({ children }) {
         shouldVibrateInApp({
           finishedSegments,
           now,
-          settings,
+          settings: currentSettings,
           appActive: AppState.currentState === "active",
           notificationsScheduled: notificationsScheduledRef.current,
         })
@@ -230,42 +259,46 @@ export function TimerProvider({ children }) {
       const lastRecentSegment = recentSegments[recentSegments.length - 1];
       if (lastRecentSegment) {
         playCycleSound(lastRecentSegment.typeId, {
-          distinctSounds: settings.distinctSounds,
-          vibrate: settings.vibrate,
+          distinctSounds: currentSettings.distinctSounds,
+          vibrate: currentSettings.vibrate,
         });
       }
       processedRef.current = finished;
       setProcessed(finished);
+
+      let nextHistory = currentHistory;
       if (focusDone > 0) {
-        count += focusDone;
-        setHistory((oldState) =>
-          addFocusSessions(
-            oldState,
-            focusSegments.map((s) => ({
-              endTime: s.endTime,
-              minutes: getSegmentMinutes(s, settings),
-            })),
-            now,
-          ),
+        nextHistory = addFocusSessions(
+          currentHistory,
+          focusSegments.map((s) => ({
+            endTime: s.endTime,
+            minutes: getSegmentMinutes(s, currentSettings),
+          })),
+          now,
         );
+        historyRef.current = nextHistory;
+        setHistory(nextHistory);
         setClock(now);
-        if (currentTaskId) {
-          addPomodorosToTask(currentTaskId, focusDone);
+        const taskId = currentTaskIdRef.current;
+        if (taskId) {
+          addPomodorosToTask(taskId, focusDone);
         }
       }
-      return count;
+      const lastFinished = finishedSegments[finishedSegments.length - 1];
+      return getTodayCount(nextHistory, lastFinished?.endTime ?? now);
     },
-    [history, settings, currentTaskId, addPomodorosToTask],
+    [addPomodorosToTask],
   );
 
   const finishPlan = useCallback(
     (plan, count) => {
       const last = plan[plan.length - 1];
+      ongoingEndTimeRef.current = null;
       updateRun(null, 0);
-      setTypeId(getNextTypeId(last.typeId, count, settings));
+      setTypeId(getNextTypeId(last.typeId, count, settingsRef.current));
       setPausedSeconds(null);
     },
-    [updateRun, settings],
+    [updateRun],
   );
 
   // O tempo vem do horário de término de cada ciclo, então continua certo mesmo
@@ -296,6 +329,13 @@ export function TimerProvider({ children }) {
       const current = plan[finished];
       setTypeId(current.typeId);
       setLiveSeconds(getRemainingSeconds(current.endTime, now));
+      if (ongoingEndTimeRef.current !== current.endTime) {
+        ongoingEndTimeRef.current = current.endTime;
+        showOngoingNotification({
+          typeLabel: getTypeById(current.typeId).display,
+          endTime: current.endTime,
+        });
+      }
     };
 
     tick();
@@ -313,46 +353,55 @@ export function TimerProvider({ children }) {
   }, [ready, segments, reconcileFinished, finishPlan]);
 
   // Play: planeja os ciclos a partir do tempo atual e agenda as notificações
-  const startTimer = async () => {
+  const startTimer = useCallback(async () => {
     // Na web o navegador só libera áudio dentro de um toque: prepara sempre no Play,
     // porque o som de fim de ciclo toca com ou sem sons distintos. No nativo é no-op.
     prepareCycleSounds();
+    const now = Date.now();
+    const currentSettings = settingsRef.current;
     const plan = buildPlan({
       typeId,
       seconds,
-      now: Date.now(),
-      focusCount: todayCount,
-      settings,
+      now,
+      focusCount: getTodayCount(historyRef.current, now),
+      settings: currentSettings,
     });
+    setClock(now);
     updateRun(plan, 0);
     setLiveSeconds(seconds);
     notificationsScheduledRef.current = false;
-    showOngoingNotification({
+    ongoingEndTimeRef.current = plan[0].endTime;
+    const ongoingPromise = showOngoingNotification({
       typeLabel: getTypeById(typeId).display,
       endTime: plan[0].endTime,
     });
 
     const ids = await scheduleTimerNotifications(
       plan.map((segment, index) => ({
-        ...getSegmentNotification(plan, index, settings, currentTask),
+        ...getSegmentNotification(plan, index, currentSettings, currentTask),
         typeId: segment.typeId,
         date: segment.endTime,
       })),
       {
-        vibrate: settings.vibrate,
-        distinctSounds: settings.distinctSounds,
+        vibrate: currentSettings.vibrate,
+        distinctSounds: currentSettings.distinctSounds,
       },
     );
     // Pausou ou trocou de modo enquanto as notificações eram agendadas
     if (segmentsRef.current !== plan) {
-      await cancelTimerNotifications(ids);
+      await ongoingPromise;
+      const stopped = segmentsRef.current == null;
+      await cancelTimerNotifications(
+        ids,
+        stopped ? undefined : { dismissOngoing: false },
+      );
       return;
     }
     notificationsScheduledRef.current = ids.length > 0;
-  };
+  }, [typeId, seconds, currentTask, updateRun]);
 
   // Pausa: guarda quanto faltava no ciclo atual e cancela os avisos
-  const pauseTimer = () => {
+  const pauseTimer = useCallback(() => {
     const plan = segmentsRef.current;
     if (plan == null) {
       return;
@@ -360,6 +409,7 @@ export function TimerProvider({ children }) {
     const now = Date.now();
     const finished = countFinishedSegments(plan, now);
     const count = reconcileFinished(plan, finished, now);
+    ongoingEndTimeRef.current = null;
     if (finished >= plan.length) {
       finishPlan(plan, count);
     } else {
@@ -369,44 +419,67 @@ export function TimerProvider({ children }) {
       updateRun(null, 0);
     }
     cancelTimerNotifications();
-    dismissOngoingNotification();
-  };
+  }, [reconcileFinished, finishPlan, updateRun]);
 
-  const toggleTimer = () => {
+  const toggleTimer = useCallback(() => {
     if (timerRunning) {
       pauseTimer();
       return;
     }
     startTimer();
-  };
+  }, [timerRunning, pauseTimer, startTimer]);
 
   // Trocar de modo manualmente sempre para o timer e começa com a duração cheia
-  const toggleTimerType = (newTimerType) => {
-    if (timerRunning) {
-      cancelTimerNotifications();
-    }
-    updateRun(null, 0);
-    setTypeId(newTimerType.id);
-    setPausedSeconds(null);
-  };
+  const toggleTimerType = useCallback(
+    (newTimerType) => {
+      ongoingEndTimeRef.current = null;
+      if (timerRunning) {
+        cancelTimerNotifications();
+      }
+      updateRun(null, 0);
+      setTypeId(newTimerType.id);
+      setPausedSeconds(null);
+    },
+    [timerRunning, updateRun],
+  );
+
+  const selectCurrentTaskId = useCallback((id) => {
+    const normalized =
+      id != null && String(id).trim() !== "" ? String(id) : null;
+    currentTaskIdRef.current = normalized;
+    setCurrentTaskId(normalized);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      timerType,
+      seconds,
+      timerRunning,
+      todayCount,
+      segments,
+      history,
+      clock,
+      currentTask,
+      setCurrentTaskId: selectCurrentTaskId,
+      toggleTimer,
+      toggleTimerType,
+    }),
+    [
+      timerType,
+      seconds,
+      timerRunning,
+      todayCount,
+      segments,
+      history,
+      clock,
+      currentTask,
+      selectCurrentTaskId,
+      toggleTimer,
+      toggleTimerType,
+    ],
+  );
 
   return (
-    <TimerContext.Provider
-      value={{
-        timerType,
-        seconds,
-        timerRunning,
-        todayCount,
-        segments,
-        history,
-        clock,
-        currentTask,
-        setCurrentTaskId,
-        toggleTimer,
-        toggleTimerType,
-      }}
-    >
-      {children}
-    </TimerContext.Provider>
+    <TimerContext.Provider value={value}>{children}</TimerContext.Provider>
   );
 }

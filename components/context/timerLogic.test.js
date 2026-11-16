@@ -210,8 +210,14 @@ describe("getSegmentNotification", () => {
 });
 
 describe("normalizeSettings", () => {
-  it("usa os padrões quando não há nada salvo", () => {
+  it("usa os padrões quando não há nada salvo ou o payload é inválido", () => {
     expect(normalizeSettings()).toEqual(DEFAULT_SETTINGS);
+    expect(normalizeSettings(null)).toEqual(DEFAULT_SETTINGS);
+    expect(normalizeSettings("invalid")).toEqual(DEFAULT_SETTINGS);
+    expect(normalizeSettings([])).toEqual(DEFAULT_SETTINGS);
+    expect(
+      normalizeSettings({ durations: null, longBreakInterval: Infinity }),
+    ).toEqual(DEFAULT_SETTINGS);
   });
 
   it("mantém valores válidos e corrige os inválidos", () => {

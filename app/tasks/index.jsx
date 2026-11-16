@@ -13,6 +13,8 @@ import useTaskContext from "../../components/context/useTaskContext";
 import TaskItem from "../../components/TaskItem";
 import { colors, fontSizes, radii } from "../../constants/theme";
 
+const TaskSeparator = () => <View style={styles.separator} />;
+
 export default function Tasks() {
   const { tasks, addTask, deleteTask, toggleTaskCompleted } = useTaskContext();
   const [taskToDelete, setTaskToDelete] = useState(null);
@@ -20,6 +22,7 @@ export default function Tasks() {
   const pendingCount = tasks.filter((t) => !t.completed).length;
 
   const confirmDelete = () => {
+    if (!taskToDelete) return;
     deleteTask(taskToDelete.id);
     setTaskToDelete(null);
   };
@@ -49,7 +52,7 @@ export default function Tasks() {
           )}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="handled"
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={TaskSeparator}
           ListHeaderComponent={
             <View style={styles.header}>
               <View style={styles.titleRow}>

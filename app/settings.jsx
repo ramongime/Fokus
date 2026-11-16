@@ -69,6 +69,7 @@ export default function Settings() {
             min={SETTINGS_LIMITS.longBreakInterval.min}
             max={SETTINGS_LIMITS.longBreakInterval.max}
             suffix=" focos"
+            label="intervalo da pausa longa"
           />
         </SettingRow>
       </View>
@@ -85,6 +86,7 @@ export default function Settings() {
             min={SETTINGS_LIMITS.dailyFocusGoal.min}
             max={SETTINGS_LIMITS.dailyFocusGoal.max}
             suffix=" focos"
+            label="meta diária de focos"
           />
         </SettingRow>
       </View>
@@ -99,6 +101,7 @@ export default function Settings() {
               min={SETTINGS_LIMITS.durations[p.id].min}
               max={SETTINGS_LIMITS.durations[p.id].max}
               suffix=" min"
+              label={`duração de ${p.display.toLowerCase()}`}
             />
           </SettingRow>
         ))}

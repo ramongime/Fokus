@@ -1,5 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 import { normalizeSettings } from "./timerLogic";
 
@@ -22,7 +28,14 @@ export function SettingsProvider({ children }) {
       try {
         const jsonValue = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
         if (jsonValue != null) {
-          setSettings(normalizeSettings(JSON.parse(jsonValue)));
+          try {
+            setSettings(normalizeSettings(JSON.parse(jsonValue)));
+          } catch (parseError) {
+            console.warn(
+              "Configurações salvas inválidas, usando padrão",
+              parseError,
+            );
+          }
         }
         setIsLoaded(true);
       } catch (e) {
@@ -43,58 +56,77 @@ export function SettingsProvider({ children }) {
     );
   }, [settings, isLoaded]);
 
-  const setAutoStartCycles = (autoStartCycles) => {
-    setSettings((oldState) => ({ ...oldState, autoStartCycles }));
-  };
+  const setAutoStartCycles = useCallback((autoStartCycles) => {
+    setSettings((oldState) => ({
+      ...oldState,
+      autoStartCycles: Boolean(autoStartCycles),
+    }));
+  }, []);
 
-  const markWelcomeSeen = () => {
+  const markWelcomeSeen = useCallback(() => {
     setSettings((oldState) => ({ ...oldState, hasSeenWelcome: true }));
-  };
+  }, []);
 
-  const setVibrate = (vibrate) => {
-    setSettings((oldState) => ({ ...oldState, vibrate }));
-  };
+  const setVibrate = useCallback((vibrate) => {
+    setSettings((oldState) => ({ ...oldState, vibrate: Boolean(vibrate) }));
+  }, []);
 
-  const setDistinctSounds = (distinctSounds) => {
-    setSettings((oldState) => ({ ...oldState, distinctSounds }));
-  };
+  const setDistinctSounds = useCallback((distinctSounds) => {
+    setSettings((oldState) => ({
+      ...oldState,
+      distinctSounds: Boolean(distinctSounds),
+    }));
+  }, []);
 
   // Ex.: setDuration("focus", 50) -> foco de 50 minutos
-  const setDuration = (typeId, minutes) => {
+  const setDuration = useCallback((typeId, minutes) => {
     setSettings((oldState) =>
       normalizeSettings({
         ...oldState,
         durations: { ...oldState.durations, [typeId]: minutes },
       }),
     );
-  };
+  }, []);
 
-  const setLongBreakInterval = (longBreakInterval) => {
+  const setLongBreakInterval = useCallback((longBreakInterval) => {
     setSettings((oldState) =>
       normalizeSettings({ ...oldState, longBreakInterval }),
     );
-  };
+  }, []);
 
-  const setDailyFocusGoal = (dailyFocusGoal) => {
+  const setDailyFocusGoal = useCallback((dailyFocusGoal) => {
     setSettings((oldState) =>
       normalizeSettings({ ...oldState, dailyFocusGoal }),
     );
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      settings,
+      isLoaded,
+      setAutoStartCycles,
+      setVibrate,
+      setDistinctSounds,
+      markWelcomeSeen,
+      setDuration,
+      setLongBreakInterval,
+      setDailyFocusGoal,
+    }),
+    [
+      settings,
+      isLoaded,
+      setAutoStartCycles,
+      setVibrate,
+      setDistinctSounds,
+      markWelcomeSeen,
+      setDuration,
+      setLongBreakInterval,
+      setDailyFocusGoal,
+    ],
+  );
 
   return (
-    <SettingsContext.Provider
-      value={{
-        settings,
-        isLoaded,
-        setAutoStartCycles,
-        setVibrate,
-        setDistinctSounds,
-        markWelcomeSeen,
-        setDuration,
-        setLongBreakInterval,
-        setDailyFocusGoal,
-      }}
-    >
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   );

@@ -337,4 +337,70 @@ describe("TasksProvider & useTaskContext", () => {
     expect(result.current.tasks[0].description).toHaveLength(120);
     expect(result.current.tasks[0].description).toBe("b".repeat(120));
   });
+
+  it("generates unique string IDs when addTask is called multiple times in the same millisecond", async () => {
+    AsyncStorage.getItem.mockResolvedValueOnce(null);
+    const nowSpy = jest.spyOn(Date, "now").mockReturnValue(1700000000000);
+
+    try {
+      const { result } = await renderHook(() => useTaskContext(), {
+        wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoaded).toBe(true);
+      });
+
+      let id1;
+      let id2;
+      await act(() => {
+        id1 = result.current.addTask("Primeira");
+        id2 = result.current.addTask("Segunda");
+      });
+
+      expect(id1).not.toBe(id2);
+      expect(result.current.tasks).toHaveLength(2);
+    } finally {
+      nowSpy.mockRestore();
+    }
+  });
+
+  it("deduplicates IDs, sanitizes pomodoros, and recovers from malformed JSON", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    AsyncStorage.getItem.mockResolvedValueOnce(
+      JSON.stringify([
+        { id: "1", description: "Original", pomodoros: "bad", completed: 1 },
+        { id: 1, description: "Duplicada" },
+        { id: "   ", description: "ID vazio" },
+      ]),
+    );
+
+    const { result } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    expect(result.current.tasks).toEqual([
+      { id: "1", description: "Original", completed: true, pomodoros: 0 },
+    ]);
+
+    await act(() => {
+      result.current.addPomodorosToTask("1", 2);
+    });
+    expect(result.current.tasks[0].pomodoros).toBe(2);
+
+    AsyncStorage.getItem.mockResolvedValueOnce("{corrupted");
+    const { result: recovered } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+
+    await waitFor(() => {
+      expect(recovered.current.isLoaded).toBe(true);
+    });
+    expect(recovered.current.tasks).toEqual([]);
+    warnSpy.mockRestore();
+  });
 });

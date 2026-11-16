@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   formatMinutes,
@@ -32,12 +32,15 @@ export default function History() {
     }
   }
 
-  const week = getWeek(history, now);
-  const weekTotal = summarizeWeek(week);
-  const month = getMonth(history, now, monthOffset);
-  const monthTotal = summarizeMonth(month);
-  const streak = getStreak(history, now);
-  const oldestMonthKey = getOldestHistoryMonthKey(now);
+  const week = useMemo(() => getWeek(history, now), [history, now]);
+  const weekTotal = useMemo(() => summarizeWeek(week), [week]);
+  const month = useMemo(
+    () => getMonth(history, now, monthOffset),
+    [history, now, monthOffset],
+  );
+  const monthTotal = useMemo(() => summarizeMonth(month), [month]);
+  const streak = useMemo(() => getStreak(history, now), [history, now]);
+  const oldestMonthKey = useMemo(() => getOldestHistoryMonthKey(now), [now]);
   const selectedWeekDay =
     week.find((day) => day.key === selectedKey) ?? week[6];
   const selectedDay =

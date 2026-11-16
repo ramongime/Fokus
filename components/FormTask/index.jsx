@@ -19,7 +19,13 @@ export default function FormTask({
   defaultValue = "",
   footer = null,
 }) {
+  const [prevDefault, setPrevDefault] = useState(defaultValue);
   const [description, setDescription] = useState(defaultValue);
+
+  if (defaultValue !== prevDefault) {
+    setPrevDefault(defaultValue);
+    setDescription(defaultValue);
+  }
 
   const submitTask = () => {
     const clean = description.trim().slice(0, 120);
@@ -30,38 +36,42 @@ export default function FormTask({
     setDescription("");
   };
 
+  const formContent = (
+    <View style={styles.inner}>
+      <Text style={styles.title}>
+        {defaultValue ? "Editar tarefa" : "Nova tarefa"}
+      </Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>Em que você está trabalhando?</Text>
+        <TextInput
+          accessibilityLabel="Descrição da tarefa"
+          style={styles.input}
+          maxLength={120}
+          numberOfLines={10}
+          multiline={true}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Ex.: estudar React Native"
+          placeholderTextColor={colors.muted}
+        />
+        <FokusButton title="Salvar" icon={<IconSave />} onPress={submitTask} />
+      </View>
+      {footer}
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.inner}>
-          <Text style={styles.title}>
-            {defaultValue ? "Editar tarefa" : "Nova tarefa"}
-          </Text>
-          <View style={styles.card}>
-            <Text style={styles.label}>Em que você está trabalhando?</Text>
-            <TextInput
-              accessibilityLabel="Descrição da tarefa"
-              style={styles.input}
-              maxLength={120}
-              numberOfLines={10}
-              multiline={true}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Ex.: estudar React Native"
-              placeholderTextColor={colors.muted}
-            />
-            <FokusButton
-              title="Salvar"
-              icon={<IconSave />}
-              onPress={submitTask}
-            />
-          </View>
-          {footer}
-        </View>
-      </TouchableWithoutFeedback>
+      {Platform.OS === "web" ? (
+        formContent
+      ) : (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          {formContent}
+        </TouchableWithoutFeedback>
+      )}
     </KeyboardAvoidingView>
   );
 }

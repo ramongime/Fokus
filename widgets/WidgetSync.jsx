@@ -33,7 +33,7 @@ export default function WidgetSync() {
     const makeWidgetProps = (
       segment,
       focusCount,
-      timerText = formatSeconds(minutesRemaining * 60),
+      timerText = formatSeconds(timerRunning ? minutesRemaining * 60 : seconds),
     ) => ({
       typeLabel: getTypeById(segment?.typeId ?? timerType.id).display,
       timerText,
@@ -73,6 +73,9 @@ export default function WidgetSync() {
       typeof FokusWidget.updateTimeline === "function"
     ) {
       const remainingSegments = segments.slice(currentIndex);
+      if (remainingSegments.length === 0) {
+        return;
+      }
       const timeline = remainingSegments.map((segment, index) => {
         const date =
           index === 0
@@ -139,6 +142,7 @@ export default function WidgetSync() {
     settingsLoaded,
     settings,
     timerType,
+    seconds,
     minutesRemaining,
     timerRunning,
     todayCount,
