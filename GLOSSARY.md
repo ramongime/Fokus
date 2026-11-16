@@ -97,7 +97,7 @@ Aviso persistente exibido na barra de status e na central de notificações do A
 _Avoid_: Notificação descartável, alarme invasivo, toast efêmero
 
 **Alarme de Conclusão de Ciclo**:
-Alerta audiovisual e háptico disparado no exato instante em que a contagem atinge 00:00, atuando de maneira idêntica tanto em primeiro plano (app aberto na mão do usuário) quanto em segundo plano.
+Alerta audiovisual e háptico disparado no exato instante em que a contagem atinge 00:00, atuando tanto em primeiro plano (com reprodução sonora imediata e vibração) quanto em segundo plano (em plataformas móveis com suporte a notificações e Live Activity).
 _Avoid_: Bipe contínuo, som de clique, notificação genérica sem áudio
 
 **Canal de Notificação**:

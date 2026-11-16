@@ -18,6 +18,10 @@ export const dismissOngoingNotification = async () => {};
 
 let audioContext;
 
+export const resetAudioContext = () => {
+  audioContext = null;
+};
+
 const getAudioContext = () => {
   const AudioContextConstructor =
     globalThis.AudioContext ?? globalThis.webkitAudioContext;
@@ -37,7 +41,10 @@ export const prepareCycleSounds = async () => {
 };
 
 // No navegador, usa tons gerados localmente para diferenciar foco e pausa.
-export const playCycleSound = async (typeId) => {
+export const playCycleSound = async (
+  typeId,
+  { distinctSounds = true } = {},
+) => {
   const context = getAudioContext();
   if (!context) {
     return;
@@ -46,7 +53,9 @@ export const playCycleSound = async (typeId) => {
   try {
     await context.resume();
     const frequencies =
-      typeId === "focus" ? [659.25, 523.25] : [523.25, 783.99, 1046.5];
+      !distinctSounds || typeId === "focus"
+        ? [659.25, 523.25]
+        : [523.25, 783.99, 1046.5];
     const startAt = context.currentTime + 0.03;
     frequencies.forEach((frequency, index) => {
       const start = startAt + index * 0.28;

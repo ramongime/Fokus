@@ -27,6 +27,7 @@ jest.mock("./timerNotifications", () => ({
   showOngoingNotification: jest.fn(() => Promise.resolve()),
   dismissOngoingNotification: jest.fn(() => Promise.resolve()),
   playCycleSound: jest.fn(() => Promise.resolve()),
+  prepareCycleSounds: jest.fn(() => Promise.resolve()),
   VIBRATION_PATTERN: [0, 400, 200, 400],
 }));
 

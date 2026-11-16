@@ -81,6 +81,7 @@ npx expo run:ios
 - **Presentational Decoupling**: Components in `components/` must remain pure presentational elements. Never import or call `useXContext` inside visual components; consume context exclusively at the route screen level (`app/`) and pass data/callbacks down via props.
 - **Storage Mount Barrier**: Every AsyncStorage consumer must gate persistence writes behind an `isLoaded` boolean flag. Writing to storage before initial data hydration finishes will clobber persisted user data with initial default state.
 - **Target Timestamp Projection**: Never implement interval countdowns via tick decrements (`remainingSeconds - 1`). Always project target deadlines (`endTime = now + duration`) and derive remaining time from `Date.now()` to survive mobile process suspension and device sleep.
+- **Desktop Viewport Bounds**: In web viewports, constrain and center screen content containers (`maxWidth: 380~520`) to preserve the focused, intimate mobile visual hierarchy instead of stretching across ultra-wide desktop monitors.
 
 ## Environment Gotchas
 
@@ -89,7 +90,7 @@ npx expo run:ios
 - **Web SPA Mode Requirement**: `app.json` enforces `web.output: "single"`. Do not change this to `"static"`; pre-rendered static HTML triggers React hydration mismatches with client-only AsyncStorage state.
 - **Web SPA Shell**: `public/index.html` is the template for the single-page web export. It paints `colors.background` before the JS loads; keep the two in sync.
 - **Web Single Bundle**: `asyncRoutes.web` is `false` in the `expo-router` plugin. SDK 58 would otherwise split routes into chunks fetched on first visit, breaking offline navigation.
-- **Web Notifications**: `timerNotifications.web.js` replaces the native module in the browser (no local notifications on web). Keep its exports in sync with `timerNotifications.js`.
+- **Web Audio & Notifications**: `timerNotifications.web.js` replaces the native module in the browser. Local push/ongoing notifications are no-op stubs; foreground cycle completion alarms are synthesized via harmonic Web Audio API tones (unlocked on user gesture via `prepareCycleSounds`) with `navigator.vibrate` fallback. Keep its exported function signatures (including `{ distinctSounds }`) in sync with `timerNotifications.js`.
 - **Node 24**: Expo SDK 58 requires Node 22.13+ (`.nvmrc` pins 24, matching CI). Run `nvm use` before `npm install`.
 - **Async Test APIs**: React Native Testing Library 14 makes `render`, `renderHook`, `act` and `fireEvent` async. Always `await` them.
 - **String Task Identifiers**: Task IDs must be strictly formatted and compared as strings (`Date.now().toString()`). Legacy numeric IDs are auto-coerced during hydration.

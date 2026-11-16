@@ -48,3 +48,6 @@ coverage/
 
 # Antigravity agent customizations
 .agents/
+
+# Claude agent customizations
+.claude/
