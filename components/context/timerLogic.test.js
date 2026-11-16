@@ -7,6 +7,7 @@ import {
   getSegmentMinutes,
   getSegmentNotification,
   MAX_PLANNED_SEGMENTS,
+  normalizeSavedSegments,
   normalizeSettings,
   shouldVibrateInApp,
 } from "./timerLogic";
@@ -268,5 +269,19 @@ describe("shouldVibrateInApp", () => {
   it("não vibra por um ciclo que acabou há muito tempo", () => {
     const old = [{ typeId: "focus", endTime: NOW - 10 * MIN }];
     expect(shouldVibrateInApp({ ...base, finishedSegments: old })).toBe(false);
+  });
+});
+
+describe("normalizeSavedSegments", () => {
+  it("retorna null para entrada inválida e filtra segmentos sem endTime válido", () => {
+    expect(normalizeSavedSegments(null)).toBeNull();
+    expect(normalizeSavedSegments([])).toBeNull();
+    expect(
+      normalizeSavedSegments([
+        null,
+        { typeId: "focus", endTime: "bad" },
+        { typeId: "unknown", startTime: 1000, endTime: 2000 },
+      ]),
+    ).toEqual([{ typeId: "focus", startTime: 1000, endTime: 2000 }]);
   });
 });

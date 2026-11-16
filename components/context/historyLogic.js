@@ -166,3 +166,36 @@ export const historyFromLegacyStats = (stats, focusMinutes) =>
         },
       }
     : {};
+
+const DAY_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// Filtra entradas corrompidas ao carregar o histórico salvo no dispositivo
+export const normalizeHistory = (raw) => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(raw)
+      .filter(
+        ([key, entry]) =>
+          DAY_KEY_PATTERN.test(key) &&
+          entry &&
+          typeof entry === "object" &&
+          typeof entry.count === "number" &&
+          Number.isFinite(entry.count) &&
+          entry.count >= 0,
+      )
+      .map(([key, entry]) => [
+        key,
+        {
+          count: entry.count,
+          minutes:
+            typeof entry.minutes === "number" &&
+            Number.isFinite(entry.minutes) &&
+            entry.minutes >= 0
+              ? entry.minutes
+              : 0,
+        },
+      ]),
+  );
+};

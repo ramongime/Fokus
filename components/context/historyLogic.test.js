@@ -7,6 +7,7 @@ import {
   getWeek,
   HISTORY_DAYS,
   historyFromLegacyStats,
+  normalizeHistory,
   summarizeMonth,
   summarizeWeek,
   todayKey,
@@ -182,5 +183,24 @@ describe("historyFromLegacyStats", () => {
     });
     expect(historyFromLegacyStats({ date: null, count: 0 }, 25)).toEqual({});
     expect(historyFromLegacyStats(undefined, 25)).toEqual({});
+  });
+});
+
+describe("normalizeHistory", () => {
+  it("mantém dias válidos e descarta entradas malformadas", () => {
+    expect(normalizeHistory(null)).toEqual({});
+    expect(normalizeHistory([])).toEqual({});
+    expect(
+      normalizeHistory({
+        "2026-09-26": { count: 2, minutes: 50 },
+        "2026-09-25": { count: 1 },
+        invalid: { count: 3, minutes: 75 },
+        "2026-09-24": { count: -1, minutes: 25 },
+        "2026-09-23": null,
+      }),
+    ).toEqual({
+      "2026-09-26": { count: 2, minutes: 50 },
+      "2026-09-25": { count: 1, minutes: 0 },
+    });
   });
 });

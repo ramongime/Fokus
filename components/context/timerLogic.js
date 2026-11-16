@@ -132,9 +132,32 @@ export const normalizeSettings = (saved = {}) => {
   };
 };
 
-// Quanto tempo depois do fim de um ciclo ainda vale vibrar pelo app. Se a pessoa só
-// abrir o app bem depois, o ciclo já acabou faz tempo e não faz sentido vibrar.
-const VIBRATION_WINDOW_MS = 5000;
+// Quanto tempo depois do fim de um ciclo ainda vale disparar alerta/vibração pelo app.
+// Se a pessoa só abrir o app bem depois, o ciclo já acabou faz tempo e não faz sentido alertar.
+export const FOREGROUND_ALERT_WINDOW_MS = 5000;
+
+// Valida e normaliza segmentos salvos antes de restaurar um plano em andamento
+export const normalizeSavedSegments = (rawSegments) => {
+  if (!Array.isArray(rawSegments)) {
+    return null;
+  }
+  const valid = rawSegments
+    .filter(
+      (s) =>
+        s &&
+        typeof s === "object" &&
+        typeof s.endTime === "number" &&
+        Number.isFinite(s.endTime),
+    )
+    .map((s) => ({
+      ...s,
+      typeId: getTypeById(s.typeId).id,
+      ...(typeof s.startTime === "number" && Number.isFinite(s.startTime)
+        ? { startTime: s.startTime }
+        : {}),
+    }));
+  return valid.length > 0 ? valid : null;
+};
 
 // Vibrar pelo próprio app só quando ele está aberto, o ciclo acabou agora e não há
 // notificação agendada (se houver, a notificação já vibra, inclusive com a tela bloqueada)
@@ -148,7 +171,7 @@ export const shouldVibrateInApp = ({
   settings.vibrate &&
   appActive &&
   !notificationsScheduled &&
-  finishedSegments.some((s) => now - s.endTime <= VIBRATION_WINDOW_MS);
+  finishedSegments.some((s) => now - s.endTime <= FOREGROUND_ALERT_WINDOW_MS);
 
 // 1500 -> "25:00". Não usa Date, então funciona acima de 60 minutos ("90:00")
 export const formatSeconds = (totalSeconds) =>

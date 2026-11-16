@@ -161,7 +161,9 @@ describe("timerNotifications.web", () => {
     });
 
     it("handles gracefully when AudioContext throws during playback", async () => {
-      mockAudioContext.resume.mockRejectedValueOnce(new Error("Playback error"));
+      mockAudioContext.resume.mockRejectedValueOnce(
+        new Error("Playback error"),
+      );
       const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 
       await playCycleSound("focus");

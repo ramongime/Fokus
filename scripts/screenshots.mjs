@@ -19,7 +19,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import http from "node:http";
-import { extname, join, resolve } from "node:path";
+import { extname, join, resolve, sep } from "node:path";
 import { chromium } from "playwright";
 
 const root = resolve(import.meta.dirname, "..");
@@ -41,8 +41,13 @@ const MIME = {
 const serve = () =>
   new Promise((done) => {
     const server = http.createServer((req, res) => {
-      let file = join(webDir, decodeURIComponent(req.url.split("?")[0]));
-      if (!existsSync(file) || statSync(file).isDirectory()) {
+      const requestPath = decodeURIComponent(req.url.split("?")[0]);
+      let file = resolve(webDir, "." + requestPath);
+      if (
+        !file.startsWith(webDir + sep) ||
+        !existsSync(file) ||
+        statSync(file).isDirectory()
+      ) {
         file = join(webDir, "index.html");
       }
       res.setHeader(

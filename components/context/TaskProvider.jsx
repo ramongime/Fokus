@@ -13,17 +13,20 @@ export function TasksProvider({ children }) {
     const loadTasks = async () => {
       try {
         const jsonValue = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
-        const loadedData = jsonValue != null ? JSON.parse(jsonValue) : [];
+        const parsed = jsonValue != null ? JSON.parse(jsonValue) : [];
+        const loadedData = Array.isArray(parsed) ? parsed : [];
         // Tarefas antigas foram salvas com id numérico
         setTasks(
-          loadedData.map((t) => ({
-            ...t,
-            id: String(t.id),
-            description:
-              typeof t?.description === "string"
-                ? t.description.slice(0, 120)
-                : "",
-          })),
+          loadedData
+            .filter((t) => t && typeof t === "object" && t.id != null)
+            .map((t) => ({
+              ...t,
+              id: String(t.id),
+              description:
+                typeof t.description === "string"
+                  ? t.description.slice(0, 120)
+                  : "",
+            })),
         );
         setIsLoaded(true);
       } catch (e) {

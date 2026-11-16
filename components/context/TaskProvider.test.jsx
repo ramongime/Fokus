@@ -78,6 +78,27 @@ describe("TasksProvider & useTaskContext", () => {
     expect(result.current.tasks[1].description).toBe("");
   });
 
+  it("filters malformed entries and non-array payloads on hydration", async () => {
+    AsyncStorage.getItem.mockResolvedValueOnce(
+      JSON.stringify([
+        null,
+        "invalid",
+        { description: "Sem id" },
+        { id: 7, description: "Válida" },
+      ]),
+    );
+
+    const { result } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    expect(result.current.tasks).toEqual([{ id: "7", description: "Válida" }]);
+  });
+
   it("keeps isLoaded false and prevents disk overwrite when loading throws", async () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     AsyncStorage.getItem.mockRejectedValueOnce(new Error("Storage corrupted"));

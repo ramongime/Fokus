@@ -10,6 +10,7 @@ import {
   playCycleSound,
   prepareCycleSounds,
   scheduleTimerNotifications,
+  VIBRATION_PATTERN,
 } from "./timerNotifications";
 import { TimerProvider } from "./TimerProvider";
 import useTaskContext from "./useTaskContext";
@@ -445,10 +446,22 @@ describe("TimerProvider & useTimerContext", () => {
   });
 
   it("triggers in-app vibration when notifications are not scheduled (e.g. permission denied)", async () => {
+    const originalOS = Platform.OS;
+    const originalAppState = AppState.currentState;
+    Platform.OS = "ios";
+    AppState.currentState = "active";
     const vibrateSpy = jest
       .spyOn(Vibration, "vibrate")
       .mockImplementation(() => {});
     scheduleTimerNotifications.mockResolvedValueOnce([]); // No OS notifications scheduled
+
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer")
+        return JSON.stringify({ typeId: "focus", pausedSeconds: 1 });
+      if (key === "fokus-settings")
+        return JSON.stringify({ ...DEFAULT_SETTINGS, autoStartCycles: false });
+      return null;
+    });
 
     const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
@@ -456,15 +469,118 @@ describe("TimerProvider & useTimerContext", () => {
 
     await waitFor(() => {
       expect(result.current.timerRunning).toBe(false);
+      expect(result.current.seconds).toBe(1);
     });
 
-    await act(async () => {
-      result.current.toggleTimer();
+    jest.useFakeTimers();
+    try {
+      await act(async () => {
+        result.current.toggleTimer();
+      });
+      expect(result.current.timerRunning).toBe(true);
+
+      await act(async () => {
+        jest.advanceTimersByTime(1200);
+      });
+
+      expect(result.current.timerRunning).toBe(false);
+      expect(result.current.timerType.id).toBe("short");
+      expect(vibrateSpy).toHaveBeenCalledWith(VIBRATION_PATTERN);
+    } finally {
+      jest.useRealTimers();
+      vibrateSpy.mockRestore();
+      Platform.OS = originalOS;
+      AppState.currentState = originalAppState;
+    }
+  });
+
+  it("reconciles completed cycle if paused right after endTime before the next tick", async () => {
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") {
+        return JSON.stringify({
+          typeId: "focus",
+          pausedSeconds: 1,
+          currentTaskId: 77,
+        });
+      }
+      if (key === "fokus-tasks") {
+        return JSON.stringify([
+          { id: 77, description: "Tarefa legada", pomodoros: 0 },
+        ]);
+      }
+      if (key === "fokus-settings") {
+        return JSON.stringify({ ...DEFAULT_SETTINGS, autoStartCycles: false });
+      }
+      return null;
     });
 
-    expect(result.current.timerRunning).toBe(true);
+    const { result } = await renderHook(
+      () => ({
+        timer: useTimerContext(),
+        tasks: useTaskContext(),
+      }),
+      { wrapper: AllProviders },
+    );
 
-    vibrateSpy.mockRestore();
+    await waitFor(() => {
+      expect(result.current.timer.seconds).toBe(1);
+      expect(result.current.timer.currentTask?.id).toBe("77");
+    });
+
+    jest.useFakeTimers();
+    try {
+      const startTime = Date.now();
+      await act(async () => {
+        result.current.timer.toggleTimer();
+      });
+      expect(result.current.timer.timerRunning).toBe(true);
+
+      jest.setSystemTime(startTime + 1200);
+      await act(() => {
+        result.current.timer.toggleTimer();
+      });
+
+      expect(result.current.timer.timerRunning).toBe(false);
+      expect(result.current.timer.timerType.id).toBe("short");
+      expect(result.current.timer.seconds).toBe(
+        DEFAULT_SETTINGS.durations.short * 60,
+      );
+      expect(result.current.timer.todayCount).toBe(1);
+      expect(result.current.tasks.tasks[0].pomodoros).toBe(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("ignores malformed history/segments and coerces numeric currentTaskId on hydration", async () => {
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") {
+        return JSON.stringify({
+          typeId: "focus",
+          pausedSeconds: -10,
+          history: "corrupted",
+          currentTaskId: 99,
+          segments: [null, { typeId: "focus", endTime: "bad" }],
+        });
+      }
+      if (key === "fokus-tasks") {
+        return JSON.stringify([{ id: 99, description: "Numérica" }]);
+      }
+      return null;
+    });
+
+    const { result } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+
+    await waitFor(() => {
+      expect(result.current.currentTask?.id).toBe("99");
+      expect(result.current.todayCount).toBe(0);
+      expect(result.current.timerRunning).toBe(false);
+      expect(result.current.seconds).toBe(
+        DEFAULT_SETTINGS.durations.focus * 60,
+      );
+    });
   });
 
   it("suppresses in-app vibration on Android to avoid duplicate concurrent vibration", async () => {

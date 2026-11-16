@@ -1,21 +1,24 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
 import {
   addFocusSessions,
   getTodayCount,
   historyFromLegacyStats,
+  normalizeHistory,
 } from "./historyLogic";
 import {
   buildPlan,
   countFinishedSegments,
+  FOREGROUND_ALERT_WINDOW_MS,
   getDurationSeconds,
   getNextTypeId,
   getRemainingSeconds,
   getSegmentMinutes,
   getSegmentNotification,
   getTypeById,
+  normalizeSavedSegments,
   shouldVibrateInApp,
 } from "./timerLogic";
 import {
@@ -75,12 +78,12 @@ export function TimerProvider({ children }) {
   const notificationsScheduledRef = useRef(true);
 
   // Atualiza o plano e o state juntos, para ref e state nunca ficarem diferentes
-  const updateRun = (newSegments, newProcessed) => {
+  const updateRun = useCallback((newSegments, newProcessed) => {
     segmentsRef.current = newSegments;
     processedRef.current = newProcessed;
     setSegments(newSegments);
     setProcessed(newProcessed);
-  };
+  }, []);
 
   // Valores derivados: calculados a cada render, não guardados
   const timerRunning = segments != null;
@@ -102,23 +105,49 @@ export function TimerProvider({ children }) {
         const jsonValue = await AsyncStorage.getItem(TIMER_STORAGE_KEY);
         if (jsonValue != null) {
           const saved = JSON.parse(jsonValue);
-          // timerTypeId, seconds e endTime vêm da versão anterior do timer
-          const savedTypeId = getTypeById(saved.typeId ?? saved.timerTypeId).id;
-          setTypeId(savedTypeId);
-          setPausedSeconds(saved.pausedSeconds ?? saved.seconds ?? null);
-          // `stats` é o contador só de hoje da versão anterior
-          setHistory(
-            saved.history ??
-              historyFromLegacyStats(
-                saved.stats,
-                DEFAULT_SETTINGS.durations.focus,
-              ),
-          );
-          setCurrentTaskId(saved.currentTaskId ?? null);
-          if (Array.isArray(saved.segments) && saved.segments.length) {
-            updateRun(saved.segments, saved.processed ?? 0);
-          } else if (saved.endTime) {
-            updateRun([{ typeId: savedTypeId, endTime: saved.endTime }], 0);
+          if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+            // timerTypeId, seconds e endTime vêm da versão anterior do timer
+            const savedTypeId = getTypeById(
+              saved.typeId ?? saved.timerTypeId,
+            ).id;
+            setTypeId(savedTypeId);
+            const rawPaused = saved.pausedSeconds ?? saved.seconds;
+            setPausedSeconds(
+              typeof rawPaused === "number" &&
+                Number.isFinite(rawPaused) &&
+                rawPaused >= 0
+                ? rawPaused
+                : null,
+            );
+            // `stats` é o contador só de hoje da versão anterior
+            setHistory(
+              saved.history &&
+                typeof saved.history === "object" &&
+                !Array.isArray(saved.history)
+                ? normalizeHistory(saved.history)
+                : historyFromLegacyStats(
+                    saved.stats,
+                    DEFAULT_SETTINGS.durations.focus,
+                  ),
+            );
+            setCurrentTaskId(
+              saved.currentTaskId != null && saved.currentTaskId !== ""
+                ? String(saved.currentTaskId)
+                : null,
+            );
+            const validSegments = normalizeSavedSegments(saved.segments);
+            if (validSegments) {
+              const savedProcessed =
+                Number.isInteger(saved.processed) && saved.processed >= 0
+                  ? Math.min(saved.processed, validSegments.length)
+                  : 0;
+              updateRun(validSegments, savedProcessed);
+            } else if (
+              typeof saved.endTime === "number" &&
+              Number.isFinite(saved.endTime)
+            ) {
+              updateRun([{ typeId: savedTypeId, endTime: saved.endTime }], 0);
+            }
           }
         }
         setIsLoaded(true);
@@ -128,7 +157,7 @@ export function TimerProvider({ children }) {
       }
     };
     getData();
-  }, []);
+  }, [updateRun]);
 
   // Força um render por minuto e ao voltar para o app, para o "focos hoje" virar o dia
   useEffect(() => {
@@ -171,6 +200,74 @@ export function TimerProvider({ children }) {
     isLoaded,
   ]);
 
+  const reconcileFinished = useCallback(
+    (plan, finished, now) => {
+      let count = getTodayCount(history, now);
+      if (finished <= processedRef.current) {
+        return count;
+      }
+
+      const finishedSegments = plan.slice(processedRef.current, finished);
+      const focusSegments = finishedSegments.filter(
+        (s) => s.typeId === "focus",
+      );
+      const focusDone = focusSegments.length;
+      if (
+        Platform.OS !== "android" &&
+        shouldVibrateInApp({
+          finishedSegments,
+          now,
+          settings,
+          appActive: AppState.currentState === "active",
+          notificationsScheduled: notificationsScheduledRef.current,
+        })
+      ) {
+        Vibration.vibrate(VIBRATION_PATTERN);
+      }
+      const recentSegments = finishedSegments.filter(
+        (segment) => now - segment.endTime <= FOREGROUND_ALERT_WINDOW_MS,
+      );
+      const lastRecentSegment = recentSegments[recentSegments.length - 1];
+      if (lastRecentSegment) {
+        playCycleSound(lastRecentSegment.typeId, {
+          distinctSounds: settings.distinctSounds,
+          vibrate: settings.vibrate,
+        });
+      }
+      processedRef.current = finished;
+      setProcessed(finished);
+      if (focusDone > 0) {
+        count += focusDone;
+        setHistory((oldState) =>
+          addFocusSessions(
+            oldState,
+            focusSegments.map((s) => ({
+              endTime: s.endTime,
+              minutes: getSegmentMinutes(s, settings),
+            })),
+            now,
+          ),
+        );
+        setClock(now);
+        if (currentTaskId) {
+          addPomodorosToTask(currentTaskId, focusDone);
+        }
+      }
+      return count;
+    },
+    [history, settings, currentTaskId, addPomodorosToTask],
+  );
+
+  const finishPlan = useCallback(
+    (plan, count) => {
+      const last = plan[plan.length - 1];
+      updateRun(null, 0);
+      setTypeId(getNextTypeId(last.typeId, count, settings));
+      setPausedSeconds(null);
+    },
+    [updateRun, settings],
+  );
+
   // O tempo vem do horário de término de cada ciclo, então continua certo mesmo
   // que o JS fique parado com a tela bloqueada ou o app fechado
   useEffect(() => {
@@ -186,64 +283,11 @@ export function TimerProvider({ children }) {
       }
       const now = Date.now();
       const finished = countFinishedSegments(plan, now);
-      let count = getTodayCount(history, now);
-
-      // Ciclos que terminaram desde o último tick: soma os focos no dia e na tarefa
-      if (finished > processedRef.current) {
-        const finishedSegments = plan.slice(processedRef.current, finished);
-        const focusSegments = finishedSegments.filter(
-          (s) => s.typeId === "focus",
-        );
-        const focusDone = focusSegments.length;
-        if (
-          Platform.OS !== "android" &&
-          shouldVibrateInApp({
-            finishedSegments,
-            now,
-            settings,
-            appActive: AppState.currentState === "active",
-            notificationsScheduled: notificationsScheduledRef.current,
-          })
-        ) {
-          Vibration.vibrate(VIBRATION_PATTERN);
-        }
-        const recentSegments = finishedSegments.filter(
-          (segment) => now - segment.endTime <= 5000,
-        );
-        const lastRecentSegment = recentSegments[recentSegments.length - 1];
-        if (lastRecentSegment) {
-          playCycleSound(lastRecentSegment.typeId, {
-            distinctSounds: settings.distinctSounds,
-            vibrate: settings.vibrate,
-          });
-        }
-        processedRef.current = finished;
-        setProcessed(finished);
-        if (focusDone > 0) {
-          count += focusDone;
-          setHistory((oldState) =>
-            addFocusSessions(
-              oldState,
-              focusSegments.map((s) => ({
-                endTime: s.endTime,
-                minutes: getSegmentMinutes(s, settings),
-              })),
-              now,
-            ),
-          );
-          setClock(now);
-          if (currentTaskId) {
-            addPomodorosToTask(currentTaskId, focusDone);
-          }
-        }
-      }
+      const count = reconcileFinished(plan, finished, now);
 
       if (finished >= plan.length) {
         // Acabou o que foi planejado: para no próximo modo sugerido
-        const last = plan[plan.length - 1];
-        updateRun(null, 0);
-        setTypeId(getNextTypeId(last.typeId, count, settings));
-        setPausedSeconds(null);
+        finishPlan(plan, count);
         dismissOngoingNotification();
         return;
       }
@@ -266,7 +310,7 @@ export function TimerProvider({ children }) {
       clearInterval(intervalId);
       subscription.remove();
     };
-  }, [ready, segments, history, settings, currentTaskId, addPomodorosToTask]);
+  }, [ready, segments, reconcileFinished, finishPlan]);
 
   // Play: planeja os ciclos a partir do tempo atual e agenda as notificações
   const startTimer = async () => {
@@ -310,12 +354,20 @@ export function TimerProvider({ children }) {
   // Pausa: guarda quanto faltava no ciclo atual e cancela os avisos
   const pauseTimer = () => {
     const plan = segmentsRef.current;
+    if (plan == null) {
+      return;
+    }
     const now = Date.now();
-    const current =
-      plan[Math.min(countFinishedSegments(plan, now), plan.length - 1)];
-    setTypeId(current.typeId);
-    setPausedSeconds(getRemainingSeconds(current.endTime, now));
-    updateRun(null, 0);
+    const finished = countFinishedSegments(plan, now);
+    const count = reconcileFinished(plan, finished, now);
+    if (finished >= plan.length) {
+      finishPlan(plan, count);
+    } else {
+      const current = plan[finished];
+      setTypeId(current.typeId);
+      setPausedSeconds(getRemainingSeconds(current.endTime, now));
+      updateRun(null, 0);
+    }
     cancelTimerNotifications();
     dismissOngoingNotification();
   };
