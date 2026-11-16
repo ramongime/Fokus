@@ -2,6 +2,9 @@
   "name": "fokus",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -10,7 +13,8 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "lint": "eslint .",
-    "format": "prettier --write app components constants scripts widgets",
+    "format": "prettier --write app __tests__ components constants scripts widgets",
+    "format:check": "prettier --check app __tests__ components constants scripts widgets",
     "screenshots": "node scripts/screenshots.mjs"
   },
   "jest": {

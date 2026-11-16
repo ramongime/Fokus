@@ -175,7 +175,7 @@ Persistence is managed via `@react-native-async-storage/async-storage` using ded
 | Storage Key | Managed Data Structure | Invariant / Defaults |
 |---|---|---|
 | `"fokus-settings"` | `{ autoStartCycles, vibrate, distinctSounds, dailyFocusGoal, hasSeenWelcome, longBreakInterval, durations: { focus, short, long } }` | Settings are normalized on load; durations and daily goal are clamped to `SETTINGS_LIMITS`. |
-| `"fokus-tasks"` | Array of Task objects: `[{ id: string, description: string, pomodoros: number, estimatedPomodoros: number, completed: boolean }]` | IDs are strictly strings. Auto-migrates legacy numeric IDs. |
+| `"fokus-tasks"` | Array of Task objects: `[{ id: string, description: string, pomodoros: number, completed: boolean }]` | IDs are strictly strings. Auto-migrates legacy numeric IDs. |
 | `"fokus-timer"` | `{ segments, pausedSeconds, history: { [date: string]: { count, minutes } }, currentTaskId }` | Retains active segment queue and 90-day focus analytics. |
 
 ### 5.2 The `isLoaded` Mount Guard Pattern

@@ -13,4 +13,22 @@ module.exports = defineConfig([
       globals: require('globals').jest,
     },
   },
+  {
+    files: ['components/**/*.js', 'components/**/*.jsx'],
+    ignores: ['components/context/**', '**/*.test.js', '**/*.test.jsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: 'context/use.*Context$',
+              message:
+                'Componentes em components/ devem ser presentacionais e receber dados via props.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);

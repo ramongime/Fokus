@@ -20,7 +20,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![Web](https://img.shields.io/badge/Web-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![Jest](https://img.shields.io/badge/testes-74_passando-C21325?style=flat-square&logo=jest&logoColor=white)
+![Jest](https://img.shields.io/badge/testes-132_passando-C21325?style=flat-square&logo=jest&logoColor=white)
 [![CI](https://github.com/ramongime/Fokus/actions/workflows/ci.yml/badge.svg)](https://github.com/ramongime/Fokus/actions/workflows/ci.yml)
 
 [Funcionalidades](#-funcionalidades) •
@@ -237,7 +237,7 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 | | Token | Hex |
 |:---:|---|---|
 | ![](https://img.shields.io/badge/-%20%20%20%20-021123?style=flat-square) | `background` | `#021123` |
-| ![](https://img.shields.io/badge/-%20%20%20%20-144480?style=flat-square) | `surface` | `#144480` |
+| ![](https://img.shields.io/badge/-%20%20%20%20-1B2A40?style=flat-square) | `surface` | `#1B2A40` |
 | ![](https://img.shields.io/badge/-%20%20%20%20-B872FF?style=flat-square) | `primary` | `#B872FF` |
 | ![](https://img.shields.io/badge/-%20%20%20%20-00F4BF?style=flat-square) | `success` | `#00F4BF` |
 | ![](https://img.shields.io/badge/-%20%20%20%20-0F725C?style=flat-square) | `successDark` | `#0F725C` |

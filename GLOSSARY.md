@@ -49,16 +49,12 @@ _Avoid_: Trocar aba, concluir ciclo, transição de ciclo
 ## Gestão de Tarefas
 
 **Tarefa**:
-Item concreto de trabalho cadastrado pelo usuário com descrição, meta estimada de ciclos e contagem de ciclos já realizados.
+Item concreto de trabalho cadastrado pelo usuário com descrição, estado de conclusão e contagem de ciclos já realizados.
 _Avoid_: Ciclo de foco, projeto, compromisso de agenda
 
 **Tarefa do Foco**:
 Tarefa única e prioritária selecionada para receber a dedicação e o crédito de conclusão durante o ciclo de foco em andamento.
 _Avoid_: Tarefa pendente, tarefa geral, backlog
-
-**Estimativa de Foco**:
-Quantidade planejada de ciclos de foco que o usuário prevê despender para concluir integralmente uma tarefa.
-_Avoid_: Duração em horas, prazo final, data de entrega
 
 **Pomodoros Concluídos**:
 Contador cumulativo de blocos de foco dedicados e finalizados com sucesso no âmbito de uma tarefa específica.
@@ -88,16 +84,20 @@ _Avoid_: Contador do dia, sequência
 
 ## Sistema e Alertas
 
+**Widget da Tela Inicial**:
+Cartão compacto nativo exibido na tela inicial do iOS e Android com a fase atual, o temporizador e o progresso da meta diária.
+_Avoid_: Live Activity, notificação contínua
+
 **Atividade ao Vivo (Live Activity)**:
-Apresentação em tempo real do temporizador ativo na Dynamic Island e na Tela de Bloqueio do iOS, permitindo acompanhar a contagem regressiva sem abrir o aplicativo.
-_Avoid_: Widget comum de tela inicial, push remoto, alerta pop-up
+Apresentação em tempo real planejada para o temporizador ativo na Dynamic Island e na Tela de Bloqueio do iOS, permitindo acompanhar a contagem regressiva sem abrir o aplicativo.
+_Avoid_: Widget de tela inicial, push remoto, alerta pop-up
 
 **Notificação Fixa (Ongoing Notification)**:
 Aviso persistente exibido na barra de status e na central de notificações do Android durante um ciclo em andamento, mantendo o horário de conclusão acessível sem interrupções sonoras contínuas.
 _Avoid_: Notificação descartável, alarme invasivo, toast efêmero
 
 **Alarme de Conclusão de Ciclo**:
-Alerta audiovisual e háptico disparado no exato instante em que a contagem atinge 00:00, atuando tanto em primeiro plano (com reprodução sonora imediata e vibração) quanto em segundo plano (em plataformas móveis com suporte a notificações e Live Activity).
+Alerta audiovisual e háptico disparado no exato instante em que a contagem atinge 00:00, atuando tanto em primeiro plano (com reprodução sonora imediata e vibração) quanto em segundo plano (em plataformas móveis com suporte a notificações agendadas).
 _Avoid_: Bipe contínuo, som de clique, notificação genérica sem áudio
 
 **Sons Distintos de Ciclo**:
@@ -112,10 +112,6 @@ _Avoid_: Som interno do aplicativo, grupo de tarefas
 Perfil de alerta que suprime sinais acústicos sonoros, emitindo estritamente pulsações táteis para sinalizar as trocas de ciclo com discrição.
 _Avoid_: Não perturbe geral, modo mudo sem vibração
 
-**Janela de Vibração**:
-Intervalo temporal máximo de tolerância após a conclusão de um segmento no qual um aviso físico tátil ainda é considerado oportuno e relevante para o usuário.
-_Avoid_: Alarme atrasado, repetição de alerta
-
-**Guardião de Carga**:
-Mecanismo de proteção que impede que os registros salvos do usuário sejam acidentalmente sobrescritos enquanto o estado inicial do sistema ainda está sendo recuperado.
-_Avoid_: Trava de tela, bloqueio de usuário
+**Janela de Alerta em Primeiro Plano**:
+Intervalo temporal máximo de tolerância após o término de um segmento em que o alarme sonoro e o aviso tátil em primeiro plano ainda são disparados como oportunos.
+_Avoid_: Alarme atrasado, repetição de alerta, janela de vibração isolada
