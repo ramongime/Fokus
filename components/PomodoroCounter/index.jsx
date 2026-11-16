@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.primary,
   },
   dotFilled: {

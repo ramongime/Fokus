@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   optionActive: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.primary,
   },
   optionText: {

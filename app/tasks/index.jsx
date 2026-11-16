@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     width: "90%",
+    maxWidth: 480,
   },
   header: {
     gap: 20,

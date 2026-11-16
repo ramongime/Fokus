@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 4,
   },
   barSelected: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: colors.text,
   },

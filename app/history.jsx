@@ -285,6 +285,7 @@ const styles = StyleSheet.create({
   inner: {
     alignSelf: "center",
     width: "90%",
+    maxWidth: 480,
     gap: 12,
     paddingBottom: 24,
   },
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
   },
   daySelected: {
     borderColor: colors.primary,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   dayFuture: {
     opacity: 0.25,

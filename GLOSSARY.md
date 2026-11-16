@@ -100,6 +100,10 @@ _Avoid_: Notificação descartável, alarme invasivo, toast efêmero
 Alerta audiovisual e háptico disparado no exato instante em que a contagem atinge 00:00, atuando tanto em primeiro plano (com reprodução sonora imediata e vibração) quanto em segundo plano (em plataformas móveis com suporte a notificações e Live Activity).
 _Avoid_: Bipe contínuo, som de clique, notificação genérica sem áudio
 
+**Sons Distintos de Ciclo**:
+Configuração auditiva que diferencia a conclusão de um ciclo de foco da conclusão de uma pausa por meio de assinaturas acústicas ou harmônicas próprias.
+_Avoid_: Sons personalizados, toques do sistema, ringtone
+
 **Canal de Notificação**:
 Configuração do sistema operacional para entrega de avisos visuais, sonoros e táteis que demarcam o término de ciclos de trabalho ou repouso.
 _Avoid_: Som interno do aplicativo, grupo de tarefas

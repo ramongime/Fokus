@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
   inner: {
     alignSelf: "center",
     width: "90%",
+    maxWidth: 480,
     gap: 24,
   },
   title: {
