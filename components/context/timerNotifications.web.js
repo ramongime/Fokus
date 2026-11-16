@@ -1,7 +1,8 @@
 /*
  * Versão web de timerNotifications.js (o Metro escolhe este arquivo no navegador).
- * O expo-notifications não agenda notificações locais na web, então aqui não há avisos:
- * o timer funciona normalmente e o app vibra por conta própria quando o ciclo termina.
+ * O expo-notifications não agenda notificações locais na web, então os avisos do sistema
+ * são no-op. Com a aba aberta, o fim do ciclo toca tons gerados pela Web Audio API
+ * (playCycleSound) e o TimerProvider vibra por conta própria.
  */
 
 // Mesmo padrão da versão nativa; o Vibration do react-native-web usa navigator.vibrate
@@ -18,6 +19,7 @@ export const dismissOngoingNotification = async () => {};
 
 let audioContext;
 
+// Só para testes: descarta o contexto guardado entre um teste e outro
 export const resetAudioContext = () => {
   audioContext = null;
 };

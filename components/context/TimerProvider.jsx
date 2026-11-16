@@ -270,9 +270,9 @@ export function TimerProvider({ children }) {
 
   // Play: planeja os ciclos a partir do tempo atual e agenda as notificações
   const startTimer = async () => {
-    if (Platform.OS === "web" && settings.distinctSounds) {
-      prepareCycleSounds();
-    }
+    // Na web o navegador só libera áudio dentro de um toque: prepara sempre no Play,
+    // porque o som de fim de ciclo toca com ou sem sons distintos. No nativo é no-op.
+    prepareCycleSounds();
     const plan = buildPlan({
       typeId,
       seconds,

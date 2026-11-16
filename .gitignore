@@ -49,5 +49,6 @@ coverage/
 # Antigravity agent customizations
 .agents/
 
-# Claude agent customizations
-.claude/
+# Claude agent customizations (a skill do projeto em .claude/skills é versionada)
+.claude/*
+!.claude/skills/

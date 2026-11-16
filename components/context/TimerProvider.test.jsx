@@ -8,6 +8,7 @@ import { TasksProvider } from "./TaskProvider";
 import {
   cancelTimerNotifications,
   playCycleSound,
+  prepareCycleSounds,
   scheduleTimerNotifications,
 } from "./timerNotifications";
 import { TimerProvider } from "./TimerProvider";
@@ -233,6 +234,30 @@ describe("TimerProvider & useTimerContext", () => {
 
     expect(result.current.timerType.id).toBe("long");
     expect(result.current.seconds).toBe(DEFAULT_SETTINGS.durations.long * 60);
+  });
+
+  // Na web o som de fim de ciclo toca mesmo sem sons distintos, e o navegador só
+  // libera o áudio dentro de um toque do usuário: o Play precisa sempre prepará-lo
+  it("prepares the cycle sound on play even when distinctSounds is false", async () => {
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-settings")
+        return JSON.stringify({ ...DEFAULT_SETTINGS, distinctSounds: false });
+      return null;
+    });
+
+    const { result } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+    await waitFor(() => {
+      expect(result.current.timerRunning).toBe(false);
+    });
+
+    await act(async () => {
+      result.current.toggleTimer();
+    });
+
+    expect(result.current.timerRunning).toBe(true);
+    expect(prepareCycleSounds).toHaveBeenCalledTimes(1);
   });
 
   it("cancels notifications if toggleTimerType is called while timer is running", async () => {
