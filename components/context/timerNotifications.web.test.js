@@ -179,4 +179,192 @@ describe("timerNotifications.web", () => {
       await expect(playCycleSound("focus")).resolves.toBeUndefined();
     });
   });
+
+  // Abas em segundo plano têm os temporizadores atrasados pelo navegador, então o
+  // alarme é agendado no relógio da Web Audio no Play, em vez de depender do tick.
+  describe("scheduled cycle alarms", () => {
+    const NOW = new Date("2026-11-16T12:00:00Z").getTime();
+    const MINUTE = 60 * 1000;
+    let oscillators;
+
+    const startedAt = () => oscillators.map((o) => o.start.mock.calls[0][0]);
+    const stopped = () =>
+      oscillators.filter((o) => o.stop.mock.calls.length > 1);
+
+    beforeEach(() => {
+      jest.useFakeTimers({ now: NOW });
+      oscillators = [];
+      mockAudioContext.state = "running";
+      mockAudioContext.currentTime = 10;
+      mockAudioContext.createOscillator = jest.fn(() => {
+        const oscillator = {
+          type: "",
+          frequency: { value: 0 },
+          connect: jest.fn(),
+          disconnect: jest.fn(),
+          start: jest.fn(),
+          stop: jest.fn(),
+        };
+        oscillators.push(oscillator);
+        return oscillator;
+      });
+      mockGain.disconnect = jest.fn();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    // Avança o relógio do sistema e o do áudio juntos, como numa aba funcionando
+    const advance = (ms) => {
+      mockAudioContext.currentTime += ms / 1000;
+      jest.setSystemTime(Date.now() + ms);
+    };
+
+    it("schedules each segment's tones on the audio clock and reports no system notifications", async () => {
+      const ids = await scheduleTimerNotifications(
+        [
+          { typeId: "focus", date: NOW + 25 * MINUTE },
+          { typeId: "short", date: NOW + 30 * MINUTE },
+        ],
+        { distinctSounds: true },
+      );
+
+      expect(ids).toEqual([]);
+      // foco: 2 tons a partir de 25 min; pausa: 3 tons a partir de 30 min
+      expect(oscillators.map((o) => o.frequency.value)).toEqual([
+        659.25, 523.25, 523.25, 783.99, 1046.5,
+      ]);
+      expect(startedAt()[0]).toBeCloseTo(10 + 25 * 60, 3);
+      expect(startedAt()[2]).toBeCloseTo(10 + 30 * 60, 3);
+    });
+
+    it("uses the standard tone for every segment when distinctSounds is off", async () => {
+      await scheduleTimerNotifications(
+        [{ typeId: "short", date: NOW + 5 * MINUTE }],
+        { distinctSounds: false },
+      );
+
+      expect(oscillators.map((o) => o.frequency.value)).toEqual([
+        659.25, 523.25,
+      ]);
+    });
+
+    it("ignores segments that already ended", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW - MINUTE },
+      ]);
+
+      expect(oscillators).toHaveLength(0);
+    });
+
+    it("silences every scheduled tone when the timer is paused", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+
+      await cancelTimerNotifications();
+
+      expect(stopped()).toHaveLength(2);
+    });
+
+    it("keeps scheduled tones when cancelling by ids, like the native module", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+
+      await cancelTimerNotifications([]);
+
+      expect(stopped()).toHaveLength(0);
+    });
+
+    it("replaces the previous plan's tones when a new plan is scheduled", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+      const firstPlan = [...oscillators];
+
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 10 * MINUTE },
+      ]);
+
+      expect(firstPlan.every((o) => o.stop.mock.calls.length > 1)).toBe(true);
+      expect(oscillators).toHaveLength(4);
+    });
+
+    it("does not play twice when the scheduled tone already rang", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+      advance(25 * MINUTE + 500);
+
+      await playCycleSound("focus");
+
+      expect(oscillators).toHaveLength(2);
+    });
+
+    it("plays right away when the audio clock fell behind and the scheduled tone is late", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+      // O relógio do áudio ficou parado (aba suspensa); só o do sistema andou
+      jest.setSystemTime(NOW + 25 * MINUTE + 500);
+
+      await playCycleSound("focus");
+
+      expect(stopped()).toHaveLength(2);
+      expect(oscillators).toHaveLength(4);
+      expect(startedAt()[2]).toBeCloseTo(10.03, 3);
+    });
+
+    it("drops a tone whose time passed while the computer slept", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+      // Dormiu 40 min: o relógio do áudio não andou, o do sistema sim
+      jest.setSystemTime(NOW + 40 * MINUTE);
+
+      jest.advanceTimersByTime(15 * 1000);
+
+      expect(stopped()).toHaveLength(2);
+      expect(oscillators).toHaveLength(2);
+    });
+
+    it("moves a tone back to the right moment after the audio clock drifts", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+      // Áudio parado por 10 min, sistema andou 10 min: faltam 15 min
+      jest.setSystemTime(NOW + 10 * MINUTE);
+
+      jest.advanceTimersByTime(15 * 1000);
+
+      expect(stopped()).toHaveLength(2);
+      expect(oscillators).toHaveLength(4);
+      // advanceTimersByTime também andou 15 s no relógio do sistema
+      expect(startedAt()[2]).toBeCloseTo(10 + 15 * 60 - 15, 3);
+    });
+
+    it("leaves on-time tones untouched during the periodic check", async () => {
+      await scheduleTimerNotifications([
+        { typeId: "focus", date: NOW + 25 * MINUTE },
+      ]);
+
+      mockAudioContext.currentTime += 15;
+      jest.advanceTimersByTime(15 * 1000);
+
+      expect(stopped()).toHaveLength(0);
+      expect(oscillators).toHaveLength(2);
+    });
+
+    it("schedules nothing and does not fail when AudioContext is unsupported", async () => {
+      delete globalThis.AudioContext;
+
+      await expect(
+        scheduleTimerNotifications([
+          { typeId: "focus", date: NOW + 25 * MINUTE },
+        ]),
+      ).resolves.toEqual([]);
+    });
+  });
 });
