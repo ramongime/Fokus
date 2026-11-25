@@ -55,6 +55,13 @@ describe("WidgetSync", () => {
 
     const timeline = FokusWidget.updateTimeline.mock.calls.at(-1)[0];
     expect(timeline.map((entry) => entry.props.focusCount)).toEqual([5, 0]);
+    expect(timeline.map((entry) => entry.props.focusDay)).toEqual([
+      "2026-11-25",
+      "2026-11-26",
+    ]);
+    expect(FokusWidget.updateSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ focusCount: 5, focusDay: "2026-11-25" }),
+    );
     expect(timeline[1].date.getTime()).toBe(new Date(2026, 10, 26).getTime());
   });
 

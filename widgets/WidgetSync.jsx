@@ -62,9 +62,12 @@ export default function WidgetSync() {
       : 0;
     const currentSegment = timerRunning ? segments?.[currentIndex] : null;
     try {
-      const p = FokusWidget.updateSnapshot(
-        makeWidgetProps(currentSegment, todayCount),
-      );
+      const p = FokusWidget.updateSnapshot({
+        ...makeWidgetProps(currentSegment, todayCount),
+        // O widget compara com a data de hoje e mostra 0 se o dia já virou (Android
+        // atualiza o widget sozinho a cada 30 min, sem o app aberto)
+        focusDay: todayKey(Date.now()),
+      });
       if (p && typeof p.catch === "function") {
         p.catch((e) =>
           console.warn("FokusWidget updateSnapshot async error:", e),
@@ -165,6 +168,11 @@ export default function WidgetSync() {
       });
       timeline.sort((a, b) => a.date.getTime() - b.date.getTime());
     }
+
+    timeline = timeline.map((entry) => ({
+      ...entry,
+      props: { ...entry.props, focusDay: todayKey(entry.date.getTime()) },
+    }));
 
     try {
       const p = FokusWidget.updateTimeline(timeline);

@@ -25,6 +25,8 @@ Fokus is an offline-first Pomodoro timer and task manager built with React Nativ
 - **Node 22.13+ (`24` in `.nvmrc`)**: Non-interactive shells may default to Node 20. Prefix `PATH` with the Node 24 binary (e.g., `export PATH="$HOME/.nvm/versions/node/v24.21.0/bin:$PATH"`) or run `nvm use` before `npx expo` / `npm ci`.
 - **Android exact alarms**: Preserve `SCHEDULE_EXACT_ALARM` in `app.json` for locked-screen alarm precision on Android 12+.
 - **Immutable Android notification channels**: Create new channel IDs when changing sound or vibration policies; `timer` is purged on startup.
+- **Notification sound file names**: Become Android resource names, so they must be lowercase and not Java reserved words (`break.wav` broke `expo prebuild`; it is now `pause.wav`).
+- **Android widget refresh**: `plugins/withWidgetUpdatePeriod.js` sets `updatePeriodMillis` (30 min) on the generated widget XML; the widget hides `focusCount` when `focusDay` is not today.
 - **Web SPA shell & bundle**: Keep `web.output: "single"` and `asyncRoutes.web: false` in `app.json`, and keep `public/index.html` background color synced with `colors.background` (`constants/theme.js`).
 - **Web audio parity**: Keep exported signatures in `components/context/timerNotifications.web.js` (including `{ distinctSounds }` and `prepareCycleSounds`) synchronized with `timerNotifications.js`.
 - **Screenshots script**: `npm run screenshots` requires one-time `npx playwright install chromium` and outputs to `docs/screenshots/` and `docs/banner.png`.
