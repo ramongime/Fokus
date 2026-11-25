@@ -67,7 +67,7 @@ Powered by Expo Router and its built-in Drawer (`expo-router/drawer`):
 ### 2.3 Pure Functional Logic Engines (`components/context/`)
 All temporal mathematics, state derivations, and cycle planning logic are isolated in side-effect-free JavaScript modules:
 - `timerLogic.js`: Pure functions for phase determination, duration calculation, end timestamp projection (`buildPlan`), segment counting, settings normalization, and notification copy generation.
-- `historyLogic.js`: Pure functions for daily bucket aggregation, 90-day retention filtering, weekly and monthly calendar structuring, daily goal progress, and consecutive day streak calculations.
+- `historyLogic.js`: Pure functions for daily bucket aggregation, 365-day retention filtering, per-task breakdown (`summarizeTasks`), backup merging (`mergeHistory`), weekly and monthly calendar structuring, daily goal progress, and consecutive day streak calculations.
 - Because these engines receive the current timestamp (`now`) as an explicit parameter and perform zero I/O, 100% of domain transitions are verifiable in unit tests without mocking timers or system clocks.
 
 ### 2.4 Native Device Abstraction (`components/context/timerNotifications.js`)
@@ -107,7 +107,7 @@ Fokus avoids heavyweight state libraries (such as Redux or MobX) in favor of dom
 3. **`TimerProvider` (Leaf Consumer)**:
    - Consumes `settings` from `SettingsProvider` to determine duration lengths and cycle chaining rules.
    - Consumes `tasks` and `addPomodorosToTask` from `TasksProvider` to associate focus intervals with tasks and increment task completion tallies upon cycle finalization.
-   - Exposes timer state machine hooks, current segment timers, live second counters, and 90-day rolling history.
+   - Exposes timer state machine hooks, current segment timers, live second counters, 365-day rolling history, and the long-break series counter (`seriesCount`).
 
 ### 3.2 Context Safety Guarantees
 Each provider exports a companion hook (`useSettingsContext`, `useTaskContext`, `useTimerContext`). Each hook executes an invariant validation check and throws an explicit error if invoked outside its respective provider tree, preventing silent undefined state failures.
@@ -130,7 +130,7 @@ Fokus replaces incremental countdown decrements with **target timestamp projecti
 3. Remaining display time is always derived functionally on every frame or tick:
    $$\text{remainingSeconds} = \max(0, \lceil(\text{endTime} - \text{Date.now()}) / 1000\rceil)$$
 4. **Resumption Reconciliation**: When the application re-enters the foreground (`AppState.addEventListener("change")`), `countFinishedSegments` evaluates how many planned segments elapsed during the suspension window:
-   - Completed focus intervals are credited to the active task and added to the 90-day history.
+   - Completed focus intervals are credited to the active task and added to the 365-day history (per day and per task).
    - The UI immediately snaps to the currently active segment and remaining second count.
    - Dual-counting is prevented by maintaining a synchronized `processedRef` and `processed` state counter.
 
@@ -161,11 +161,13 @@ countFinishedSegments(now) ──────────────► Reconci
 Live UI syncs to Segment 2 countdown
 ```
 
-### 4.3 90-Day Rolling Analytics Lifecycle
+### 4.3 365-Day Rolling Analytics Lifecycle
 1. Session records are committed to `history` upon focus completion using the local date string (`YYYY-MM-DD`).
 2. If a focus session crosses midnight, it is credited to the day of completion (`endTime`).
-3. During every focus append operation (`addFocusSessions`), historical keys older than 90 calendar days ($90 \times 24\text{ hours}$) are automatically pruned, keeping storage payloads compact and fast to parse.
-4. `getStreak` calculates uninterrupted consecutive days of completed focus. To prevent streak anxiety, if today has no focus sessions yet, the calculation measures consecutive days starting from yesterday.
+3. During every focus append operation (`addFocusSessions`), historical keys older than `HISTORY_DAYS` (365) calendar days are automatically pruned, keeping storage payloads compact and fast to parse.
+4. When a task was selected, the day entry also stores `tasks: { [taskId]: { count, minutes } }`; the History screen summarizes it per period ("Sem tarefa" for focus without a task, deleted tasks grouped as "Tarefa excluída").
+5. The long-break series (`series: { count, lastEndTime }` in `fokus-timer`) is independent from the daily counter: it continues across midnight if the last focus ended at most `SERIES_GAP_MS` (2 h) earlier, otherwise it restarts on the new day (`getSeriesCount`). The daily counter (`todayCount`) always resets at local midnight.
+6. `getStreak` calculates uninterrupted consecutive days of completed focus. To prevent streak anxiety, if today has no focus sessions yet, the calculation measures consecutive days starting from yesterday.
 
 ---
 
@@ -178,7 +180,7 @@ Persistence is managed via `@react-native-async-storage/async-storage` using ded
 |---|---|---|
 | `"fokus-settings"` | `{ autoStartCycles, vibrate, distinctSounds, dailyFocusGoal, hasSeenWelcome, longBreakInterval, durations: { focus, short, long } }` | Settings are normalized on load; durations and daily goal are clamped to `SETTINGS_LIMITS`. |
 | `"fokus-tasks"` | Array of Task objects: `[{ id: string, description: string, pomodoros: number, completed: boolean }]` | IDs are strictly strings. Auto-migrates legacy numeric IDs. |
-| `"fokus-timer"` | `{ segments, pausedSeconds, history: { [date: string]: { count, minutes } }, currentTaskId }` | Retains active segment queue and 90-day focus analytics. |
+| `"fokus-timer"` | `{ segments, processed, pausedSeconds, history: { [date: string]: { count, minutes, tasks?: { [taskId]: { count, minutes } } } }, series: { count, lastEndTime } \| null, currentTaskId }` | Retains active segment queue, 365-day focus analytics and the long-break series. |
 
 ### 5.2 The `isLoaded` Mount Guard Pattern
 AsyncStorage read operations are asynchronous. If a React component initializes state with default values and writes state back to storage upon mutation, a race condition occurs on mount: default state can overwrite existing persisted storage before the initial read resolves.
@@ -193,6 +195,9 @@ Fokus provides defensive parsing and forward-compatible migration:
 1. **Task ID Coercion**: Legacy versions generated numeric IDs (`Date.now()`). The task loader maps all legacy IDs via `String(t.id)` to guarantee consistent `===` string matching across route params.
 2. **Legacy Stats Migration**: Earlier iterations maintained single-day counters (`stats: { date, count }`). On startup, `historyFromLegacyStats` converts legacy stats into the multi-day schema `{ [date]: { count, minutes: count * focusMinutes } }` without data loss.
 3. **Settings Normalization**: Stored settings are passed through `normalizeSettings()`, filling in any missing keys from `DEFAULT_SETTINGS` and bounding numbers using `SETTINGS_LIMITS`.
+
+### 5.4 Backup (Export / Restore)
+`app/settings.jsx` ("Seus dados") exports `{ app: "fokus", version, exportedAt, settings, tasks, history }` as JSON (`backupLogic.js`). Native shares the text through `Share` (`shareBackup.js`); web downloads a `.json` file (`shareBackup.web.js`). Restore takes pasted text, validates it with the same normalizers used on load, then: settings are replaced (`replaceSettings`), tasks are merged by id (`importTasks` → `mergeTasks`), and history is merged keeping the larger count per day (`importHistory` → `mergeHistory`), so restoring a backup twice does not double count. The running timer is never part of a backup.
 
 ---
 

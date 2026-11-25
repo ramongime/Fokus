@@ -7,6 +7,7 @@ import {
   getMonth,
   getWeek,
   HISTORY_DAYS,
+  mergeHistory,
   historyFromLegacyStats,
   normalizeHistory,
   summarizeMonth,
@@ -295,5 +296,26 @@ describe("focos por tarefa", () => {
       { id: "deleted", label: "Tarefa excluída", count: 2, minutes: 50 },
       { id: "none", label: "Sem tarefa", count: 1, minutes: 25 },
     ]);
+  });
+});
+
+describe("mergeHistory", () => {
+  it("fica com o registro de mais focos em cada dia, sem somar duas vezes", () => {
+    const current = { "2026-09-26": { count: 3, minutes: 75 } };
+    const incoming = {
+      "2026-09-26": { count: 2, minutes: 50 },
+      "2026-09-20": { count: 1, minutes: 25 },
+    };
+    expect(mergeHistory(current, incoming, NOW)).toEqual({
+      "2026-09-26": { count: 3, minutes: 75 },
+      "2026-09-20": { count: 1, minutes: 25 },
+    });
+  });
+
+  it("descarta dias além do limite do histórico", () => {
+    const old = todayKey(NOW - (HISTORY_DAYS + 5) * 24 * 60 * 60 * 1000);
+    expect(mergeHistory({}, { [old]: { count: 1, minutes: 25 } }, NOW)).toEqual(
+      {},
+    );
   });
 });

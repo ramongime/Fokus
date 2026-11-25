@@ -890,4 +890,27 @@ describe("TimerProvider & useTimerContext", () => {
       jest.useRealTimers();
     }
   });
+
+  it("importa o histórico de um backup somando ao atual", async () => {
+    const today = todayKey(Date.now());
+    AsyncStorage.getItem.mockImplementation(async (key) =>
+      key === "fokus-timer"
+        ? JSON.stringify({ history: { [today]: { count: 1, minutes: 25 } } })
+        : null,
+    );
+    const { result } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+    await waitFor(() => expect(result.current.todayCount).toBe(1));
+
+    await act(() => {
+      result.current.importHistory({
+        [today]: { count: 3, minutes: 75 },
+        lixo: { count: 1 },
+      });
+    });
+
+    expect(result.current.todayCount).toBe(3);
+    expect(Object.keys(result.current.history)).toEqual([today]);
+  });
 });

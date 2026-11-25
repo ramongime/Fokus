@@ -62,8 +62,8 @@ _Avoid_: Minutos corridos, pontuação
 
 ## Estatísticas e Histórico
 
-**Histórico de 90 Dias**:
-Registro cumulativo de produtividade que consolida diariamente o número de ciclos finalizados e os minutos focados em uma janela contínua de até três meses.
+**Histórico de 1 Ano**:
+Registro cumulativo de produtividade que consolida diariamente o número de ciclos finalizados e os minutos focados (no total e por tarefa) em uma janela contínua de até 365 dias.
 _Avoid_: Log bruto, backup permanente, estatística volátil
 
 **Tempo Focado**:

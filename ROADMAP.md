@@ -88,8 +88,8 @@ Além da separação do motor de áudio, as seguintes oportunidades técnicas es
 - **Objetivo**: Disponibilizar um bloco de Configurações Rápidas (Quick Settings Tile) no Android para iniciar ou pausar um ciclo Pomodoro diretamente da barra superior sem precisar abrir o app.
 - **Impacto**: Redução drástica da fricção de uso para ciclos rotineiros de trabalho.
 
-### 2.3 Exportação e Importação de Dados (Portabilidade Local-First)
-- **Objetivo**: Permitir exportação de todas as tarefas, histórico de 90 dias e configurações em arquivo JSON legível, além de restauração com validação de esquema defensiva.
+### 2.3 Exportação e Importação de Dados (Portabilidade Local-First) — ✅ entregue
+- **Objetivo**: Permitir exportação de todas as tarefas, histórico e configurações em arquivo JSON legível, além de restauração com validação de esquema defensiva. Entregue em Configurações › Seus dados (compartilhar no celular, download na web, restauração colando o texto). Próximo passo possível: seletor de arquivo com `expo-document-picker`.
 - **Impacto**: Soberania completa do usuário sobre seus dados de produtividade sem necessidade de nuvem.
 
 ### 2.4 Modo Minimalista Zen (Tela OLED Preta Pura)

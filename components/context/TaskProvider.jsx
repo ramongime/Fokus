@@ -7,50 +7,11 @@ import {
   useRef,
   useState,
 } from "react";
+import { mergeTasks, normalizeStoredTasks } from "./taskLogic";
 
 export const TaskContext = createContext();
 
 const TASKS_STORAGE_KEY = "fokus-tasks";
-
-const normalizeStoredTasks = (rawList) => {
-  const seenIds = new Set();
-  const normalized = [];
-
-  for (const item of rawList) {
-    if (!item || typeof item !== "object" || Array.isArray(item)) {
-      continue;
-    }
-    if (item.id == null) {
-      continue;
-    }
-    const id = String(item.id).trim();
-    if (!id || seenIds.has(id)) {
-      continue;
-    }
-    seenIds.add(id);
-
-    const task = {
-      id,
-      description:
-        typeof item.description === "string"
-          ? item.description.slice(0, 120)
-          : "",
-    };
-    if (item.completed !== undefined) {
-      task.completed = Boolean(item.completed);
-    }
-    if (item.pomodoros !== undefined) {
-      task.pomodoros =
-        typeof item.pomodoros === "number" &&
-        Number.isFinite(item.pomodoros) &&
-        item.pomodoros >= 0
-          ? Math.floor(item.pomodoros)
-          : 0;
-    }
-    normalized.push(task);
-  }
-  return normalized;
-};
 
 export function TasksProvider({ children }) {
   const [tasks, setTasks] = useState([]);
@@ -163,10 +124,26 @@ export function TasksProvider({ children }) {
     setTasks((oldState) => oldState.filter((t) => t.id !== id));
   }, []);
 
+  // Restaura tarefas de um backup, somando às atuais (ver mergeTasks)
+  const importTasks = useCallback((rawList) => {
+    const incoming = normalizeStoredTasks(
+      Array.isArray(rawList) ? rawList : [],
+    );
+    for (const task of incoming) {
+      const numericId = Number(task.id);
+      if (Number.isFinite(numericId) && numericId > lastIdRef.current) {
+        lastIdRef.current = numericId;
+      }
+    }
+    setTasks((oldTasks) => mergeTasks(oldTasks, incoming));
+    return incoming.length;
+  }, []);
+
   const value = useMemo(
     () => ({
       tasks,
       isLoaded,
+      importTasks,
       addTask,
       toggleTaskCompleted,
       updateTask,
@@ -176,6 +153,7 @@ export function TasksProvider({ children }) {
     [
       tasks,
       isLoaded,
+      importTasks,
       addTask,
       toggleTaskCompleted,
       updateTask,

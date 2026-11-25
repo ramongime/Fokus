@@ -28,7 +28,7 @@ The implementation adheres to four architectural rules:
    ```
 3. **Pure Immutable Transformations**: Functions accept input data and return newly calculated records or arrays without mutating arguments:
    - `getNextTypeId(finishedTypeId, focusCount, settings)` deterministically returns `"long"`, `"short"`, or `"focus"`.
-   - `addFocusSessions(history, sessions, now)` returns a new history object retaining only the last 90 calendar days.
+   - `addFocusSessions(history, sessions, now)` returns a new history object retaining only the last `HISTORY_DAYS` calendar days (90 originally, 365 since the backup release).
    - `getStreak(history, now)` calculates consecutive daily streaks, dynamically offsetting to yesterday if today has no logged focus yet.
 4. **Isolated Unit Test Coverage**: Pure functions are verified directly in `timerLogic.test.js` and `historyLogic.test.js` using Jest. Testing complex multi-cycle sequences and calendar edge cases requires zero mocking or timer manipulation.
 

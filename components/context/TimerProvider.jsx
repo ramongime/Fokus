@@ -13,6 +13,7 @@ import {
   addFocusSessions,
   getTodayCount,
   historyFromLegacyStats,
+  mergeHistory,
   normalizeHistory,
 } from "./historyLogic";
 import {
@@ -487,6 +488,17 @@ export function TimerProvider({ children }) {
     [timerRunning, updateRun],
   );
 
+  // Restaura o histórico de um backup, somando ao atual (ver mergeHistory)
+  const importHistory = useCallback((raw) => {
+    const merged = mergeHistory(
+      historyRef.current,
+      normalizeHistory(raw),
+      Date.now(),
+    );
+    historyRef.current = merged;
+    setHistory(merged);
+  }, []);
+
   const selectCurrentTaskId = useCallback((id) => {
     const normalized =
       id != null && String(id).trim() !== "" ? String(id) : null;
@@ -505,6 +517,7 @@ export function TimerProvider({ children }) {
       clock,
       currentTask,
       setCurrentTaskId: selectCurrentTaskId,
+      importHistory,
       toggleTimer,
       toggleTimerType,
     }),
@@ -518,6 +531,7 @@ export function TimerProvider({ children }) {
       clock,
       currentTask,
       selectCurrentTaskId,
+      importHistory,
       toggleTimer,
       toggleTimerType,
     ],

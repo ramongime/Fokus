@@ -8,7 +8,8 @@
  *   { count: 3, minutes: 75, tasks: { "1700000000000": { count: 2, minutes: 50 } } }
  */
 
-export const HISTORY_DAYS = 90;
+// Um ano: uma entrada pequena por dia com foco, então cabe folgado no AsyncStorage
+export const HISTORY_DAYS = 365;
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTHS = [
@@ -266,6 +267,23 @@ const normalizeDayTasks = (raw) => {
       { count: entry.count, minutes: safeMinutesOf(entry) },
     ]);
   return entries.length > 0 ? Object.fromEntries(entries) : null;
+};
+
+// Junta um histórico importado ao atual: em cada dia vale o registro com mais focos
+// (o mesmo dia não é somado duas vezes ao restaurar um backup do próprio aparelho).
+// Dias além de HISTORY_DAYS são descartados.
+export const mergeHistory = (current, incoming, now) => {
+  const next = { ...current };
+  for (const [key, day] of Object.entries(incoming)) {
+    const existing = next[key];
+    if (!existing || day.count > existing.count) {
+      next[key] = day;
+    }
+  }
+  const oldestKey = todayKey(daysBefore(now, HISTORY_DAYS - 1));
+  return Object.fromEntries(
+    Object.entries(next).filter(([key]) => key >= oldestKey),
+  );
 };
 
 // Focos e minutos por tarefa nos dias `dayKeys`, do maior tempo para o menor.
