@@ -10,6 +10,7 @@ import {
   historyFromLegacyStats,
   normalizeHistory,
   summarizeMonth,
+  summarizeTasks,
   summarizeWeek,
   todayKey,
 } from "./historyLogic";
@@ -226,5 +227,73 @@ describe("getNextDayStart", () => {
   it("à meia-noite em ponto aponta para o dia seguinte", () => {
     const now = new Date(2026, 10, 26).getTime();
     expect(getNextDayStart(now)).toBe(new Date(2026, 10, 27).getTime());
+  });
+});
+
+describe("focos por tarefa", () => {
+  it("guarda no dia o total de cada tarefa", () => {
+    const history = addFocusSessions(
+      {},
+      [
+        { endTime: at(26, 9), minutes: 25, taskId: "7" },
+        { endTime: at(26, 10), minutes: 25, taskId: "7" },
+        { endTime: at(26, 11), minutes: 15 },
+      ],
+      NOW,
+    );
+    expect(history[todayKey(NOW)]).toEqual({
+      count: 3,
+      minutes: 65,
+      tasks: { 7: { count: 2, minutes: 50 } },
+    });
+  });
+
+  it("mantém e valida as tarefas ao normalizar", () => {
+    expect(
+      normalizeHistory({
+        "2026-09-26": {
+          count: 2,
+          minutes: 50,
+          tasks: { 7: { count: 1, minutes: 25 }, x: { count: -1 } },
+        },
+        "2026-09-25": { count: 1, minutes: 25, tasks: "lixo" },
+      }),
+    ).toEqual({
+      "2026-09-26": {
+        count: 2,
+        minutes: 50,
+        tasks: { 7: { count: 1, minutes: 25 } },
+      },
+      "2026-09-25": { count: 1, minutes: 25 },
+    });
+  });
+
+  it("resume por tarefa, com sem tarefa e excluídas agrupadas", () => {
+    const history = {
+      "2026-09-26": {
+        count: 4,
+        minutes: 100,
+        tasks: {
+          1: { count: 1, minutes: 25 },
+          2: { count: 1, minutes: 25 },
+          3: { count: 1, minutes: 25 },
+        },
+      },
+      "2026-09-25": {
+        count: 2,
+        minutes: 50,
+        tasks: { 1: { count: 2, minutes: 50 } },
+      },
+    };
+    const rows = summarizeTasks(
+      history,
+      ["2026-09-25", "2026-09-26"],
+      [{ id: "1", description: "Ler" }],
+    );
+    expect(rows).toEqual([
+      { id: "1", label: "Ler", count: 3, minutes: 75 },
+      { id: "deleted", label: "Tarefa excluída", count: 2, minutes: 50 },
+      { id: "none", label: "Sem tarefa", count: 1, minutes: 25 },
+    ]);
   });
 });

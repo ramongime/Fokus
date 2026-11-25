@@ -303,6 +303,7 @@ export function TimerProvider({ children }) {
           focusSegments.map((s) => ({
             endTime: s.endTime,
             minutes: getSegmentMinutes(s, currentSettings),
+            taskId: currentTaskIdRef.current,
           })),
           now,
         );

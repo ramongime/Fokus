@@ -4,6 +4,8 @@
  * O histórico é um objeto com uma entrada por dia em que houve foco:
  *   { "2026-09-26": { count: 3, minutes: 75 }, ... }
  * Os dias são no fuso do aparelho e só os últimos HISTORY_DAYS ficam guardados.
+ * Quando o foco tinha uma tarefa, o dia também guarda o total por tarefa:
+ *   { count: 3, minutes: 75, tasks: { "1700000000000": { count: 2, minutes: 50 } } }
  */
 
 export const HISTORY_DAYS = 90;
@@ -56,11 +58,11 @@ export const getNextDayStart = (now) => {
   return date.getTime();
 };
 
-// Soma focos concluídos ao histórico. Cada sessão: { endTime, minutes }.
+// Soma focos concluídos ao histórico. Cada sessão: { endTime, minutes, taskId? }.
 // O dia é o do fim do foco, então um foco que termina 00:10 conta no dia novo.
 export const addFocusSessions = (history, sessions, now) => {
   const next = { ...history };
-  for (const { endTime, minutes } of sessions) {
+  for (const { endTime, minutes, taskId } of sessions) {
     if (!Number.isFinite(endTime)) {
       continue;
     }
@@ -70,7 +72,20 @@ export const addFocusSessions = (history, sessions, now) => {
       typeof minutes === "number" && Number.isFinite(minutes) && minutes >= 0
         ? minutes
         : 0;
-    next[key] = { count: day.count + 1, minutes: day.minutes + safeMinutes };
+    const nextDay = {
+      ...day,
+      count: day.count + 1,
+      minutes: day.minutes + safeMinutes,
+    };
+    if (taskId != null && String(taskId).trim() !== "") {
+      const id = String(taskId);
+      const task = day.tasks?.[id] ?? { count: 0, minutes: 0 };
+      nextDay.tasks = {
+        ...day.tasks,
+        [id]: { count: task.count + 1, minutes: task.minutes + safeMinutes },
+      };
+    }
+    next[key] = nextDay;
   }
   const oldestKey = todayKey(daysBefore(now, HISTORY_DAYS - 1));
   return Object.fromEntries(
@@ -218,17 +233,86 @@ export const normalizeHistory = (raw) => {
           Number.isFinite(entry.count) &&
           entry.count >= 0,
       )
-      .map(([key, entry]) => [
-        key,
-        {
-          count: entry.count,
-          minutes:
-            typeof entry.minutes === "number" &&
-            Number.isFinite(entry.minutes) &&
-            entry.minutes >= 0
-              ? entry.minutes
-              : 0,
-        },
-      ]),
+      .map(([key, entry]) => {
+        const day = { count: entry.count, minutes: safeMinutesOf(entry) };
+        const tasks = normalizeDayTasks(entry.tasks);
+        if (tasks) {
+          day.tasks = tasks;
+        }
+        return [key, day];
+      }),
+  );
+};
+
+const isCount = (value) =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0;
+
+const safeMinutesOf = (entry) => (isCount(entry?.minutes) ? entry.minutes : 0);
+
+const normalizeDayTasks = (raw) => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const entries = Object.entries(raw)
+    .filter(
+      ([id, entry]) =>
+        id.trim() !== "" &&
+        entry &&
+        typeof entry === "object" &&
+        isCount(entry.count),
+    )
+    .map(([id, entry]) => [
+      id,
+      { count: entry.count, minutes: safeMinutesOf(entry) },
+    ]);
+  return entries.length > 0 ? Object.fromEntries(entries) : null;
+};
+
+// Focos e minutos por tarefa nos dias `dayKeys`, do maior tempo para o menor.
+// Focos sem tarefa (ou de antes de existir esse registro) aparecem como "Sem tarefa";
+// tarefas que não existem mais aparecem como "Tarefa excluída".
+export const summarizeTasks = (history, dayKeys, tasks) => {
+  const totals = new Map();
+  const add = (id, count, minutes) => {
+    const current = totals.get(id) ?? { count: 0, minutes: 0 };
+    totals.set(id, {
+      count: current.count + count,
+      minutes: current.minutes + minutes,
+    });
+  };
+  for (const key of dayKeys) {
+    const day = getDay(history, key);
+    let taskCount = 0;
+    let taskMinutes = 0;
+    for (const [id, entry] of Object.entries(day.tasks ?? {})) {
+      add(id, entry.count, entry.minutes);
+      taskCount += entry.count;
+      taskMinutes += entry.minutes;
+    }
+    const restCount = day.count - taskCount;
+    if (restCount > 0) {
+      add(null, restCount, Math.max(0, day.minutes - taskMinutes));
+    }
+  }
+  const names = new Map(
+    (tasks ?? []).map((t) => [String(t.id), t.description]),
+  );
+  // Tarefas excluídas viram uma linha só
+  const rows = new Map();
+  for (const [id, total] of totals) {
+    const rowId = id == null ? "none" : names.has(id) ? id : "deleted";
+    const label =
+      rowId === "none"
+        ? "Sem tarefa"
+        : rowId === "deleted"
+          ? "Tarefa excluída"
+          : names.get(id);
+    const row = rows.get(rowId) ?? { id: rowId, label, count: 0, minutes: 0 };
+    row.count += total.count;
+    row.minutes += total.minutes;
+    rows.set(rowId, row);
+  }
+  return [...rows.values()].sort(
+    (x, y) => y.minutes - x.minutes || y.count - x.count,
   );
 };
