@@ -8,7 +8,6 @@ Fokus is an offline-first Pomodoro timer and task manager built with React Nativ
 - **Domain vocabulary (`pt-BR`)**: Read [`GLOSSARY.md`](GLOSSARY.md) when naming cycles, tasks, stats, or alerts.
 - **Architectural decisions**: Read [`ADRs/`](ADRs/) (`0001`–`0008`; note this repo uses `ADRs/` rather than `docs/adr/`).
 - **Planned initiatives**: Read [`ROADMAP.md`](ROADMAP.md) before altering foreground audio or adding native Live Activities.
-- **UI & testing standards**: Read [`.agents/rules/fokus-standards.md`](.agents/rules/fokus-standards.md) when editing UI components or tests.
 
 ## Architecture & Domain Invariants
 

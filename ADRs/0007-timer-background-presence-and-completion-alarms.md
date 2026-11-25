@@ -17,7 +17,7 @@ In a Pomodoro productivity application, users frequently lock their devices or s
 
 2. **Unified Cycle Completion Alarms**:
    When the timer countdown reaches `00:00`, completion feedback (sound and haptic vibration) must trigger deterministically across all environments:
-   - In **Foreground** (app active and visible): The app must never stay silent when open in front of the user (`.agents/rules/fokus-standards.md`).
+   - In **Foreground** (app active and visible): The app must never stay silent when open in front of the user.
    - In **Background** (screen locked or app suspended): The host operating system must fire native alerts without depending on a frozen JavaScript runtime.
 
 Alternative solutions evaluated:

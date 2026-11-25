@@ -14,7 +14,7 @@ Atualmente, o disparo audiovisual ao atingir `00:00` é implementado em `compone
 - A reprodução é realizada delegando ao módulo `expo-notifications` (`scheduleNotificationAsync` com `trigger: null` ou canal específico).
 - Antes de emitir o som, o fluxo executa `ensurePermission()` para checar se o usuário concedeu permissões de notificação no sistema operacional (iOS e Android).
 - **Problema Crítico de Acoplamento**: Se o usuário negar ou revogar as permissões de notificação do sistema — ou desativar alertas de notificação nas configurações do dispositivo por preferência de privacidade —, o método `ensurePermission()` retorna `false`. Consequentemente, `playCycleSound` encerra silenciosamente sua execução sem emitir som algum.
-- **Violação de Diretriz**: Isso quebra a diretriz fundamental do Fokus estabelecida em `.agents/rules/fokus-standards.md`:
+- **Violação de Diretriz**: Isso quebra a diretriz fundamental do Fokus do projeto:
   > *"O app nunca pode ficar mudo quando aberto."*
 - **Poluição Visual com o App Aberto**: Disparar notificações locais do sistema operacional com o aplicativo ativo em primeiro plano exibe banners ou toasts do SO por cima da interface do timer, degradando a estética minimalista e gerando ruído desnecessário.
 
