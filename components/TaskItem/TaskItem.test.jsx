@@ -16,7 +16,7 @@ const setup = async () => {
     onPressDelete: jest.fn(),
   };
   const utils = await render(
-    <TaskItem text="Ler 10 páginas" pomodoros={2} {...handlers} />,
+    <TaskItem id="42" text="Ler 10 páginas" pomodoros={2} {...handlers} />,
   );
   return { ...utils, ...handlers };
 };
@@ -27,7 +27,7 @@ describe("TaskItem", () => {
 
     expect(getByText("2 focos")).toBeTruthy();
     await fireEvent.press(getByText("Ler 10 páginas"));
-    expect(onPressEdit).toHaveBeenCalledTimes(1);
+    expect(onPressEdit).toHaveBeenCalledWith("42");
     expect(getByLabelText('Editar "Ler 10 páginas"')).toBeTruthy();
   });
 
@@ -41,13 +41,13 @@ describe("TaskItem", () => {
         nativeEvent: { actionName: "delete" },
       },
     );
-    expect(onPressDelete).toHaveBeenCalledTimes(1);
+    expect(onPressDelete).toHaveBeenCalledWith("42");
   });
 
   it("toggles completion from the check", async () => {
     const { getByLabelText, onToggleComplete } = await setup();
 
     await fireEvent.press(getByLabelText('Concluir "Ler 10 páginas"'));
-    expect(onToggleComplete).toHaveBeenCalledTimes(1);
+    expect(onToggleComplete).toHaveBeenCalledWith("42");
   });
 });

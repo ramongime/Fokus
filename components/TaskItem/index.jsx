@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { IconCheck, IconTrash } from "../Icons";
@@ -6,20 +6,23 @@ import { colors, fontSizes } from "../../constants/theme";
 
 // Linha de tarefa sem cartão e sem ícones fixos:
 // tocar no texto edita, deslizar para a esquerda revela "Excluir".
-const TaskItem = ({
+// Os callbacks recebem o `id` da tarefa: assim a lista passa funções estáveis e o
+// memo evita redesenhar todas as linhas quando só uma muda (ou ao digitar no campo).
+const TaskItem = memo(function TaskItem({
+  id,
   completed,
   text,
   pomodoros,
   onToggleComplete,
   onPressEdit,
   onPressDelete,
-}) => {
+}) {
   const swipeRef = useRef(null);
 
   // Fecha a linha antes de perguntar: se a exclusão for cancelada, ela não fica aberta
   const handleSwipeDelete = () => {
     swipeRef.current?.close();
-    onPressDelete();
+    onPressDelete(id);
   };
 
   const renderDeleteAction = () => (
@@ -45,7 +48,7 @@ const TaskItem = ({
     >
       <View style={styles.row}>
         <Pressable
-          onPress={onToggleComplete}
+          onPress={() => onToggleComplete(id)}
           hitSlop={8}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: !!completed }}
@@ -55,14 +58,14 @@ const TaskItem = ({
         </Pressable>
         <Pressable
           style={styles.content}
-          onPress={onPressEdit}
+          onPress={() => onPressEdit(id)}
           accessibilityRole="button"
           accessibilityLabel={`Editar "${text}"`}
           accessibilityHint="Deslize para a esquerda para excluir"
           // Leitores de tela não deslizam: a exclusão também fica como ação
           accessibilityActions={[{ name: "delete", label: "Excluir" }]}
           onAccessibilityAction={(event) => {
-            if (event.nativeEvent.actionName === "delete") onPressDelete();
+            if (event.nativeEvent.actionName === "delete") onPressDelete(id);
           }}
         >
           <Text style={[styles.text, completed && styles.textCompleted]}>
@@ -77,7 +80,7 @@ const TaskItem = ({
       </View>
     </Swipeable>
   );
-};
+});
 
 const styles = StyleSheet.create({
   swipeContainer: {
