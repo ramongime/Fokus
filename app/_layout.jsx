@@ -7,12 +7,12 @@ import { SettingsProvider } from "../components/context/SettingsProvider";
 import { TasksProvider } from "../components/context/TaskProvider";
 import { TimerProvider } from "../components/context/TimerProvider";
 import useSettingsContext from "../components/context/useSettingsContext";
-import useTimerSummary from "../components/context/useTimerSummary";
+import useTimerSummaryContext from "../components/context/useTimerSummaryContext";
 import { colors } from "../constants/theme";
 import WidgetSync from "../widgets/WidgetSync";
 
 function DrawerNavigator() {
-  const { todayCount, timerRunning } = useTimerSummary();
+  const { todayCount, timerRunning } = useTimerSummaryContext();
   const { settings } = useSettingsContext();
 
   return (

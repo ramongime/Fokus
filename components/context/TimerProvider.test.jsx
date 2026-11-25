@@ -17,7 +17,7 @@ import {
 import { TimerProvider } from "./TimerProvider";
 import useTaskContext from "./useTaskContext";
 import useTimerContext from "./useTimerContext";
-import useTimerSummary from "./useTimerSummary";
+import useTimerSummaryContext from "./useTimerSummaryContext";
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(),
@@ -806,7 +806,7 @@ describe("TimerProvider & useTimerContext", () => {
     }
   });
 
-  it("não renderiza quem usa useTimerSummary a cada segundo do timer", async () => {
+  it("não renderiza quem usa useTimerSummaryContext a cada segundo do timer", async () => {
     const onSummaryRender = jest.fn();
     const { result } = await renderHook(
       () => {
@@ -816,7 +816,7 @@ describe("TimerProvider & useTimerContext", () => {
       {
         wrapper: ({ children }) => {
           const Summary = () => {
-            useTimerSummary();
+            useTimerSummaryContext();
             onSummaryRender();
             return null;
           };

@@ -20,7 +20,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![Web](https://img.shields.io/badge/Web-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![Jest](https://img.shields.io/badge/testes-202_passando-C21325?style=flat-square&logo=jest&logoColor=white)
+![Jest](https://img.shields.io/badge/testes-206_passando-C21325?style=flat-square&logo=jest&logoColor=white)
 [![CI](https://github.com/ramongime/Fokus/actions/workflows/ci.yml/badge.svg)](https://github.com/ramongime/Fokus/actions/workflows/ci.yml)
 
 [Funcionalidades](#-funcionalidades) •
@@ -40,14 +40,15 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 |---|---|
 | ⏱️ **Três modos de timer** | Foco, Pausa curta e Pausa longa, com ilustração própria para cada um |
 | 🔁 **Ciclos emendados** | Acabou o foco, a pausa começa sozinha; acabou a pausa, volta o foco. Dá para desligar nas configurações |
-| 🍅 **Contador do dia** | Bolinhas mostram quanto falta para a pausa longa, que vem a cada 4 focos (configurável) |
-| 📊 **Histórico semanal e mensal** | Gráfico da semana, calendário mensal, tempo focado, sequência de dias e metas diárias |
+| 🍅 **Contador do dia** | Uma bolinha por foco do dia, em séries até a pausa longa (a cada 4 focos, configurável). Zera à meia-noite; a série continua se você estiver no meio dela |
+| 📊 **Histórico semanal e mensal** | Gráfico da semana, calendário mensal, tempo focado (no total e por tarefa), sequência de dias e metas diárias, guardados por 1 ano |
+| 🗂️ **Backup dos seus dados** | Exporte tarefas, histórico e configurações em JSON e restaure em outro aparelho, sem conta nem nuvem |
 | 🎯 **Foco em uma tarefa** | Escolha no que está trabalhando; cada foco concluído soma um 🍅 na tarefa |
 | ⚙️ **Configurações** | Durações, intervalo da pausa longa, emendar ciclos, vibração, sons e meta diária |
 | 🔒 **Funciona com a tela bloqueada** | O tempo é calculado a partir do horário de término, então nada se perde quando o celular dorme |
 | 📳 **Vibração no fim do ciclo** | O celular vibra junto com a notificação, mesmo com a tela bloqueada. Dá para desligar |
 | 🔔 **Notificação no fim do ciclo** | Agendada direto no sistema operacional: chega mesmo com o app em segundo plano ou fechado, avisando qual ciclo começou |
-| 🎵 **Sons por ciclo** | Um som no fim do foco e outro no fim da pausa; pode desligar nas configurações |
+| 🎵 **Sons por ciclo** | Um som no fim do foco e outro no fim da pausa; pode desligar nas configurações. Com o app aberto, toca mesmo sem permissão de notificação |
 | 📱 **Widget** | Mostra o ciclo atual e o progresso da meta diária na tela inicial do iPhone ou Android |
 | 💾 **Retoma de onde parou** | Fechou o app no meio do foco? Ao abrir, o timer continua certinho |
 | ✅ **Lista de tarefas completa** | Criar, editar, concluir e excluir (com confirmação), tudo salvo no aparelho |
@@ -199,12 +200,15 @@ fokus/
 │       ├── TaskProvider.jsx     #    Tarefas + AsyncStorage
 │       ├── TimerProvider.jsx    #    Timer, ciclos, histórico + notificações
 │       ├── timerLogic.js        #    Regras puras do timer (testadas)
-│       ├── historyLogic.js      #    Histórico por dia, semana e sequência (testadas)
+│       ├── historyLogic.js      #    Histórico por dia, semana, tarefa e sequência (testadas)
+│       ├── taskLogic.js         #    Validação e junção de tarefas (testadas)
+│       ├── backupLogic.js       #    Exportar e ler backups (testadas)
 │       └── timerNotifications.js
 ├── constants/                   # 🎛️ Configuração
 │   ├── theme.js                 #    Cores, fontes e raios
 │   ├── settings.js              #    Configurações padrão e limites
 │   └── pomodoro.js              #    Modos do timer e textos das notificações
+├── plugins/                     # 🔌 Config plugins próprios (atualização do widget Android)
 ├── scripts/screenshots.mjs      # 📸 Gera as imagens do README
 ├── widgets/                     # 📱 Widgets nativos + sincronização de estado
 ├── .github/workflows/ci.yml     # 🤖 Lint + testes + bundle a cada push
@@ -213,7 +217,7 @@ fokus/
 
 **Como as peças se encaixam:**
 
-- 🧭 **Telas finas**: pegam dados de um hook (`useTaskContext`, `useTimerContext`, `useSettingsContext`) e montam a UI.
+- 🧭 **Telas finas**: pegam dados de um hook (`useTaskContext`, `useTimerContext`, `useSettingsContext`) e montam a UI. Telas sem o relógio usam `useTimerSummaryContext`, que não renderiza a cada segundo.
 - 🧠 **Um Provider por domínio**: estado, persistência no `AsyncStorage` e ações ficam juntos.
 - 🧩 **Componentes burros**: recebem tudo por props e nunca acessam o contexto.
 - 📝 **Um formulário para criar e editar**: `FormTask` muda só pelo `defaultValue`.
@@ -262,6 +266,8 @@ Quer usar esse mesmo padrão em outro app? Tem uma skill pronta em
 - [x] Histórico da semana e do mês com metas diárias
 - [x] Sons diferentes para foco e pausa
 - [x] Widget na tela inicial do celular
+- [x] Tempo focado por tarefa
+- [x] Exportar e restaurar backup
 
 ---
 

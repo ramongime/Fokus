@@ -2,7 +2,7 @@ import { useContext, useMemo } from "react";
 import { TimerContext, TimerSecondsContext } from "./TimerProvider";
 
 // Estado completo do timer, incluindo o tempo restante (renderiza a cada segundo).
-// Telas que não mostram o relógio devem usar useTimerSummary.
+// Telas que não mostram o relógio devem usar useTimerSummaryContext.
 export default function useTimerContext() {
   const context = useContext(TimerContext);
   const seconds = useContext(TimerSecondsContext);

@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { ConfirmModal } from "../components/ConfirmModal";
 import {
   buildBackup,
@@ -17,7 +10,8 @@ import {
 import { shareBackup } from "../components/context/shareBackup";
 import useSettingsContext from "../components/context/useSettingsContext";
 import useTaskContext from "../components/context/useTaskContext";
-import useTimerSummary from "../components/context/useTimerSummary";
+import { FokusButton } from "../components/FokusButton";
+import useTimerSummaryContext from "../components/context/useTimerSummaryContext";
 import { RestoreModal } from "../components/RestoreModal";
 import { SettingRow } from "../components/SettingRow";
 import { Stepper } from "../components/Stepper";
@@ -37,11 +31,12 @@ export default function Settings() {
     replaceSettings,
   } = useSettingsContext();
   const { tasks, importTasks } = useTaskContext();
-  const { history, importHistory } = useTimerSummary();
+  const { history, importHistory } = useTimerSummaryContext();
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreError, setRestoreError] = useState(null);
   // Backup lido e validado, esperando a confirmação
   const [pendingBackup, setPendingBackup] = useState(null);
+  // { text, error }: resultado da última exportação ou restauração
   const [dataMessage, setDataMessage] = useState(null);
 
   const exportBackup = async () => {
@@ -52,11 +47,14 @@ export default function Settings() {
         json: buildBackup({ settings, tasks, history, now }),
       });
       if (shared) {
-        setDataMessage("Backup exportado.");
+        setDataMessage({ text: "Backup exportado.", error: false });
       }
     } catch (e) {
       console.warn("Erro ao exportar backup", e);
-      setDataMessage("Não foi possível exportar o backup.");
+      setDataMessage({
+        text: "Não foi possível exportar o backup.",
+        error: true,
+      });
     }
   };
 
@@ -83,7 +81,10 @@ export default function Settings() {
     importTasks(savedTasks);
     importHistory(savedHistory);
     setPendingBackup(null);
-    setDataMessage(`Backup restaurado: ${describeBackup(pendingBackup)}.`);
+    setDataMessage({
+      text: `Backup restaurado: ${describeBackup(pendingBackup)}.`,
+      error: false,
+    });
   };
 
   return (
@@ -183,32 +184,29 @@ export default function Settings() {
           suas tarefas, histórico e configurações para outro aparelho.
         </Text>
         <View style={styles.dataActions}>
-          <Pressable
-            style={styles.dataButton}
-            onPress={exportBackup}
-            accessibilityRole="button"
-          >
-            <Text style={styles.dataButtonText}>Exportar backup</Text>
-          </Pressable>
-          <Pressable
-            style={styles.dataButton}
+          <FokusButton outline title="Exportar backup" onPress={exportBackup} />
+          <FokusButton
+            outline
+            title="Restaurar backup"
             onPress={() => {
               setRestoreError(null);
               setRestoreOpen(true);
             }}
-            accessibilityRole="button"
-          >
-            <Text style={styles.dataButtonText}>Restaurar backup</Text>
-          </Pressable>
+          />
         </View>
         {dataMessage ? (
-          <Text style={styles.dataMessage} accessibilityLiveRegion="polite">
-            {dataMessage}
+          <Text
+            style={[styles.dataMessage, dataMessage.error && styles.dataError]}
+            accessibilityLiveRegion="polite"
+          >
+            {dataMessage.text}
           </Text>
         ) : null}
       </View>
 
       <RestoreModal
+        // Remonta a cada abertura para começar com o campo vazio
+        key={restoreOpen ? "restore-open" : "restore-closed"}
         visible={restoreOpen}
         error={restoreError}
         onSubmit={readBackup}
@@ -274,29 +272,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   dataActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 12,
     marginTop: 16,
-  },
-  dataButton: {
-    flexGrow: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    alignItems: "center",
-  },
-  dataButtonText: {
-    color: colors.primary,
-    fontSize: fontSizes.md,
-    fontWeight: "bold",
   },
   dataMessage: {
     color: colors.success,
     fontSize: fontSizes.sm,
     marginTop: 12,
+  },
+  dataError: {
+    color: colors.danger,
   },
   hint: {
     color: colors.muted,

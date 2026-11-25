@@ -3,13 +3,13 @@ import { useLocalSearchParams } from "expo-router";
 import History from "../app/history";
 import useSettingsContext from "../components/context/useSettingsContext";
 import useTaskContext from "../components/context/useTaskContext";
-import useTimerSummary from "../components/context/useTimerSummary";
+import useTimerSummaryContext from "../components/context/useTimerSummaryContext";
 
 jest.mock("expo-router", () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
-jest.mock("../components/context/useTimerSummary", () => jest.fn());
+jest.mock("../components/context/useTimerSummaryContext", () => jest.fn());
 jest.mock("../components/context/useSettingsContext", () => jest.fn());
 jest.mock("../components/context/useTaskContext", () => jest.fn());
 
@@ -32,7 +32,7 @@ describe("History screen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useLocalSearchParams.mockReturnValue({});
-    useTimerSummary.mockReturnValue({
+    useTimerSummaryContext.mockReturnValue({
       history: mockHistory,
       clock: MOCK_NOW,
     });

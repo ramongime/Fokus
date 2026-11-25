@@ -13,14 +13,14 @@ import {
 } from "../components/context/historyLogic";
 import useSettingsContext from "../components/context/useSettingsContext";
 import useTaskContext from "../components/context/useTaskContext";
-import useTimerSummary from "../components/context/useTimerSummary";
+import useTimerSummaryContext from "../components/context/useTimerSummaryContext";
 import { StatTile } from "../components/StatTile";
 import { WeekChart } from "../components/WeekChart";
 import { colors, fontSizes, radii } from "../constants/theme";
 
 export default function History() {
   const params = useLocalSearchParams();
-  const { history, clock: now } = useTimerSummary();
+  const { history, clock: now } = useTimerSummaryContext();
   const { settings } = useSettingsContext();
   const { tasks } = useTaskContext();
   const [prevParamView, setPrevParamView] = useState(params?.view);

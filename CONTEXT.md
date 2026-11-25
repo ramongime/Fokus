@@ -112,7 +112,7 @@ Fokus avoids heavyweight state libraries (such as Redux or MobX) in favor of dom
 ### 3.2 Context Safety Guarantees
 Each provider exports a companion hook (`useSettingsContext`, `useTaskContext`, `useTimerContext`). Each hook executes an invariant validation check and throws an explicit error if invoked outside its respective provider tree, preventing silent undefined state failures.
 
-`TimerProvider` splits its value in two contexts: the live remaining `seconds` (changes every second while running) lives in `TimerSecondsContext`, and everything else in `TimerContext`. `useTimerContext` merges both and is meant for the timer screen and `WidgetSync`; screens and the Drawer that do not show the countdown use `useTimerSummary`, so they do not re-render every second. Callbacks exposed by the provider (e.g. `toggleTimer`) must not depend on `seconds`.
+`TimerProvider` splits its value in two contexts: the live remaining `seconds` (changes every second while running) lives in `TimerSecondsContext`, and everything else in `TimerContext`. `useTimerContext` merges both and is meant for the timer screen and `WidgetSync`; screens and the Drawer that do not show the countdown use `useTimerSummaryContext`, so they do not re-render every second. Callbacks exposed by the provider (e.g. `toggleTimer`) must not depend on `seconds`.
 
 ---
 

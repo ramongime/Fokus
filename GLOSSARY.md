@@ -26,6 +26,10 @@ _Avoid_: Duração da pausa, tempo total de trabalho
 Modo operacional de encadeamento automático no qual os períodos de trabalho e descanso se sucedem sem necessidade de acionamento manual do usuário.
 _Avoid_: Reprodução contínua, timer infinito, piloto automático
 
+**Série de Focos**:
+Sequência de ciclos de foco contada até a pausa longa ("Foco · 2 de 4"). Continua depois da meia-noite se o último foco terminou há até 2 horas; depois disso, recomeça no dia novo.
+_Avoid_: Contador do dia, sequência (streak), plano de ciclos
+
 **Plano de Ciclos**:
 Sequência ordenada e pré-projetada de etapas de foco e descanso estruturada para guiar uma sessão contínua de trabalho.
 _Avoid_: Lista de tarefas, agendamento de calendário, alarme avulso
@@ -81,6 +85,14 @@ _Avoid_: Sequência, meta diária de foco
 **Meta Diária de Foco**:
 Quantidade configurável de ciclos de foco que o usuário pretende concluir em um dia, acompanhada no histórico mensal.
 _Avoid_: Contador do dia, sequência
+
+**Tempo por Tarefa**:
+Focos e minutos de cada tarefa num período do histórico. Focos sem tarefa aparecem como "Sem tarefa"; tarefas apagadas, como "Tarefa excluída".
+_Avoid_: Focos da tarefa (o total acumulado na própria tarefa)
+
+**Backup**:
+Arquivo JSON com configurações, tarefas e histórico, exportado e restaurado pelo próprio usuário em Configurações › Seus dados. Restaurar substitui as configurações e soma tarefas e histórico sem duplicar.
+_Avoid_: Sincronização, nuvem, conta
 
 ## Sistema e Alertas
 

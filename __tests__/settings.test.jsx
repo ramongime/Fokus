@@ -4,7 +4,7 @@ import { buildBackup } from "../components/context/backupLogic";
 import { shareBackup } from "../components/context/shareBackup";
 import useSettingsContext from "../components/context/useSettingsContext";
 import useTaskContext from "../components/context/useTaskContext";
-import useTimerSummary from "../components/context/useTimerSummary";
+import useTimerSummaryContext from "../components/context/useTimerSummaryContext";
 import { DEFAULT_SETTINGS } from "../constants/settings";
 
 jest.mock("../components/context/shareBackup", () => ({
@@ -12,7 +12,7 @@ jest.mock("../components/context/shareBackup", () => ({
 }));
 jest.mock("../components/context/useSettingsContext", () => jest.fn());
 jest.mock("../components/context/useTaskContext", () => jest.fn());
-jest.mock("../components/context/useTimerSummary", () => jest.fn());
+jest.mock("../components/context/useTimerSummaryContext", () => jest.fn());
 
 const history = { "2026-11-25": { count: 2, minutes: 50 } };
 const tasks = [{ id: "1", description: "Ler" }];
@@ -28,7 +28,7 @@ const setup = async () => {
     replaceSettings: handlers.replaceSettings,
   });
   useTaskContext.mockReturnValue({ tasks, importTasks: handlers.importTasks });
-  useTimerSummary.mockReturnValue({
+  useTimerSummaryContext.mockReturnValue({
     history,
     importHistory: handlers.importHistory,
   });

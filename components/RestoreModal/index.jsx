@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   error: {
-    color: colors.primary,
+    color: colors.danger,
     fontSize: fontSizes.sm,
     textAlign: "center",
   },
