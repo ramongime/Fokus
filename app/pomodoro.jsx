@@ -24,6 +24,7 @@ export default function Pomodoro() {
     seconds,
     timerRunning,
     todayCount,
+    seriesCount,
     currentTask,
     setCurrentTaskId,
     toggleTimer,
@@ -38,15 +39,16 @@ export default function Pomodoro() {
   const background = isFocus ? colors.background : colors.backgroundBreak;
   const totalSeconds = getDurationSeconds(timerType.id, settings);
   const progress = totalSeconds > 0 ? 1 - seconds / totalSeconds : 0;
-  // Posição do foco atual na série até a pausa longa. Ex.: "Foco · 2 de 4"
+  // Posição do foco atual na série até a pausa longa. Ex.: "Foco · 2 de 4".
+  // A série atravessa a meia-noite se você está no meio dela (ver getSeriesCount).
   const interval = settings.longBreakInterval;
   const phaseLabel = isFocus
-    ? `${timerType.display} · ${(todayCount % interval) + 1} de ${interval}`
+    ? `${timerType.display} · ${(seriesCount % interval) + 1} de ${interval}`
     : timerType.display;
 
   // Pular conta como se o foco atual fosse o próximo da série
   const nextType = getTypeById(
-    getNextTypeId(timerType.id, todayCount + 1, settings),
+    getNextTypeId(timerType.id, seriesCount + 1, settings),
   );
   const skipLabel = isFocus ? "Pular para a pausa" : "Pular para o foco";
 

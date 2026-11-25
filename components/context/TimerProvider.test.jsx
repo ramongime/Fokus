@@ -854,4 +854,40 @@ describe("TimerProvider & useTimerContext", () => {
       jest.useRealTimers();
     }
   });
+
+  it("continua a série da pausa longa quando os ciclos atravessam a meia-noite", async () => {
+    jest.useFakeTimers();
+    const now = new Date(2026, 10, 26, 0, 5).getTime();
+    jest.setSystemTime(now);
+    const yesterday = new Date(2026, 10, 25, 23, 50).getTime();
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") {
+        return JSON.stringify({
+          typeId: "focus",
+          history: { [todayKey(yesterday)]: { count: 3, minutes: 75 } },
+          series: { count: 3, lastEndTime: yesterday },
+          // Foco que terminou agora, depois da meia-noite: é o 4º da série
+          segments: [
+            { typeId: "focus", startTime: now - 1500000, endTime: now - 1000 },
+          ],
+          processed: 0,
+        });
+      }
+      return null;
+    });
+
+    try {
+      const { result } = await renderHook(() => useTimerContext(), {
+        wrapper: AllProviders,
+      });
+      await waitFor(() => {
+        expect(result.current.todayCount).toBe(1);
+      });
+      expect(result.current.seriesCount).toBe(4);
+      // Fechou a série de 4: a próxima é a pausa longa, mesmo sendo o 1º foco do dia
+      expect(result.current.timerType.id).toBe("long");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

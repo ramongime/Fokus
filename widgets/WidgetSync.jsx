@@ -18,8 +18,15 @@ import FokusWidget from "./FokusWidget";
 
 export default function WidgetSync() {
   const { settings, isLoaded: settingsLoaded } = useSettingsContext();
-  const { timerType, seconds, timerRunning, todayCount, segments, history } =
-    useTimerContext();
+  const {
+    timerType,
+    seconds,
+    timerRunning,
+    todayCount,
+    seriesCount,
+    segments,
+    history,
+  } = useTimerContext();
   const minutesRemaining = Math.ceil(seconds / 60);
   // Rodando, o widget mostra só minutos: arredonda para o efeito não rodar (e não
   // atualizar o widget nativo) a cada segundo, apenas quando o minuto muda
@@ -115,9 +122,14 @@ export default function WidgetSync() {
         finalSegment.endTime,
         remainingSegments,
       );
+      // A pausa depois do plano segue a série (que pode ter começado ontem)
+      const seriesAfterPlan =
+        seriesCount +
+        remainingSegments.filter((segment) => segment.typeId === "focus")
+          .length;
       const nextTypeId = getNextTypeId(
         finalSegment.typeId,
-        countAfterPlan,
+        seriesAfterPlan,
         settings,
       );
 
@@ -172,6 +184,7 @@ export default function WidgetSync() {
     minutesRemaining,
     timerRunning,
     todayCount,
+    seriesCount,
     segments,
     history,
   ]);

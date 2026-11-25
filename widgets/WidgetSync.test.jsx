@@ -27,6 +27,7 @@ const mockTimer = (overrides) =>
     seconds: 1500,
     timerRunning: false,
     todayCount: 5,
+    seriesCount: 5,
     segments: null,
     history,
     ...overrides,

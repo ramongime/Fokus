@@ -28,6 +28,8 @@ const mockTimer = (overrides) => {
     seconds: 1500,
     timerRunning: false,
     todayCount: 1,
+    // Sem virada de dia no meio da série, a série é igual aos focos de hoje
+    seriesCount: overrides?.todayCount ?? 1,
     currentTask: null,
     setCurrentTaskId: jest.fn(),
     toggleTimer: jest.fn(),
@@ -90,5 +92,13 @@ describe("Pomodoro screen", () => {
     expect(mockSetOptions).toHaveBeenCalledWith({
       headerStyle: { backgroundColor: colors.backgroundBreak },
     });
+  });
+
+  it("continua a série quando ela atravessa a meia-noite", async () => {
+    mockTimer({ todayCount: 0, seriesCount: 2 });
+    const { getByText } = await render(<Pomodoro />);
+
+    expect(getByText("Foco · 3 de 4")).toBeTruthy();
+    expect(getByText("🍅 0 focos hoje")).toBeTruthy();
   });
 });

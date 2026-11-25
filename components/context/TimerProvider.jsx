@@ -16,6 +16,7 @@ import {
   normalizeHistory,
 } from "./historyLogic";
 import {
+  addFocusToSeries,
   buildPlan,
   countFinishedSegments,
   FOREGROUND_ALERT_WINDOW_MS,
@@ -23,9 +24,11 @@ import {
   getNextTypeId,
   getRemainingSeconds,
   getSegmentMinutes,
+  getSeriesCount,
   getSegmentNotification,
   getTypeById,
   normalizeSavedSegments,
+  normalizeSeries,
   shouldVibrateInApp,
 } from "./timerLogic";
 import {
@@ -74,6 +77,9 @@ export function TimerProvider({ children }) {
   const [liveSeconds, setLiveSeconds] = useState(0);
   // Focos por dia: { "2026-09-26": { count, minutes } }
   const [history, setHistory] = useState({});
+  // Série de focos até a pausa longa: { count, lastEndTime }; atravessa a meia-noite
+  // se você está focando nela. null = ainda não registrada (usa os focos de hoje)
+  const [series, setSeries] = useState(null);
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   // Atualizado a cada minuto para o contador do dia virar à meia-noite
@@ -85,6 +91,7 @@ export function TimerProvider({ children }) {
   const segmentsRef = useRef(null);
   const processedRef = useRef(0);
   const historyRef = useRef(history);
+  const seriesRef = useRef(series);
   const settingsRef = useRef(settings);
   const currentTaskIdRef = useRef(currentTaskId);
   const ongoingEndTimeRef = useRef(null);
@@ -107,6 +114,7 @@ export function TimerProvider({ children }) {
     ? liveSeconds
     : (pausedSeconds ?? getDurationSeconds(typeId, settings));
   const todayCount = getTodayCount(history, clock);
+  const seriesCount = getSeriesCount(series, todayCount, clock);
   const currentTask = tasks.find((t) => t.id === currentTaskId) ?? null;
   // Só processa ciclos depois de tudo carregado, senão os pomodoros somados numa tarefa
   // seriam sobrescritos quando a lista de tarefas terminasse de carregar
@@ -159,6 +167,9 @@ export function TimerProvider({ children }) {
                   );
             historyRef.current = initialHistory;
             setHistory(initialHistory);
+            const savedSeries = normalizeSeries(saved.series);
+            seriesRef.current = savedSeries;
+            setSeries(savedSeries);
             const normalizedTaskId =
               saved.currentTaskId != null &&
               String(saved.currentTaskId).trim() !== ""
@@ -216,6 +227,7 @@ export function TimerProvider({ children }) {
       segments,
       processed,
       history,
+      series,
       currentTaskId: persistedTaskId,
     });
     AsyncStorage.setItem(TIMER_STORAGE_KEY, jsonValue).catch((e) =>
@@ -227,6 +239,7 @@ export function TimerProvider({ children }) {
     segments,
     processed,
     history,
+    series,
     persistedTaskId,
     isLoaded,
   ]);
@@ -236,7 +249,11 @@ export function TimerProvider({ children }) {
       const currentSettings = settingsRef.current;
       const currentHistory = historyRef.current;
       if (finished <= processedRef.current) {
-        return getTodayCount(currentHistory, now);
+        return getSeriesCount(
+          seriesRef.current,
+          getTodayCount(currentHistory, now),
+          now,
+        );
       }
 
       const finishedSegments = plan.slice(processedRef.current, finished);
@@ -270,7 +287,17 @@ export function TimerProvider({ children }) {
       setProcessed(finished);
 
       let nextHistory = currentHistory;
+      let nextSeries = seriesRef.current;
       if (focusDone > 0) {
+        for (const segment of focusSegments) {
+          nextSeries = addFocusToSeries(
+            nextSeries,
+            getTodayCount(currentHistory, segment.endTime),
+            segment.endTime,
+          );
+        }
+        seriesRef.current = nextSeries;
+        setSeries(nextSeries);
         nextHistory = addFocusSessions(
           currentHistory,
           focusSegments.map((s) => ({
@@ -288,7 +315,12 @@ export function TimerProvider({ children }) {
         }
       }
       const lastFinished = finishedSegments[finishedSegments.length - 1];
-      return getTodayCount(nextHistory, lastFinished?.endTime ?? now);
+      const countAt = lastFinished?.endTime ?? now;
+      return getSeriesCount(
+        nextSeries,
+        getTodayCount(nextHistory, countAt),
+        countAt,
+      );
     },
     [addPomodorosToTask],
   );
@@ -370,7 +402,11 @@ export function TimerProvider({ children }) {
       typeId,
       seconds: startSeconds,
       now,
-      focusCount: getTodayCount(historyRef.current, now),
+      focusCount: getSeriesCount(
+        seriesRef.current,
+        getTodayCount(historyRef.current, now),
+        now,
+      ),
       settings: currentSettings,
     });
     setClock(now);
@@ -462,6 +498,7 @@ export function TimerProvider({ children }) {
       timerType,
       timerRunning,
       todayCount,
+      seriesCount,
       segments,
       history,
       clock,
@@ -474,6 +511,7 @@ export function TimerProvider({ children }) {
       timerType,
       timerRunning,
       todayCount,
+      seriesCount,
       segments,
       history,
       clock,
