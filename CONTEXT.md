@@ -197,7 +197,7 @@ Fokus provides defensive parsing and forward-compatible migration:
 3. **Settings Normalization**: Stored settings are passed through `normalizeSettings()`, filling in any missing keys from `DEFAULT_SETTINGS` and bounding numbers using `SETTINGS_LIMITS`.
 
 ### 5.4 Backup (Export / Restore)
-`app/settings.jsx` ("Seus dados") exports `{ app: "fokus", version, exportedAt, settings, tasks, history }` as JSON (`backupLogic.js`). Native shares the text through `Share` (`shareBackup.js`); web downloads a `.json` file (`shareBackup.web.js`). Restore takes pasted text, validates it with the same normalizers used on load, then: settings are replaced (`replaceSettings`), tasks are merged by id (`importTasks` → `mergeTasks`), and history is merged keeping the larger count per day (`importHistory` → `mergeHistory`), so restoring a backup twice does not double count. The running timer is never part of a backup.
+`app/settings.jsx` ("Seus dados") exports `{ app: "fokus", version, exportedAt, settings, tasks, history }` as JSON (`backupLogic.js`). Native shares the text through `Share` (`shareBackup.js`); web downloads a `.json` file (`shareBackup.web.js`). Restore takes a file picked with `expo-document-picker` (`pickBackupFile.js`, read with `expo-file-system`; `pickBackupFile.web.js` reads the browser `File`) or pasted text, validates it with the same normalizers used on load, then: settings are replaced (`replaceSettings`), tasks are merged by id (`importTasks` → `mergeTasks`), and history is merged keeping the larger count per day (`importHistory` → `mergeHistory`), so restoring a backup twice does not double count. The running timer is never part of a backup.
 
 ---
 

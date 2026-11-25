@@ -7,6 +7,7 @@ import {
   getBackupFileName,
   parseBackup,
 } from "../components/context/backupLogic";
+import { pickBackupFile } from "../components/context/pickBackupFile";
 import { shareBackup } from "../components/context/shareBackup";
 import useSettingsContext from "../components/context/useSettingsContext";
 import useTaskContext from "../components/context/useTaskContext";
@@ -34,6 +35,7 @@ export default function Settings() {
   const { history, importHistory } = useTimerSummaryContext();
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreError, setRestoreError] = useState(null);
+  const [readingFile, setReadingFile] = useState(false);
   // Backup lido e validado, esperando a confirmação
   const [pendingBackup, setPendingBackup] = useState(null);
   // { text, error }: resultado da última exportação ou restauração
@@ -67,6 +69,21 @@ export default function Settings() {
     setRestoreError(null);
     setRestoreOpen(false);
     setPendingBackup(result.data);
+  };
+
+  const pickFile = async () => {
+    setReadingFile(true);
+    try {
+      const text = await pickBackupFile();
+      if (text != null) {
+        readBackup(text);
+      }
+    } catch (e) {
+      console.warn("Erro ao ler o arquivo de backup", e);
+      setRestoreError(e?.userMessage ?? "Não foi possível ler o arquivo.");
+    } finally {
+      setReadingFile(false);
+    }
   };
 
   const restoreBackup = () => {
@@ -209,6 +226,8 @@ export default function Settings() {
         key={restoreOpen ? "restore-open" : "restore-closed"}
         visible={restoreOpen}
         error={restoreError}
+        loading={readingFile}
+        onPickFile={pickFile}
         onSubmit={readBackup}
         onCancel={() => setRestoreOpen(false)}
       />

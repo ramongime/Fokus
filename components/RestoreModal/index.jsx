@@ -9,9 +9,15 @@ import {
 } from "react-native";
 import { colors, fontSizes, radii } from "../../constants/theme";
 
-// Campo para colar o texto de um backup. Funciona igual no celular e na web,
-// sem precisar de seletor de arquivos.
-export const RestoreModal = ({ visible, error, onSubmit, onCancel }) => {
+// Restaurar um backup: escolhendo o arquivo (seletor do sistema) ou colando o texto.
+export const RestoreModal = ({
+  visible,
+  error,
+  loading,
+  onPickFile,
+  onSubmit,
+  onCancel,
+}) => {
   const [text, setText] = useState("");
   const close = () => {
     setText("");
@@ -34,9 +40,18 @@ export const RestoreModal = ({ visible, error, onSubmit, onCancel }) => {
         />
         <View style={styles.dialog}>
           <Text style={styles.title}>Restaurar backup</Text>
-          <Text style={styles.message}>
-            Abra o arquivo de backup, copie todo o texto e cole aqui.
-          </Text>
+          <Pressable
+            style={[styles.pickButton, loading && styles.disabled]}
+            onPress={onPickFile}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !!loading }}
+          >
+            <Text style={styles.pickText}>
+              {loading ? "Lendo arquivo..." : "Escolher arquivo"}
+            </Text>
+          </Pressable>
+          <Text style={styles.message}>ou cole aqui o texto do backup:</Text>
           <TextInput
             style={styles.input}
             value={text}
@@ -108,6 +123,18 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: fontSizes.sm,
     textAlign: "center",
+  },
+  pickButton: {
+    paddingVertical: 12,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: "center",
+  },
+  pickText: {
+    color: colors.primary,
+    fontSize: fontSizes.md,
+    fontWeight: "bold",
   },
   input: {
     minHeight: 140,

@@ -16,7 +16,7 @@ Three gaps surfaced while fixing the daily counter:
 1. **Series independent from the day**: `fokus-timer` stores `series: { count, lastEndTime }`. `getSeriesCount` (pure, `timerLogic.js`) keeps the series across midnight when the last focus ended at most `SERIES_GAP_MS` (2 h) earlier; otherwise it restarts on the new day. Without a saved series (older data) it falls back to the daily counter. The daily counter (`todayCount`) still resets at local midnight.
 2. **Per-task history**: each day entry may carry `tasks: { [taskId]: { count, minutes } }`, written when a focus finishes with a selected task. Older entries stay valid and are shown as "Sem tarefa".
 3. **Retention**: `HISTORY_DAYS` goes from 90 to 365 (one small entry per day with focus).
-4. **Backup without new native modules**: export builds a versioned JSON (`app: "fokus"`, `version: 1`) and shares it with React Native `Share` (download on web). Restore takes pasted text and runs it through the same normalizers used on load (`normalizeSettings`, `normalizeStoredTasks`, `normalizeHistory`), with a size cap and per-day caps. Settings are replaced; tasks and history are merged (`mergeTasks`, `mergeHistory` keeps the larger count per day) so restoring twice never double counts. The running timer is never part of a backup.
+4. **Backup without new native modules**: export builds a versioned JSON (`app: "fokus"`, `version: 1`) and shares it with React Native `Share` (download on web). Restore takes a file chosen with `expo-document-picker` (read through `expo-file-system`) or pasted text, and runs it through the same normalizers used on load (`normalizeSettings`, `normalizeStoredTasks`, `normalizeHistory`), with a size cap and per-day caps. Settings are replaced; tasks and history are merged (`mergeTasks`, `mergeHistory` keeps the larger count per day) so restoring twice never double counts. The running timer is never part of a backup.
 
 ## Consequences
 
@@ -28,5 +28,5 @@ Three gaps surfaced while fixing the daily counter:
 
 ### Negative
 
-- Restore by pasting text is less convenient than a file picker (`expo-document-picker` is a possible follow-up).
+- Export on native shares the JSON as text (no `expo-sharing`), so the saved file may end up as `.txt`; the picker accepts any file type and relies on `parseBackup` validation.
 - A day entry is slightly larger when tasks are used.
