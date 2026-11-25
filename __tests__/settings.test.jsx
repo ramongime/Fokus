@@ -1,6 +1,7 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import Settings from "../app/settings";
 import { buildBackup } from "../components/context/backupLogic";
+import { pickBackupFile } from "../components/context/pickBackupFile";
 import { shareBackup } from "../components/context/shareBackup";
 import useSettingsContext from "../components/context/useSettingsContext";
 import useTaskContext from "../components/context/useTaskContext";
@@ -9,6 +10,9 @@ import { DEFAULT_SETTINGS } from "../constants/settings";
 
 jest.mock("../components/context/shareBackup", () => ({
   shareBackup: jest.fn(() => Promise.resolve(true)),
+}));
+jest.mock("../components/context/pickBackupFile", () => ({
+  pickBackupFile: jest.fn(),
 }));
 jest.mock("../components/context/useSettingsContext", () => jest.fn());
 jest.mock("../components/context/useTaskContext", () => jest.fn());
@@ -93,5 +97,47 @@ describe("Settings screen · Seus dados", () => {
 
     expect(getByText(/Não parece um backup do Fokus/)).toBeTruthy();
     expect(importTasks).not.toHaveBeenCalled();
+  });
+
+  it("restaura escolhendo o arquivo do backup", async () => {
+    pickBackupFile.mockResolvedValueOnce(
+      buildBackup({ settings: DEFAULT_SETTINGS, tasks, history, now: 0 }),
+    );
+    const { getByText, importHistory } = await setup();
+
+    await fireEvent.press(getByText("Restaurar backup"));
+    await fireEvent.press(getByText("Escolher arquivo"));
+    await waitFor(() =>
+      expect(getByText(/Encontrado: 1 tarefa e 2 focos em 1 dia/)).toBeTruthy(),
+    );
+    await fireEvent.press(getByText("Restaurar"));
+
+    expect(importHistory).toHaveBeenCalledWith(history);
+  });
+
+  it("não faz nada se a escolha do arquivo for cancelada", async () => {
+    pickBackupFile.mockResolvedValueOnce(null);
+    const { getByText, queryByText, importTasks } = await setup();
+
+    await fireEvent.press(getByText("Restaurar backup"));
+    await fireEvent.press(getByText("Escolher arquivo"));
+
+    await waitFor(() => expect(getByText("Escolher arquivo")).toBeTruthy());
+    expect(queryByText(/Encontrado/)).toBeNull();
+    expect(importTasks).not.toHaveBeenCalled();
+  });
+
+  it("mostra erro amigável quando o arquivo não pode ser lido", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    pickBackupFile.mockRejectedValueOnce(new Error("EACCES"));
+    const { getByText } = await setup();
+
+    await fireEvent.press(getByText("Restaurar backup"));
+    await fireEvent.press(getByText("Escolher arquivo"));
+
+    await waitFor(() =>
+      expect(getByText("Não foi possível ler o arquivo.")).toBeTruthy(),
+    );
+    warn.mockRestore();
   });
 });

@@ -97,11 +97,17 @@ const seed = {
     pausedSeconds: null,
     segments: null,
     processed: 0,
+    // Parte dos focos em cada tarefa, para o cartão "Por tarefa" do histórico
     history: Object.fromEntries(
-      sampleWeek.map(([daysAgo, count]) => [
-        dayKey(daysAgo),
-        { count, minutes: count * 25 },
-      ]),
+      sampleWeek.map(([daysAgo, count]) => {
+        const study = Math.ceil(count / 2);
+        const read = Math.max(0, count - study - 1);
+        const tasks = { 1: { count: study, minutes: study * 25 } };
+        if (read > 0) {
+          tasks[3] = { count: read, minutes: read * 25 };
+        }
+        return [dayKey(daysAgo), { count, minutes: count * 25, tasks }];
+      }),
     ),
     currentTaskId: "1",
   },
@@ -157,9 +163,15 @@ const captureScreens = async (browser) => {
 
   await open("/settings");
   await shot("configuracoes");
+  await page.getByText("Seus dados").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  await shot("backup");
 
   await open("/history");
   await shot("historico");
+  await page.getByText("Por tarefa").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  await shot("historico-tarefas");
 
   await page.close();
 };

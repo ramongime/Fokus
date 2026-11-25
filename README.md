@@ -20,7 +20,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 ![Web](https://img.shields.io/badge/Web-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white)
 ![ESLint](https://img.shields.io/badge/lint-0_avisos-00F4BF?style=flat-square&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![Jest](https://img.shields.io/badge/testes-206_passando-C21325?style=flat-square&logo=jest&logoColor=white)
+![Jest](https://img.shields.io/badge/testes-234_passando-C21325?style=flat-square&logo=jest&logoColor=white)
 [![CI](https://github.com/ramongime/Fokus/actions/workflows/ci.yml/badge.svg)](https://github.com/ramongime/Fokus/actions/workflows/ci.yml)
 
 [Funcionalidades](#-funcionalidades) •
@@ -42,7 +42,7 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 | 🔁 **Ciclos emendados** | Acabou o foco, a pausa começa sozinha; acabou a pausa, volta o foco. Dá para desligar nas configurações |
 | 🍅 **Contador do dia** | Uma bolinha por foco do dia, em séries até a pausa longa (a cada 4 focos, configurável). Zera à meia-noite; a série continua se você estiver no meio dela |
 | 📊 **Histórico semanal e mensal** | Gráfico da semana, calendário mensal, tempo focado (no total e por tarefa), sequência de dias e metas diárias, guardados por 1 ano |
-| 🗂️ **Backup dos seus dados** | Exporte tarefas, histórico e configurações em JSON e restaure em outro aparelho, sem conta nem nuvem |
+| 🗂️ **Backup dos seus dados** | Exporte tarefas, histórico e configurações em JSON e restaure em outro aparelho escolhendo o arquivo, sem conta nem nuvem |
 | 🎯 **Foco em uma tarefa** | Escolha no que está trabalhando; cada foco concluído soma um 🍅 na tarefa |
 | ⚙️ **Configurações** | Durações, intervalo da pausa longa, emendar ciclos, vibração, sons e meta diária |
 | 🔒 **Funciona com a tela bloqueada** | O tempo é calculado a partir do horário de término, então nada se perde quando o celular dorme |
@@ -69,9 +69,13 @@ Bloqueie a tela, guarde o celular e volte a focar. Quando o tempo acabar, o Foku
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/escolher-tarefa.png" width="230" alt="Escolher a tarefa do foco"> | <img src="docs/screenshots/tarefas.png" width="230" alt="Lista de tarefas com pomodoros"> | <img src="docs/screenshots/configuracoes.png" width="230" alt="Tela de configurações"> |
 
-| Histórico da semana | Nova tarefa |
-|:---:|:---:|
-| <img src="docs/screenshots/historico.png" width="230" alt="Histórico com gráfico de focos por dia"> | <img src="docs/screenshots/nova-tarefa.png" width="230" alt="Formulário de nova tarefa"> |
+| Histórico da semana | Focos por tarefa | Nova tarefa |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/historico.png" width="230" alt="Histórico com gráfico de focos por dia"> | <img src="docs/screenshots/historico-tarefas.png" width="230" alt="Histórico de focos por tarefa"> | <img src="docs/screenshots/nova-tarefa.png" width="230" alt="Formulário de nova tarefa"> |
+
+| Backup dos dados |
+|:---:|
+| <img src="docs/screenshots/backup.png" width="230" alt="Exportar e restaurar backup"> |
 
 </div>
 
