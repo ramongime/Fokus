@@ -3,9 +3,8 @@
  * exato, então aparecem mesmo com a tela bloqueada ou o app fechado. Não há servidor
  * nem push: tudo acontece no aparelho.
  */
-import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Notifications from "expo-notifications";
-import { AppState, Platform, Vibration } from "react-native";
+import { Platform } from "react-native";
 
 // Vibra, pausa, vibra (ms). Usado nos canais do Android e na vibração pelo app.
 export const VIBRATION_PATTERN = [0, 400, 200, 400];
@@ -51,10 +50,10 @@ const CUSTOM_SOUND_CHANNELS = [
   },
 ];
 
+const ALL_CHANNELS = [...LEGACY_CHANNELS, ...CUSTOM_SOUND_CHANNELS];
+
 // Canais de versões anteriores, apagados ao preparar as notificações
 const OBSOLETE_CHANNEL_IDS = ["cycles-break-vibrate", "cycles-break-quiet"];
-
-const ALL_CHANNELS = [...LEGACY_CHANNELS, ...CUSTOM_SOUND_CHANNELS];
 
 // Canal da versão inicial, criado sem vibração
 const LEGACY_CHANNEL_ID = "timer";
@@ -63,14 +62,20 @@ const LEGACY_CHANNEL_ID = "timer";
 export const ONGOING_CHANNEL_ID = "timer-active";
 export const ONGOING_NOTIFICATION_ID = "fokus-timer-ongoing";
 
-// Mostra a notificação mesmo com o app aberto
+// Em primeiro plano o som e a vibração vêm do audioService/Vibration; suprimimos
+// banners e sons de notificações agendadas, mantendo apenas a notificação fixa do Android.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const isOngoing =
+      Platform.OS === "android" &&
+      notification?.request?.identifier === ONGOING_NOTIFICATION_ID;
+    return {
+      shouldShowBanner: false,
+      shouldShowList: isOngoing,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 let permissionPromise = null;
@@ -227,84 +232,3 @@ export const dismissOngoingNotification = async () => {
     // Ignora se já descartada
   }
 };
-
-// Sons tocados pelo próprio app (expo-audio), sem passar pelas notificações
-const CYCLE_SOUND_ASSETS = {
-  focus: require("../../assets/sounds/focus.wav"),
-  pause: require("../../assets/sounds/pause.wav"),
-};
-const cyclePlayers = {};
-let audioModeReady = false;
-
-// Toca o som do fim do ciclo direto pelo app. Usado com o app aberto quando não há
-// permissão de notificação: o Fokus nunca fica mudo na frente do usuário.
-// O som toca mesmo com o iPhone no modo silencioso, como um alarme.
-export const playInAppCycleSound = async (
-  soundPhase,
-  { vibrate = true } = {},
-) => {
-  try {
-    if (!audioModeReady) {
-      await setAudioModeAsync({ playsInSilentMode: true });
-      audioModeReady = true;
-    }
-    const player =
-      cyclePlayers[soundPhase] ??
-      (cyclePlayers[soundPhase] = createAudioPlayer(
-        CYCLE_SOUND_ASSETS[soundPhase],
-      ));
-    await player.seekTo(0);
-    player.play();
-  } catch (e) {
-    console.warn("Erro ao tocar o som do ciclo pelo app:", e);
-  }
-  // No iOS o TimerProvider já vibra pelo app quando não há notificação agendada;
-  // no Android a vibração vinha só do canal da notificação, então vibra aqui.
-  if (vibrate && Platform.OS === "android") {
-    Vibration.vibrate(VIBRATION_PATTERN);
-  }
-};
-
-// Emite aviso sonoro e vibratório imediato ao atingir 00:00 (primeiro plano)
-export const playCycleSound = async (
-  typeId,
-  { distinctSounds = true, vibrate = true } = {},
-) => {
-  try {
-    const hasPermission = await ensurePermission();
-    if (!hasPermission) {
-      // Sem permissão, a notificação não tocaria nada. Com o app aberto, toca pelo app.
-      if (AppState.currentState === "active") {
-        const phase = distinctSounds && typeId !== "focus" ? "pause" : "focus";
-        await playInAppCycleSound(phase, { vibrate });
-      }
-      return;
-    }
-    const soundPhase = typeId === "focus" ? "focus" : "pause";
-    const customSound = distinctSounds && typeId != null;
-    const channelId = customSound
-      ? `cycles-${soundPhase}-${vibrate ? "vibrate" : "quiet"}`
-      : vibrate
-        ? "cycles"
-        : "cycles-quiet";
-    const sound = customSound ? `${soundPhase}.wav` : true;
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title:
-          typeId === "focus" ? "Ciclo de foco concluído!" : "Pausa concluída!",
-        body:
-          typeId === "focus"
-            ? "Excelente foco! Hora de relaxar a mente."
-            : "Pausa finalizada. Pronto para focar novamente?",
-        sound,
-        vibrate: vibrate ? VIBRATION_PATTERN : undefined,
-      },
-      trigger: channelId ? { channelId } : null,
-    });
-  } catch (e) {
-    console.warn("Erro ao emitir alerta sonoro de conclusão:", e);
-  }
-};
-
-export const prepareCycleSounds = async () => {};
