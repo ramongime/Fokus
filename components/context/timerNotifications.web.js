@@ -239,3 +239,10 @@ export const playCycleSound = async (
     console.warn("Não foi possível tocar o som do ciclo", error);
   }
 };
+
+// Mesma assinatura da versão nativa. Na web o som já é sempre tocado pelo próprio app
+// (Web Audio), sem depender de permissão de notificação.
+export const playInAppCycleSound = async (soundPhase) =>
+  playCycleSound(soundPhase === "break" ? "short" : "focus", {
+    distinctSounds: true,
+  });

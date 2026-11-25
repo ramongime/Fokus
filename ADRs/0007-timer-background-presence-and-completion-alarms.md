@@ -54,4 +54,5 @@ We decided to establish unified background presence and completion alerting usin
 ### Negative
 
 - **Foreground Notification Coupling**: Because `playCycleSound` currently routes through `expo-notifications`, foreground audio depends on notification permissions and OS notification settings. If notification permissions are denied, foreground sounds are also blocked (an architectural opportunity documented in `ROADMAP.md` for decoupling via a dedicated native audio engine such as `expo-audio`).
+  - *Update (2026-11)*: mitigated. When permission is denied and the app is active, `playCycleSound` falls back to `playInAppCycleSound`, which plays `focus.wav`/`break.wav` through `expo-audio` (`playsInSilentMode: true`) and vibrates on Android. With permission granted the notification path is unchanged.
 - **Android Channel Immutability**: Modifying notification sound or vibration behavior requires creating new channel identifiers (`cycles-focus-vibrate`, `cycles-break-quiet`) and migrating legacy channels (`deleteNotificationChannelAsync`).

@@ -6,6 +6,8 @@ Este documento registra as diretrizes de evolução técnica e oportunidades arq
 
 ## 1. Oportunidade Prioritária: Desacoplamento da Reprodução Sonora em Primeiro Plano
 
+> **Status (2026-11)**: primeira etapa entregue. Sem permissão de notificação, com o app aberto, o som do ciclo toca pelo `expo-audio` (`playInAppCycleSound` em `timerNotifications.js`), também no modo silencioso do iPhone. Com permissão, o caminho por notificação segue igual. Falta mover todo o som em primeiro plano para o `expo-audio` (e tirar o banner com o app aberto), o que pede teste em aparelho.
+
 ### 1.1 Contexto e Diagnóstico Atual
 
 Atualmente, o disparo audiovisual ao atingir `00:00` é implementado em `components/context/timerNotifications.js` através da função `playCycleSound`:

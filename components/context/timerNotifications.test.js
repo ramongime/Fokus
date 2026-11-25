@@ -1,5 +1,6 @@
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { AppState, Platform, Vibration } from "react-native";
 import {
   cancelTimerNotifications,
   dismissOngoingNotification,
@@ -9,6 +10,15 @@ import {
   showOngoingNotification,
   VIBRATION_PATTERN,
 } from "./timerNotifications";
+
+const mockPlayer = {
+  seekTo: jest.fn(() => Promise.resolve()),
+  play: jest.fn(),
+};
+jest.mock("expo-audio", () => ({
+  createAudioPlayer: jest.fn(() => mockPlayer),
+  setAudioModeAsync: jest.fn(() => Promise.resolve()),
+}));
 
 jest.mock("expo-notifications", () => ({
   setNotificationHandler: jest.fn(),
@@ -364,6 +374,58 @@ describe("timerNotifications", () => {
         }),
         trigger: { channelId: "cycles-break-quiet" },
       });
+    });
+  });
+
+  describe("som pelo app sem permissão de notificação", () => {
+    let vibrateSpy;
+    const originalAppState = AppState.currentState;
+
+    beforeEach(() => {
+      Notifications.getPermissionsAsync.mockResolvedValue({ granted: false });
+      Notifications.requestPermissionsAsync.mockResolvedValue({
+        granted: false,
+      });
+      mockPlayer.play.mockClear();
+      createAudioPlayer.mockClear();
+      vibrateSpy = jest
+        .spyOn(Vibration, "vibrate")
+        .mockImplementation(() => {});
+      AppState.currentState = "active";
+    });
+
+    afterEach(() => {
+      vibrateSpy.mockRestore();
+      AppState.currentState = originalAppState;
+    });
+
+    it("toca o som do ciclo pelo app quando ele está aberto", async () => {
+      await playCycleSound("short", { distinctSounds: true, vibrate: true });
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(setAudioModeAsync).toHaveBeenCalledWith({
+        playsInSilentMode: true,
+      });
+      expect(mockPlayer.play).toHaveBeenCalledTimes(1);
+      // iOS: a vibração pelo app fica com o TimerProvider
+      expect(vibrateSpy).not.toHaveBeenCalled();
+    });
+
+    it("reaproveita o player e vibra no Android", async () => {
+      Platform.OS = "android";
+      await playCycleSound("focus", { distinctSounds: false, vibrate: true });
+      await playCycleSound("long", { distinctSounds: false, vibrate: true });
+
+      expect(mockPlayer.play).toHaveBeenCalledTimes(2);
+      expect(createAudioPlayer.mock.calls.length).toBeLessThanOrEqual(1);
+      expect(vibrateSpy).toHaveBeenCalledWith(VIBRATION_PATTERN);
+    });
+
+    it("não toca nada com o app em segundo plano", async () => {
+      AppState.currentState = "background";
+      await playCycleSound("focus", { distinctSounds: true, vibrate: true });
+
+      expect(mockPlayer.play).not.toHaveBeenCalled();
     });
   });
 });
