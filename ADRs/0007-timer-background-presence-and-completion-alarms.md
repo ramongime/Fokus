@@ -35,7 +35,7 @@ We decided to establish unified background presence and completion alerting usin
    - **iOS Live Activities**: The application configures `NSSupportsLiveActivities: true` in `app.json` (`ios.infoPlist`), enabling target timestamp binding for native Live Activities and Dynamic Island projections.
 
 2. **Unified Cycle Completion Alarms**:
-   - **Foreground Delivery**: When the timer countdown reaches `00:00` while the application is in the foreground, `playCycleSound(typeId, { distinctSounds, vibrate })` fires immediately. It schedules an immediate local notification with phase-specific audio assets (`focus.wav` or `break.wav`) and vibration pattern (`VIBRATION_PATTERN = [0, 400, 200, 400]`), ensuring immediate audiovisual and haptic feedback.
+   - **Foreground Delivery**: When the timer countdown reaches `00:00` while the application is in the foreground, `playCycleSound(typeId, { distinctSounds, vibrate })` fires immediately. It schedules an immediate local notification with phase-specific audio assets (`focus.wav` or `pause.wav`) and vibration pattern (`VIBRATION_PATTERN = [0, 400, 200, 400]`), ensuring immediate audiovisual and haptic feedback.
    - **Background Delivery**: When starting or modifying a timer sequence, `scheduleTimerNotifications` pre-registers exact native alarms (`SCHEDULE_EXACT_ALARM` on Android, `SchedulableTriggerInputTypes.DATE` on iOS) for each segment's target `endTime`. Even when the JS runtime is frozen, the OS delivers the notification, custom sound, and vibration at the exact target millisecond.
 
 3. **Lifecycle Teardown & Transition Hygiene**:
@@ -54,5 +54,5 @@ We decided to establish unified background presence and completion alerting usin
 ### Negative
 
 - **Foreground Notification Coupling**: Because `playCycleSound` currently routes through `expo-notifications`, foreground audio depends on notification permissions and OS notification settings. If notification permissions are denied, foreground sounds are also blocked (an architectural opportunity documented in `ROADMAP.md` for decoupling via a dedicated native audio engine such as `expo-audio`).
-  - *Update (2026-11)*: mitigated. When permission is denied and the app is active, `playCycleSound` falls back to `playInAppCycleSound`, which plays `focus.wav`/`break.wav` through `expo-audio` (`playsInSilentMode: true`) and vibrates on Android. With permission granted the notification path is unchanged.
+  - *Update (2026-11)*: mitigated. When permission is denied and the app is active, `playCycleSound` falls back to `playInAppCycleSound`, which plays `focus.wav`/`pause.wav` through `expo-audio` (`playsInSilentMode: true`) and vibrates on Android. With permission granted the notification path is unchanged.
 - **Android Channel Immutability**: Modifying notification sound or vibration behavior requires creating new channel identifiers (`cycles-focus-vibrate`, `cycles-break-quiet`) and migrating legacy channels (`deleteNotificationChannelAsync`).

@@ -243,6 +243,6 @@ export const playCycleSound = async (
 // Mesma assinatura da versão nativa. Na web o som já é sempre tocado pelo próprio app
 // (Web Audio), sem depender de permissão de notificação.
 export const playInAppCycleSound = async (soundPhase) =>
-  playCycleSound(soundPhase === "break" ? "short" : "focus", {
+  playCycleSound(soundPhase === "pause" ? "short" : "focus", {
     distinctSounds: true,
   });

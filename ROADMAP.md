@@ -39,7 +39,7 @@ A solução consiste em **desacoplar estritamente a emissão sonora em primeiro 
    │    Native Audio Engine      │   │  OS Scheduled Notification  │
    │   (ex.: expo-audio / AV)    │   │     (expo-notifications)    │
    ├─────────────────────────────┤   ├─────────────────────────────┤
-   │ • Toca focus.wav/break.wav  │   │ • Dispara alarme agendado   │
+   │ • Toca focus.wav/pause.wav  │   │ • Dispara alarme agendado   │
    │ • Independente de perm. SO  │   │ • Exact Alarm / Live Act.   │
    │ • Latência ultra-baixa      │   │ • Acorda tela bloqueada     │
    │ • Haptic via Haptics API    │   │ • Som e vibração nativos SO │
@@ -58,7 +58,7 @@ A solução consiste em **desacoplar estritamente a emissão sonora em primeiro 
    - Para tocar áudio e acionar vibração tátil com o app aberto na tela, nenhuma permissão de notificação é necessária.
    - Usuários que bloqueiam notificações podem utilizar o Fokus como um relógio de mesa interativo com garantia absoluta de áudio.
 3. **Pré-Carregamento e Latência Zero**:
-   - Manter os arquivos `focus.wav` e `break.wav` pré-carregados em memória (`prepareCycleSounds`), evitando atrasos de I/O na transição de estado.
+   - Manter os arquivos `focus.wav` e `pause.wav` pré-carregados em memória (`prepareCycleSounds`), evitando atrasos de I/O na transição de estado.
 4. **Reserva do `expo-notifications` para Background**:
    - O `expo-notifications` permanece responsável exclusivamente por:
      - Notificações agendadas pré-projetadas (`scheduleTimerNotifications`) com alarmes exatos (`SCHEDULE_EXACT_ALARM`) para quando a tela estiver desligada.

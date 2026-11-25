@@ -35,19 +35,24 @@ const CUSTOM_SOUND_CHANNELS = [
     sound: "focus.wav",
     vibrate: false,
   },
+  // O som da pausa se chamava break.wav, mas "break" é palavra reservada do Java e o
+  // prebuild do Android recusa esse nome de recurso. Virou pause.wav, com canais novos.
   {
-    id: "cycles-break-vibrate",
+    id: "cycles-pause-vibrate",
     name: "Fim da pausa (som Fokus, vibrar)",
-    sound: "break.wav",
+    sound: "pause.wav",
     vibrate: true,
   },
   {
-    id: "cycles-break-quiet",
+    id: "cycles-pause-quiet",
     name: "Fim da pausa (som Fokus, sem vibrar)",
-    sound: "break.wav",
+    sound: "pause.wav",
     vibrate: false,
   },
 ];
+
+// Canais de versões anteriores, apagados ao preparar as notificações
+const OBSOLETE_CHANNEL_IDS = ["cycles-break-vibrate", "cycles-break-quiet"];
 
 const ALL_CHANNELS = [...LEGACY_CHANNELS, ...CUSTOM_SOUND_CHANNELS];
 
@@ -80,7 +85,9 @@ const ensurePermission = () => {
   permissionPromise = (async () => {
     try {
       if (Platform.OS === "android") {
-        await Notifications.deleteNotificationChannelAsync(LEGACY_CHANNEL_ID);
+        for (const channelId of [LEGACY_CHANNEL_ID, ...OBSOLETE_CHANNEL_IDS]) {
+          await Notifications.deleteNotificationChannelAsync(channelId);
+        }
         for (const channel of ALL_CHANNELS) {
           await Notifications.setNotificationChannelAsync(channel.id, {
             name: channel.name,
@@ -126,7 +133,7 @@ export const scheduleTimerNotifications = async (
     }
     return await Promise.all(
       items.map(({ title, body, date, typeId }) => {
-        const soundPhase = typeId === "focus" ? "focus" : "break";
+        const soundPhase = typeId === "focus" ? "focus" : "pause";
         const customSound = distinctSounds && typeId != null;
         const channelId = customSound
           ? `cycles-${soundPhase}-${vibrate ? "vibrate" : "quiet"}`
@@ -224,7 +231,7 @@ export const dismissOngoingNotification = async () => {
 // Sons tocados pelo próprio app (expo-audio), sem passar pelas notificações
 const CYCLE_SOUND_ASSETS = {
   focus: require("../../assets/sounds/focus.wav"),
-  break: require("../../assets/sounds/break.wav"),
+  pause: require("../../assets/sounds/pause.wav"),
 };
 const cyclePlayers = {};
 let audioModeReady = false;
@@ -268,12 +275,12 @@ export const playCycleSound = async (
     if (!hasPermission) {
       // Sem permissão, a notificação não tocaria nada. Com o app aberto, toca pelo app.
       if (AppState.currentState === "active") {
-        const phase = distinctSounds && typeId !== "focus" ? "break" : "focus";
+        const phase = distinctSounds && typeId !== "focus" ? "pause" : "focus";
         await playInAppCycleSound(phase, { vibrate });
       }
       return;
     }
-    const soundPhase = typeId === "focus" ? "focus" : "break";
+    const soundPhase = typeId === "focus" ? "focus" : "pause";
     const customSound = distinctSounds && typeId != null;
     const channelId = customSound
       ? `cycles-${soundPhase}-${vibrate ? "vibrate" : "quiet"}`

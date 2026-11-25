@@ -369,10 +369,10 @@ describe("timerNotifications", () => {
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith({
         content: expect.objectContaining({
           title: "Pausa concluída!",
-          sound: "break.wav",
+          sound: "pause.wav",
           vibrate: undefined,
         }),
-        trigger: { channelId: "cycles-break-quiet" },
+        trigger: { channelId: "cycles-pause-quiet" },
       });
     });
   });
