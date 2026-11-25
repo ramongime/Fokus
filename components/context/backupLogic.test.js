@@ -2,6 +2,7 @@ import {
   buildBackup,
   describeBackup,
   getBackupFileName,
+  MAX_BACKUP_LENGTH,
   parseBackup,
 } from "./backupLogic";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
@@ -39,6 +40,11 @@ describe("backup", () => {
     expect(parseBackup('{"app":"outro","version":1}').error).toBe(
       "Este texto não é um backup do Fokus.",
     );
+  });
+
+  it("recusa texto grande demais antes de ler", () => {
+    const huge = `{"app":"fokus","version":1,"x":"${"a".repeat(MAX_BACKUP_LENGTH)}"}`;
+    expect(parseBackup(huge).ok).toBe(false);
   });
 
   it("recusa backup de versão mais nova", () => {

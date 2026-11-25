@@ -218,7 +218,13 @@ export const historyFromLegacyStats = (stats, focusMinutes) => {
   };
 };
 
-// Filtra entradas corrompidas ao carregar o histórico salvo no dispositivo
+// Um dia tem 1440 minutos e o foco mais curto tem 1 minuto: nenhum dia real passa disso.
+// Limita dados corrompidos ou de um backup adulterado (um número gigante travaria a tela
+// do timer, que desenha uma bolinha por foco).
+export const MAX_DAY_MINUTES = 24 * 60;
+const MAX_TASK_ID_LENGTH = 64;
+
+// Filtra entradas corrompidas ao carregar o histórico salvo no dispositivo (ou um backup)
 export const normalizeHistory = (raw) => {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return {};
@@ -235,7 +241,10 @@ export const normalizeHistory = (raw) => {
           entry.count >= 0,
       )
       .map(([key, entry]) => {
-        const day = { count: entry.count, minutes: safeMinutesOf(entry) };
+        const day = {
+          count: toCount(entry.count),
+          minutes: safeMinutesOf(entry),
+        };
         const tasks = normalizeDayTasks(entry.tasks);
         if (tasks) {
           day.tasks = tasks;
@@ -248,7 +257,11 @@ export const normalizeHistory = (raw) => {
 const isCount = (value) =>
   typeof value === "number" && Number.isFinite(value) && value >= 0;
 
-const safeMinutesOf = (entry) => (isCount(entry?.minutes) ? entry.minutes : 0);
+// Inteiro entre 0 e MAX_DAY_MINUTES
+const toCount = (value) => Math.min(Math.floor(value), MAX_DAY_MINUTES);
+
+const safeMinutesOf = (entry) =>
+  isCount(entry?.minutes) ? Math.min(entry.minutes, MAX_DAY_MINUTES) : 0;
 
 const normalizeDayTasks = (raw) => {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -258,13 +271,14 @@ const normalizeDayTasks = (raw) => {
     .filter(
       ([id, entry]) =>
         id.trim() !== "" &&
+        id.length <= MAX_TASK_ID_LENGTH &&
         entry &&
         typeof entry === "object" &&
         isCount(entry.count),
     )
     .map(([id, entry]) => [
       id,
-      { count: entry.count, minutes: safeMinutesOf(entry) },
+      { count: toCount(entry.count), minutes: safeMinutesOf(entry) },
     ]);
   return entries.length > 0 ? Object.fromEntries(entries) : null;
 };
@@ -318,7 +332,9 @@ export const summarizeTasks = (history, dayKeys, tasks) => {
   // Tarefas excluídas viram uma linha só
   const rows = new Map();
   for (const [id, total] of totals) {
-    const rowId = id == null ? "none" : names.has(id) ? id : "deleted";
+    // Prefixo para o id de uma tarefa nunca colidir com as linhas especiais
+    const rowId =
+      id == null ? "none" : names.has(id) ? `task:${id}` : "deleted";
     const label =
       rowId === "none"
         ? "Sem tarefa"

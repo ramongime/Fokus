@@ -14,12 +14,15 @@ export const getCounterSeries = (count, longBreakInterval) => {
   );
 };
 
+// Acima disso o texto continua com o total, mas não desenha mais bolinhas
+export const MAX_COUNTER_DOTS = 48;
+
 export const PomodoroCounter = memo(function PomodoroCounter({
   count,
   longBreakInterval,
 }) {
   const interval = Math.max(1, Math.floor(longBreakInterval) || 1);
-  const series = getCounterSeries(count, interval);
+  const series = getCounterSeries(Math.min(count, MAX_COUNTER_DOTS), interval);
   const label = `${count} ${count === 1 ? "foco" : "focos"} hoje`;
 
   return (

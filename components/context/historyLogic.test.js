@@ -7,6 +7,7 @@ import {
   getMonth,
   getWeek,
   HISTORY_DAYS,
+  MAX_DAY_MINUTES,
   mergeHistory,
   historyFromLegacyStats,
   normalizeHistory,
@@ -292,7 +293,7 @@ describe("focos por tarefa", () => {
       [{ id: "1", description: "Ler" }],
     );
     expect(rows).toEqual([
-      { id: "1", label: "Ler", count: 3, minutes: 75 },
+      { id: "task:1", label: "Ler", count: 3, minutes: 75 },
       { id: "deleted", label: "Tarefa excluída", count: 2, minutes: 50 },
       { id: "none", label: "Sem tarefa", count: 1, minutes: 25 },
     ]);
@@ -317,5 +318,38 @@ describe("mergeHistory", () => {
     expect(mergeHistory({}, { [old]: { count: 1, minutes: 25 } }, NOW)).toEqual(
       {},
     );
+  });
+});
+
+describe("limites do histórico", () => {
+  it("limita contagens absurdas de dados corrompidos ou adulterados", () => {
+    expect(
+      normalizeHistory({
+        "2026-09-26": {
+          count: 1e12,
+          minutes: 1e12,
+          tasks: {
+            1: { count: 2.7, minutes: 50 },
+            ["x".repeat(65)]: { count: 1 },
+          },
+        },
+      }),
+    ).toEqual({
+      "2026-09-26": {
+        count: MAX_DAY_MINUTES,
+        minutes: MAX_DAY_MINUTES,
+        tasks: { 1: { count: 2, minutes: 50 } },
+      },
+    });
+  });
+
+  it("não deixa __proto__ mexer no protótipo", () => {
+    const history = normalizeHistory(
+      JSON.parse(
+        '{"__proto__":{"count":1},"2026-09-26":{"count":1,"minutes":25,"tasks":{"__proto__":{"count":1}}}}',
+      ),
+    );
+    expect(Object.keys(history)).toEqual(["2026-09-26"]);
+    expect({}.count).toBeUndefined();
   });
 });

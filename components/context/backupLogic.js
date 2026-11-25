@@ -9,6 +9,7 @@ import { normalizeSettings } from "./timerLogic";
 
 export const BACKUP_APP = "fokus";
 export const BACKUP_VERSION = 1;
+export const MAX_BACKUP_LENGTH = 2 * 1024 * 1024;
 
 // Ex.: fokus-backup-2026-11-25.json (data local)
 export const getBackupFileName = (now) => {
@@ -34,9 +35,14 @@ export const buildBackup = ({ settings, tasks, history, now }) =>
 // Lê o texto de um backup. Devolve { ok: true, data } com tudo já validado,
 // ou { ok: false, error } com a mensagem para mostrar ao usuário.
 export const parseBackup = (text) => {
+  const content = String(text ?? "").trim();
+  // Um ano de histórico com tarefas fica bem abaixo disso; texto maior não é um backup
+  if (content.length > MAX_BACKUP_LENGTH) {
+    return { ok: false, error: "Texto grande demais para um backup do Fokus." };
+  }
   let raw;
   try {
-    raw = JSON.parse(String(text ?? "").trim());
+    raw = JSON.parse(content);
   } catch {
     return {
       ok: false,

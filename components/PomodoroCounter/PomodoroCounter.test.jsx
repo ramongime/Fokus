@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react-native";
-import { getCounterSeries, PomodoroCounter } from "./index";
+import { getCounterSeries, MAX_COUNTER_DOTS, PomodoroCounter } from "./index";
 
 describe("getCounterSeries", () => {
   it("mostra uma série vazia quando ainda não houve foco", () => {
@@ -40,5 +40,16 @@ describe("PomodoroCounter", () => {
 
     expect(queryAllByTestId("pomodoro-counter-dot-filled")).toHaveLength(0);
     expect(getAllByTestId("pomodoro-counter-dot")).toHaveLength(4);
+  });
+
+  it("limita as bolinhas desenhadas, mas mostra o total no texto", async () => {
+    const { getAllByTestId, getByText } = await render(
+      <PomodoroCounter count={5000} longBreakInterval={4} />,
+    );
+
+    expect(getAllByTestId("pomodoro-counter-dot-filled")).toHaveLength(
+      MAX_COUNTER_DOTS,
+    );
+    expect(getByText("🍅 5000 focos hoje")).toBeTruthy();
   });
 });
