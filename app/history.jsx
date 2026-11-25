@@ -8,18 +8,21 @@ import {
   getStreak,
   getWeek,
   summarizeMonth,
+  summarizeTasks,
   summarizeWeek,
 } from "../components/context/historyLogic";
 import useSettingsContext from "../components/context/useSettingsContext";
-import useTimerContext from "../components/context/useTimerContext";
+import useTaskContext from "../components/context/useTaskContext";
+import useTimerSummaryContext from "../components/context/useTimerSummaryContext";
 import { StatTile } from "../components/StatTile";
 import { WeekChart } from "../components/WeekChart";
 import { colors, fontSizes, radii } from "../constants/theme";
 
 export default function History() {
   const params = useLocalSearchParams();
-  const { history, clock: now } = useTimerContext();
+  const { history, clock: now } = useTimerSummaryContext();
   const { settings } = useSettingsContext();
+  const { tasks } = useTaskContext();
   const [prevParamView, setPrevParamView] = useState(params?.view);
   const [view, setView] = useState(params?.view === "month" ? "month" : "week");
   const [monthOffset, setMonthOffset] = useState(0);
@@ -39,6 +42,15 @@ export default function History() {
     [history, now, monthOffset],
   );
   const monthTotal = useMemo(() => summarizeMonth(month), [month]);
+  // Tempo por tarefa no período da aba aberta (semana ou mês exibido)
+  const taskRows = useMemo(() => {
+    const keys =
+      view === "month"
+        ? month.days.filter((day) => !day.empty).map((day) => day.key)
+        : week.map((day) => day.key);
+    return summarizeTasks(history, keys, tasks);
+  }, [history, view, month, week, tasks]);
+  const maxTaskMinutes = Math.max(1, ...taskRows.map((row) => row.minutes));
   const streak = useMemo(() => getStreak(history, now), [history, now]);
   const oldestMonthKey = useMemo(() => getOldestHistoryMonthKey(now), [now]);
   const selectedWeekDay =
@@ -271,6 +283,53 @@ export default function History() {
         </View>
       )}
 
+      {taskRows.length > 0 ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Por tarefa</Text>
+          <Text style={styles.cardSubtitle}>
+            {view === "month" ? "No mês exibido" : "Nos últimos 7 dias"}
+          </Text>
+          <View style={styles.taskList}>
+            {taskRows.map((row) => (
+              <View
+                key={row.id}
+                style={styles.taskRow}
+                accessible
+                accessibilityLabel={`${row.label}: ${row.count} ${row.count === 1 ? "foco" : "focos"}, ${formatMinutes(row.minutes)}`}
+              >
+                <View style={styles.taskRowHeader}>
+                  <Text
+                    style={[
+                      styles.taskLabel,
+                      row.id === "none" || row.id === "deleted"
+                        ? styles.taskLabelMuted
+                        : null,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {row.label}
+                  </Text>
+                  <Text style={styles.taskValue}>
+                    {row.count} {row.count === 1 ? "foco" : "focos"} ·{" "}
+                    {formatMinutes(row.minutes)}
+                  </Text>
+                </View>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.taskFill,
+                      {
+                        width: `${Math.max(4, (row.minutes / maxTaskMinutes) * 100)}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {(view === "month" ? monthTotal.count : weekTotal.count) === 0 ? (
         <Text style={styles.empty}>
           Complete um foco para começar seu histórico. 🍅
@@ -479,6 +538,35 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     backgroundColor: colors.success,
+    borderRadius: 3,
+  },
+  taskList: {
+    gap: 12,
+    marginTop: 12,
+  },
+  taskRow: {
+    gap: 4,
+  },
+  taskRowHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  taskLabel: {
+    flex: 1,
+    color: colors.text,
+    fontSize: fontSizes.sm,
+  },
+  taskLabelMuted: {
+    color: colors.muted,
+  },
+  taskValue: {
+    color: colors.muted,
+    fontSize: fontSizes.sm,
+  },
+  taskFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
     borderRadius: 3,
   },
   goalText: {

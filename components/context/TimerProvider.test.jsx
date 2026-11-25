@@ -22,6 +22,7 @@ import {
 import { TimerProvider } from "./TimerProvider";
 import useTaskContext from "./useTaskContext";
 import useTimerContext from "./useTimerContext";
+import useTimerSummaryContext from "./useTimerSummaryContext";
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(),
@@ -859,5 +860,145 @@ describe("TimerProvider & useTimerContext", () => {
       expect(result.current.timerRunning).toBe(false);
     });
     warnSpy.mockRestore();
+  });
+
+  it("zera os focos de hoje na virada do dia com o app aberto", async () => {
+    jest.useFakeTimers();
+    const beforeMidnight = new Date(2026, 10, 25, 23, 59, 30).getTime();
+    jest.setSystemTime(beforeMidnight);
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") {
+        return JSON.stringify({
+          typeId: "focus",
+          history: { [todayKey(beforeMidnight)]: { count: 6, minutes: 150 } },
+        });
+      }
+      return null;
+    });
+
+    try {
+      const { result } = await renderHook(() => useTimerContext(), {
+        wrapper: AllProviders,
+      });
+      await waitFor(() => {
+        expect(result.current.todayCount).toBe(6);
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(61 * 1000);
+      });
+
+      expect(result.current.todayCount).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("não renderiza quem usa useTimerSummaryContext a cada segundo do timer", async () => {
+    const onSummaryRender = jest.fn();
+    const { result } = await renderHook(
+      () => {
+        const timer = useTimerContext();
+        return { timer };
+      },
+      {
+        wrapper: ({ children }) => {
+          const Summary = () => {
+            useTimerSummaryContext();
+            onSummaryRender();
+            return null;
+          };
+          return (
+            <AllProviders>
+              <Summary />
+              {children}
+            </AllProviders>
+          );
+        },
+      },
+    );
+    await waitFor(() => {
+      expect(result.current.timer.timerType.id).toBe("focus");
+    });
+
+    jest.useFakeTimers();
+    try {
+      await act(async () => {
+        await result.current.timer.toggleTimer();
+      });
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+      const rendersAfterStart = onSummaryRender.mock.calls.length;
+      const secondsAfterStart = result.current.timer.seconds;
+
+      await act(async () => {
+        jest.advanceTimersByTime(5 * 1000);
+      });
+
+      expect(result.current.timer.seconds).toBeLessThan(secondsAfterStart);
+      expect(onSummaryRender).toHaveBeenCalledTimes(rendersAfterStart);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("continua a série da pausa longa quando os ciclos atravessam a meia-noite", async () => {
+    jest.useFakeTimers();
+    const now = new Date(2026, 10, 26, 0, 5).getTime();
+    jest.setSystemTime(now);
+    const yesterday = new Date(2026, 10, 25, 23, 50).getTime();
+    AsyncStorage.getItem.mockImplementation(async (key) => {
+      if (key === "fokus-timer") {
+        return JSON.stringify({
+          typeId: "focus",
+          history: { [todayKey(yesterday)]: { count: 3, minutes: 75 } },
+          series: { count: 3, lastEndTime: yesterday },
+          // Foco que terminou agora, depois da meia-noite: é o 4º da série
+          segments: [
+            { typeId: "focus", startTime: now - 1500000, endTime: now - 1000 },
+          ],
+          processed: 0,
+        });
+      }
+      return null;
+    });
+
+    try {
+      const { result } = await renderHook(() => useTimerContext(), {
+        wrapper: AllProviders,
+      });
+      await waitFor(() => {
+        expect(result.current.todayCount).toBe(1);
+      });
+      expect(result.current.seriesCount).toBe(4);
+      // Fechou a série de 4: a próxima é a pausa longa, mesmo sendo o 1º foco do dia
+      expect(result.current.timerType.id).toBe("long");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("importa o histórico de um backup somando ao atual", async () => {
+    const today = todayKey(Date.now());
+    AsyncStorage.getItem.mockImplementation(async (key) =>
+      key === "fokus-timer"
+        ? JSON.stringify({ history: { [today]: { count: 1, minutes: 25 } } })
+        : null,
+    );
+    const { result } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+    await waitFor(() => expect(result.current.todayCount).toBe(1));
+
+    await act(() => {
+      result.current.importHistory({
+        [today]: { count: 3, minutes: 75 },
+        lixo: { count: 1 },
+      });
+    });
+
+    expect(result.current.todayCount).toBe(3);
+    expect(Object.keys(result.current.history)).toEqual([today]);
   });
 });

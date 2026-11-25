@@ -17,7 +17,7 @@ In a Pomodoro productivity application, users frequently lock their devices or s
 
 2. **Unified Cycle Completion Alarms**:
    When the timer countdown reaches `00:00`, completion feedback (sound and haptic vibration) must trigger deterministically across all environments:
-   - In **Foreground** (app active and visible): The app must never stay silent when open in front of the user (`.agents/rules/fokus-standards.md`).
+   - In **Foreground** (app active and visible): The app must never stay silent when open in front of the user.
    - In **Background** (screen locked or app suspended): The host operating system must fire native alerts without depending on a frozen JavaScript runtime.
 
 Alternative solutions evaluated:
@@ -35,7 +35,7 @@ We decided to establish unified background presence and completion alerting usin
    - **iOS Live Activities**: The application configures `NSSupportsLiveActivities: true` in `app.json` (`ios.infoPlist`), enabling target timestamp binding for native Live Activities and Dynamic Island projections.
 
 2. **Unified Cycle Completion Alarms**:
-   - **Foreground Delivery**: When the timer countdown reaches `00:00` while the application is in the foreground, `playCycleSound(typeId, { distinctSounds, vibrate })` fires immediately. It schedules an immediate local notification with phase-specific audio assets (`focus.wav` or `break.wav`) and vibration pattern (`VIBRATION_PATTERN = [0, 400, 200, 400]`), ensuring immediate audiovisual and haptic feedback.
+   - **Foreground Delivery**: When the timer countdown reaches `00:00` while the application is in the foreground, `playCycleSound(typeId, { distinctSounds, vibrate })` fires immediately. It schedules an immediate local notification with phase-specific audio assets (`focus.wav` or `pause.wav`) and vibration pattern (`VIBRATION_PATTERN = [0, 400, 200, 400]`), ensuring immediate audiovisual and haptic feedback.
    - **Background Delivery**: When starting or modifying a timer sequence, `scheduleTimerNotifications` pre-registers exact native alarms (`SCHEDULE_EXACT_ALARM` on Android, `SchedulableTriggerInputTypes.DATE` on iOS) for each segment's target `endTime`. Even when the JS runtime is frozen, the OS delivers the notification, custom sound, and vibration at the exact target millisecond.
 
 3. **Lifecycle Teardown & Transition Hygiene**:
@@ -54,4 +54,5 @@ We decided to establish unified background presence and completion alerting usin
 ### Negative
 
 - **Foreground Notification Coupling**: Because `playCycleSound` currently routes through `expo-notifications`, foreground audio depends on notification permissions and OS notification settings. If notification permissions are denied, foreground sounds are also blocked (an architectural opportunity documented in `ROADMAP.md` for decoupling via a dedicated native audio engine such as `expo-audio`).
+  - *Update (2026-11)*: superseded by ADR 0008 (foreground audio moved to `services/audioService.js` via `expo-audio`). The pause sound file is now `pause.wav` (`break` is a Java reserved word and broke the Android prebuild).
 - **Android Channel Immutability**: Modifying notification sound or vibration behavior requires creating new channel identifiers (`cycles-focus-vibrate`, `cycles-break-quiet`) and migrating legacy channels (`deleteNotificationChannelAsync`).

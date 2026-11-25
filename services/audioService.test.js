@@ -12,7 +12,7 @@ import {
 } from "./audioService";
 
 jest.mock("../assets/sounds/focus.wav", () => "focus-sound-asset");
-jest.mock("../assets/sounds/break.wav", () => "break-sound-asset");
+jest.mock("../assets/sounds/pause.wav", () => "break-sound-asset");
 
 function getPlayerForAsset(assetName) {
   const callIndex = createAudioPlayer.mock.calls.findIndex(
@@ -143,7 +143,7 @@ describe("audioService (native)", () => {
     expect(breakPlayer.play).not.toHaveBeenCalled();
   });
 
-  it("toca o som de pausa (break.wav) para Pausa Curta e Pausa Longa quando distinctSounds está ativo", async () => {
+  it("toca o som de pausa (pause.wav) para Pausa Curta e Pausa Longa quando distinctSounds está ativo", async () => {
     await prepareCycleSounds();
     const focusPlayer = getPlayerForAsset("focus-sound-asset");
     const breakPlayer = getPlayerForAsset("break-sound-asset");

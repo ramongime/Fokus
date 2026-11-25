@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { Platform } from "react-native";
-import { getTodayCount, todayKey } from "../components/context/historyLogic";
+import {
+  getNextDayStart,
+  getTodayCount,
+  todayKey,
+} from "../components/context/historyLogic";
 import {
   countFinishedSegments,
   formatSeconds,
@@ -19,11 +23,14 @@ export default function WidgetSync() {
     seconds,
     timerRunning,
     todayCount,
+    seriesCount,
     segments,
     history,
-    clock,
   } = useTimerContext();
   const minutesRemaining = Math.ceil(seconds / 60);
+  // Rodando, o widget mostra só minutos: arredonda para o efeito não rodar (e não
+  // atualizar o widget nativo) a cada segundo, apenas quando o minuto muda
+  const displaySeconds = timerRunning ? minutesRemaining * 60 : seconds;
 
   useEffect(() => {
     if (!settingsLoaded) {
@@ -33,7 +40,7 @@ export default function WidgetSync() {
     const makeWidgetProps = (
       segment,
       focusCount,
-      timerText = formatSeconds(timerRunning ? minutesRemaining * 60 : seconds),
+      timerText = formatSeconds(displaySeconds),
     ) => ({
       typeLabel: getTypeById(segment?.typeId ?? timerType.id).display,
       timerText,
@@ -55,9 +62,12 @@ export default function WidgetSync() {
       : 0;
     const currentSegment = timerRunning ? segments?.[currentIndex] : null;
     try {
-      const p = FokusWidget.updateSnapshot(
-        makeWidgetProps(currentSegment, todayCount),
-      );
+      const p = FokusWidget.updateSnapshot({
+        ...makeWidgetProps(currentSegment, todayCount),
+        // O widget compara com a data de hoje e mostra 0 se o dia já virou (Android
+        // atualiza o widget sozinho a cada 30 min, sem o app aberto)
+        focusDay: todayKey(Date.now()),
+      });
       if (p && typeof p.catch === "function") {
         p.catch((e) =>
           console.warn("FokusWidget updateSnapshot async error:", e),
@@ -68,18 +78,25 @@ export default function WidgetSync() {
     }
 
     if (
-      timerRunning &&
-      Platform.OS === "ios" &&
-      typeof FokusWidget.updateTimeline === "function"
+      Platform.OS !== "ios" ||
+      typeof FokusWidget.updateTimeline !== "function"
     ) {
+      return;
+    }
+
+    // Linha do tempo do widget no iOS: um item por ciclo planejado e um à meia-noite,
+    // para o "Hoje: X focos" zerar no dia novo mesmo com o app fechado
+    const now = Date.now();
+    let timeline;
+    if (timerRunning && segments) {
       const remainingSegments = segments.slice(currentIndex);
       if (remainingSegments.length === 0) {
         return;
       }
-      const timeline = remainingSegments.map((segment, index) => {
+      timeline = remainingSegments.map((segment, index) => {
         const date =
           index === 0
-            ? new Date()
+            ? new Date(now)
             : new Date(
                 segment.startTime ??
                   segment.endTime -
@@ -108,9 +125,14 @@ export default function WidgetSync() {
         finalSegment.endTime,
         remainingSegments,
       );
+      // A pausa depois do plano segue a série (que pode ter começado ontem)
+      const seriesAfterPlan =
+        seriesCount +
+        remainingSegments.filter((segment) => segment.typeId === "focus")
+          .length;
       const nextTypeId = getNextTypeId(
         finalSegment.typeId,
-        countAfterPlan,
+        seriesAfterPlan,
         settings,
       );
 
@@ -127,28 +149,52 @@ export default function WidgetSync() {
           timerEndTime: null,
         },
       });
-      try {
-        const p = FokusWidget.updateTimeline(timeline);
-        if (p && typeof p.catch === "function") {
-          p.catch((e) =>
-            console.warn("FokusWidget updateTimeline async error:", e),
-          );
-        }
-      } catch (e) {
-        console.warn("FokusWidget updateTimeline error:", e);
+    } else {
+      timeline = [
+        { date: new Date(now), props: makeWidgetProps(null, todayCount) },
+      ];
+    }
+
+    // À meia-noite nenhum foco do dia novo terminou ainda: o contador é zero
+    const midnight = getNextDayStart(now);
+    const activeAtMidnight = timeline.filter(
+      (entry) => entry.date.getTime() <= midnight,
+    );
+    const entryAtMidnight = activeAtMidnight[activeAtMidnight.length - 1];
+    if (entryAtMidnight) {
+      timeline.push({
+        date: new Date(midnight),
+        props: { ...entryAtMidnight.props, focusCount: 0 },
+      });
+      timeline.sort((a, b) => a.date.getTime() - b.date.getTime());
+    }
+
+    timeline = timeline.map((entry) => ({
+      ...entry,
+      props: { ...entry.props, focusDay: todayKey(entry.date.getTime()) },
+    }));
+
+    try {
+      const p = FokusWidget.updateTimeline(timeline);
+      if (p && typeof p.catch === "function") {
+        p.catch((e) =>
+          console.warn("FokusWidget updateTimeline async error:", e),
+        );
       }
+    } catch (e) {
+      console.warn("FokusWidget updateTimeline error:", e);
     }
   }, [
     settingsLoaded,
     settings,
     timerType,
-    seconds,
+    displaySeconds,
     minutesRemaining,
     timerRunning,
     todayCount,
+    seriesCount,
     segments,
     history,
-    clock,
   ]);
 
   return null;

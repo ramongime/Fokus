@@ -51,7 +51,7 @@
       [
         "expo-notifications",
         {
-          "sounds": ["./assets/sounds/focus.wav", "./assets/sounds/break.wav"],
+          "sounds": ["./assets/sounds/focus.wav", "./assets/sounds/pause.wav"],
           "enableRemoteNotifications": false
         }
       ],
@@ -92,6 +92,7 @@
           ]
         }
       ],
+      "./plugins/withWidgetUpdatePeriod",
       [
         "expo-splash-screen",
         {

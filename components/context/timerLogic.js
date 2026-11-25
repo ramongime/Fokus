@@ -5,6 +5,7 @@
  */
 import { pomodoro } from "../../constants/pomodoro";
 import { DEFAULT_SETTINGS, SETTINGS_LIMITS } from "../../constants/settings";
+import { todayKey } from "./historyLogic";
 
 // Quantos ciclos à frente são planejados (e notificados) quando os ciclos emendam
 export const MAX_PLANNED_SEGMENTS = 8;
@@ -40,6 +41,44 @@ export const getNextTypeId = (finishedTypeId, focusCount, settings) => {
   }
   return focusCount % settings.longBreakInterval === 0 ? "long" : "short";
 };
+
+// Uma série de focos (até a pausa longa) atravessa a meia-noite se o último foco terminou
+// há no máximo este tempo. Mais que isso, num dia diferente, a série recomeça do zero.
+export const SERIES_GAP_MS = 2 * 60 * 60 * 1000;
+
+// Quantos focos a série atual já tem em `now`. `series` = { count, lastEndTime } salvo pelo
+// timer; sem ele (versão anterior), vale a contagem do dia, como antes.
+export const getSeriesCount = (series, todayCount, now) => {
+  if (
+    !series ||
+    !Number.isFinite(series.lastEndTime) ||
+    !Number.isInteger(series.count) ||
+    series.count < 0
+  ) {
+    return todayCount;
+  }
+  const sameDay = todayKey(series.lastEndTime) === todayKey(now);
+  return sameDay || now - series.lastEndTime <= SERIES_GAP_MS
+    ? series.count
+    : 0;
+};
+
+// Soma à série um foco que terminou em `endTime`
+export const addFocusToSeries = (series, todayCountBefore, endTime) => ({
+  count: getSeriesCount(series, todayCountBefore, endTime) + 1,
+  lastEndTime: endTime,
+});
+
+// Valida a série salva; qualquer coisa estranha vira null (cai na contagem do dia)
+export const normalizeSeries = (raw) =>
+  raw &&
+  typeof raw === "object" &&
+  Number.isInteger(raw.count) &&
+  raw.count >= 0 &&
+  typeof raw.lastEndTime === "number" &&
+  Number.isFinite(raw.lastEndTime)
+    ? { count: raw.count, lastEndTime: raw.lastEndTime }
+    : null;
 
 // Monta a sequência de ciclos a partir de agora. Sem emendar ciclos, é só o atual.
 // Ex.: foco com 0 focos no dia -> foco, curta, foco, curta, foco, curta, foco, longa

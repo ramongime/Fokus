@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -14,17 +14,37 @@ import TaskItem from "../../components/TaskItem";
 import { colors, fontSizes, radii } from "../../constants/theme";
 
 const TaskSeparator = () => <View style={styles.separator} />;
+const keyExtractor = (item) => item.id;
+const openEdit = (id) => router.navigate(`/edit-task/${id}`);
 
 export default function Tasks() {
   const { tasks, addTask, deleteTask, toggleTaskCompleted } = useTaskContext();
-  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [taskToDeleteId, setTaskToDeleteId] = useState(null);
+  const taskToDelete = tasks.find((t) => t.id === taskToDeleteId) ?? null;
   const [draft, setDraft] = useState("");
   const pendingCount = tasks.filter((t) => !t.completed).length;
+
+  // Estável entre renders (só muda com a lista): digitar no campo de nova tarefa
+  // não redesenha as linhas, e o memo do TaskItem só redesenha a que mudou
+  const renderItem = useCallback(
+    ({ item }) => (
+      <TaskItem
+        id={item.id}
+        completed={item.completed}
+        text={item.description}
+        pomodoros={item.pomodoros}
+        onPressDelete={setTaskToDeleteId}
+        onToggleComplete={toggleTaskCompleted}
+        onPressEdit={openEdit}
+      />
+    ),
+    [toggleTaskCompleted],
+  );
 
   const confirmDelete = () => {
     if (!taskToDelete) return;
     deleteTask(taskToDelete.id);
-    setTaskToDelete(null);
+    setTaskToDeleteId(null);
   };
 
   // Cria direto da lista: digita e confirma, sem abrir outra tela
@@ -40,17 +60,8 @@ export default function Tasks() {
       <View style={styles.wrapper}>
         <FlatList
           data={tasks}
-          renderItem={({ item }) => (
-            <TaskItem
-              completed={item.completed}
-              text={item.description}
-              pomodoros={item.pomodoros}
-              onPressDelete={() => setTaskToDelete(item)}
-              onToggleComplete={() => toggleTaskCompleted(item.id)}
-              onPressEdit={() => router.navigate(`/edit-task/${item.id}`)}
-            />
-          )}
-          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
           keyboardShouldPersistTaps="handled"
           ItemSeparatorComponent={TaskSeparator}
           ListHeaderComponent={
@@ -108,7 +119,7 @@ export default function Tasks() {
         }
         confirmLabel="Excluir"
         onConfirm={confirmDelete}
-        onCancel={() => setTaskToDelete(null)}
+        onCancel={() => setTaskToDeleteId(null)}
       />
     </View>
   );

@@ -27,8 +27,8 @@ We decided to decouple foreground audio playback from OS notifications by introd
      - `playsInSilentMode: true` so iOS plays completion tones even when the physical mute switch is enabled.
      - `interruptionMode: "mixWithOthers"` so cycle chimes mix smoothly over background music or podcasts without pausing them.
      - `allowsRecording: false` and `shouldPlayInBackground: false`.
-   - Preloads `assets/sounds/focus.wav` and `assets/sounds/break.wav` via `createAudioPlayer` on play gesture (`prepareCycleSounds`), coalescing concurrent initialization and lazily preparing on demand if needed.
-   - Plays `focus.wav` for focus cycles or whenever `distinctSounds === false` (preserving parity with Web without adding extra audio assets), and `break.wav` for break cycles when `distinctSounds === true`, rewinding via `seekTo(0)` before calling `play()`.
+   - Preloads `assets/sounds/focus.wav` and `assets/sounds/pause.wav` via `createAudioPlayer` on play gesture (`prepareCycleSounds`), coalescing concurrent initialization and lazily preparing on demand if needed.
+   - Plays `focus.wav` for focus cycles or whenever `distinctSounds === false` (preserving parity with Web without adding extra audio assets), and `pause.wav` (formerly `break.wav`) for break cycles when `distinctSounds === true`, rewinding via `seekTo(0)` before calling `play()`.
    - Operates with zero dependency on notification permissions and releases native players via `releaseCycleSounds()` when `TimerProvider` unmounts.
 
 2. **Minimal Config Plugin Permissions (`app.json`)**:

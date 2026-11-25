@@ -403,4 +403,31 @@ describe("TasksProvider & useTaskContext", () => {
     expect(recovered.current.tasks).toEqual([]);
     warnSpy.mockRestore();
   });
+
+  it("importa tarefas de um backup sem perder as atuais e sem repetir ids", async () => {
+    AsyncStorage.getItem.mockResolvedValue(
+      JSON.stringify([{ id: "1", description: "Atual", pomodoros: 4 }]),
+    );
+    const { result } = await renderHook(() => useTaskContext(), {
+      wrapper: ({ children }) => <TasksProvider>{children}</TasksProvider>,
+    });
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+    await act(() => {
+      result.current.importTasks([
+        { id: "1", description: "Atual", pomodoros: 1 },
+        { id: "5000", description: "Do backup" },
+      ]);
+    });
+
+    expect(result.current.tasks).toEqual([
+      { id: "1", description: "Atual", pomodoros: 4 },
+      { id: "5000", description: "Do backup" },
+    ]);
+    let newId;
+    await act(() => {
+      newId = result.current.addTask("Nova");
+    });
+    expect(Number(newId)).toBeGreaterThan(5000);
+  });
 });

@@ -1,4 +1,5 @@
 import {
+  getNextDayStart,
   addFocusSessions,
   formatMinutes,
   getStreak,
@@ -6,9 +7,12 @@ import {
   getMonth,
   getWeek,
   HISTORY_DAYS,
+  MAX_DAY_MINUTES,
+  mergeHistory,
   historyFromLegacyStats,
   normalizeHistory,
   summarizeMonth,
+  summarizeTasks,
   summarizeWeek,
   todayKey,
 } from "./historyLogic";
@@ -208,5 +212,144 @@ describe("normalizeHistory", () => {
       "2026-09-26": { count: 2, minutes: 50 },
       "2026-09-25": { count: 1, minutes: 0 },
     });
+  });
+});
+
+describe("getNextDayStart", () => {
+  it("retorna a próxima meia-noite local", () => {
+    const now = new Date(2026, 10, 25, 23, 59, 30).getTime();
+    expect(getNextDayStart(now)).toBe(new Date(2026, 10, 26).getTime());
+  });
+
+  it("vira o mês e o ano", () => {
+    const now = new Date(2026, 11, 31, 8, 0).getTime();
+    expect(getNextDayStart(now)).toBe(new Date(2027, 0, 1).getTime());
+  });
+
+  it("à meia-noite em ponto aponta para o dia seguinte", () => {
+    const now = new Date(2026, 10, 26).getTime();
+    expect(getNextDayStart(now)).toBe(new Date(2026, 10, 27).getTime());
+  });
+});
+
+describe("focos por tarefa", () => {
+  it("guarda no dia o total de cada tarefa", () => {
+    const history = addFocusSessions(
+      {},
+      [
+        { endTime: at(26, 9), minutes: 25, taskId: "7" },
+        { endTime: at(26, 10), minutes: 25, taskId: "7" },
+        { endTime: at(26, 11), minutes: 15 },
+      ],
+      NOW,
+    );
+    expect(history[todayKey(NOW)]).toEqual({
+      count: 3,
+      minutes: 65,
+      tasks: { 7: { count: 2, minutes: 50 } },
+    });
+  });
+
+  it("mantém e valida as tarefas ao normalizar", () => {
+    expect(
+      normalizeHistory({
+        "2026-09-26": {
+          count: 2,
+          minutes: 50,
+          tasks: { 7: { count: 1, minutes: 25 }, x: { count: -1 } },
+        },
+        "2026-09-25": { count: 1, minutes: 25, tasks: "lixo" },
+      }),
+    ).toEqual({
+      "2026-09-26": {
+        count: 2,
+        minutes: 50,
+        tasks: { 7: { count: 1, minutes: 25 } },
+      },
+      "2026-09-25": { count: 1, minutes: 25 },
+    });
+  });
+
+  it("resume por tarefa, com sem tarefa e excluídas agrupadas", () => {
+    const history = {
+      "2026-09-26": {
+        count: 4,
+        minutes: 100,
+        tasks: {
+          1: { count: 1, minutes: 25 },
+          2: { count: 1, minutes: 25 },
+          3: { count: 1, minutes: 25 },
+        },
+      },
+      "2026-09-25": {
+        count: 2,
+        minutes: 50,
+        tasks: { 1: { count: 2, minutes: 50 } },
+      },
+    };
+    const rows = summarizeTasks(
+      history,
+      ["2026-09-25", "2026-09-26"],
+      [{ id: "1", description: "Ler" }],
+    );
+    expect(rows).toEqual([
+      { id: "task:1", label: "Ler", count: 3, minutes: 75 },
+      { id: "deleted", label: "Tarefa excluída", count: 2, minutes: 50 },
+      { id: "none", label: "Sem tarefa", count: 1, minutes: 25 },
+    ]);
+  });
+});
+
+describe("mergeHistory", () => {
+  it("fica com o registro de mais focos em cada dia, sem somar duas vezes", () => {
+    const current = { "2026-09-26": { count: 3, minutes: 75 } };
+    const incoming = {
+      "2026-09-26": { count: 2, minutes: 50 },
+      "2026-09-20": { count: 1, minutes: 25 },
+    };
+    expect(mergeHistory(current, incoming, NOW)).toEqual({
+      "2026-09-26": { count: 3, minutes: 75 },
+      "2026-09-20": { count: 1, minutes: 25 },
+    });
+  });
+
+  it("descarta dias além do limite do histórico", () => {
+    const old = todayKey(NOW - (HISTORY_DAYS + 5) * 24 * 60 * 60 * 1000);
+    expect(mergeHistory({}, { [old]: { count: 1, minutes: 25 } }, NOW)).toEqual(
+      {},
+    );
+  });
+});
+
+describe("limites do histórico", () => {
+  it("limita contagens absurdas de dados corrompidos ou adulterados", () => {
+    expect(
+      normalizeHistory({
+        "2026-09-26": {
+          count: 1e12,
+          minutes: 1e12,
+          tasks: {
+            1: { count: 2.7, minutes: 50 },
+            ["x".repeat(65)]: { count: 1 },
+          },
+        },
+      }),
+    ).toEqual({
+      "2026-09-26": {
+        count: MAX_DAY_MINUTES,
+        minutes: MAX_DAY_MINUTES,
+        tasks: { 1: { count: 2, minutes: 50 } },
+      },
+    });
+  });
+
+  it("não deixa __proto__ mexer no protótipo", () => {
+    const history = normalizeHistory(
+      JSON.parse(
+        '{"__proto__":{"count":1},"2026-09-26":{"count":1,"minutes":25,"tasks":{"__proto__":{"count":1}}}}',
+      ),
+    );
+    expect(Object.keys(history)).toEqual(["2026-09-26"]);
+    expect({}.count).toBeUndefined();
   });
 });

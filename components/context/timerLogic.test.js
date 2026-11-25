@@ -1,4 +1,7 @@
 import {
+  addFocusToSeries,
+  getSeriesCount,
+  normalizeSeries,
   buildPlan,
   countFinishedSegments,
   FOREGROUND_ALERT_WINDOW_MS,
@@ -323,5 +326,47 @@ describe("normalizeSavedSegments", () => {
         { typeId: "unknown", startTime: 1000, endTime: 2000 },
       ]),
     ).toEqual([{ typeId: "focus", startTime: 1000, endTime: 2000 }]);
+  });
+});
+
+describe("série de focos até a pausa longa", () => {
+  const at = (day, hour, minute = 0) =>
+    new Date(2026, 10, day, hour, minute).getTime();
+
+  it("sem série salva, usa os focos de hoje", () => {
+    expect(getSeriesCount(null, 3, at(25, 10))).toBe(3);
+  });
+
+  it("no mesmo dia, a série continua mesmo depois de horas parado", () => {
+    const series = { count: 2, lastEndTime: at(25, 8) };
+    expect(getSeriesCount(series, 2, at(25, 18))).toBe(2);
+  });
+
+  it("atravessa a meia-noite se o último foco terminou há pouco", () => {
+    const series = { count: 2, lastEndTime: at(25, 23, 40) };
+    expect(getSeriesCount(series, 0, at(26, 0, 5))).toBe(2);
+    expect(addFocusToSeries(series, 0, at(26, 0, 30))).toEqual({
+      count: 3,
+      lastEndTime: at(26, 0, 30),
+    });
+  });
+
+  it("recomeça no dia seguinte depois de uma pausa longa demais", () => {
+    const series = { count: 3, lastEndTime: at(25, 22) };
+    expect(getSeriesCount(series, 0, at(26, 9))).toBe(0);
+    expect(addFocusToSeries(series, 0, at(26, 9))).toEqual({
+      count: 1,
+      lastEndTime: at(26, 9),
+    });
+  });
+
+  it("descarta série salva inválida", () => {
+    expect(normalizeSeries({ count: -1, lastEndTime: 1 })).toBeNull();
+    expect(normalizeSeries({ count: 2 })).toBeNull();
+    expect(normalizeSeries("x")).toBeNull();
+    expect(normalizeSeries({ count: 2, lastEndTime: 5 })).toEqual({
+      count: 2,
+      lastEndTime: 5,
+    });
   });
 });

@@ -6,13 +6,15 @@ Este documento registra as diretrizes de evolução técnica e oportunidades arq
 
 ## 1. Oportunidade Prioritária: Desacoplamento da Reprodução Sonora em Primeiro Plano
 
+> **Status (2026-11)**: entregue. Ver ADR 0008 e `services/audioService.js`.
+
 ### 1.1 Contexto e Diagnóstico Atual
 
 Atualmente, o disparo audiovisual ao atingir `00:00` é implementado em `components/context/timerNotifications.js` através da função `playCycleSound`:
 - A reprodução é realizada delegando ao módulo `expo-notifications` (`scheduleNotificationAsync` com `trigger: null` ou canal específico).
 - Antes de emitir o som, o fluxo executa `ensurePermission()` para checar se o usuário concedeu permissões de notificação no sistema operacional (iOS e Android).
 - **Problema Crítico de Acoplamento**: Se o usuário negar ou revogar as permissões de notificação do sistema — ou desativar alertas de notificação nas configurações do dispositivo por preferência de privacidade —, o método `ensurePermission()` retorna `false`. Consequentemente, `playCycleSound` encerra silenciosamente sua execução sem emitir som algum.
-- **Violação de Diretriz**: Isso quebra a diretriz fundamental do Fokus estabelecida em `.agents/rules/fokus-standards.md`:
+- **Violação de Diretriz**: Isso quebra a diretriz fundamental do Fokus do projeto:
   > *"O app nunca pode ficar mudo quando aberto."*
 - **Poluição Visual com o App Aberto**: Disparar notificações locais do sistema operacional com o aplicativo ativo em primeiro plano exibe banners ou toasts do SO por cima da interface do timer, degradando a estética minimalista e gerando ruído desnecessário.
 
@@ -37,7 +39,7 @@ A solução consiste em **desacoplar estritamente a emissão sonora em primeiro 
    │    Native Audio Engine      │   │  OS Scheduled Notification  │
    │   (ex.: expo-audio / AV)    │   │     (expo-notifications)    │
    ├─────────────────────────────┤   ├─────────────────────────────┤
-   │ • Toca focus.wav/break.wav  │   │ • Dispara alarme agendado   │
+   │ • Toca focus.wav/pause.wav  │   │ • Dispara alarme agendado   │
    │ • Independente de perm. SO  │   │ • Exact Alarm / Live Act.   │
    │ • Latência ultra-baixa      │   │ • Acorda tela bloqueada     │
    │ • Haptic via Haptics API    │   │ • Som e vibração nativos SO │
@@ -56,7 +58,7 @@ A solução consiste em **desacoplar estritamente a emissão sonora em primeiro 
    - Para tocar áudio e acionar vibração tátil com o app aberto na tela, nenhuma permissão de notificação é necessária.
    - Usuários que bloqueiam notificações podem utilizar o Fokus como um relógio de mesa interativo com garantia absoluta de áudio.
 3. **Pré-Carregamento e Latência Zero**:
-   - Manter os arquivos `focus.wav` e `break.wav` pré-carregados em memória (`prepareCycleSounds`), evitando atrasos de I/O na transição de estado.
+   - Manter os arquivos `focus.wav` e `pause.wav` pré-carregados em memória (`prepareCycleSounds`), evitando atrasos de I/O na transição de estado.
 4. **Reserva do `expo-notifications` para Background**:
    - O `expo-notifications` permanece responsável exclusivamente por:
      - Notificações agendadas pré-projetadas (`scheduleTimerNotifications`) com alarmes exatos (`SCHEDULE_EXACT_ALARM`) para quando a tela estiver desligada.
@@ -88,8 +90,8 @@ Além da separação do motor de áudio, as seguintes oportunidades técnicas es
 - **Objetivo**: Disponibilizar um bloco de Configurações Rápidas (Quick Settings Tile) no Android para iniciar ou pausar um ciclo Pomodoro diretamente da barra superior sem precisar abrir o app.
 - **Impacto**: Redução drástica da fricção de uso para ciclos rotineiros de trabalho.
 
-### 2.3 Exportação e Importação de Dados (Portabilidade Local-First)
-- **Objetivo**: Permitir exportação de todas as tarefas, histórico de 90 dias e configurações em arquivo JSON legível, além de restauração com validação de esquema defensiva.
+### 2.3 Exportação e Importação de Dados (Portabilidade Local-First) — ✅ entregue
+- **Objetivo**: Permitir exportação de todas as tarefas, histórico e configurações em arquivo JSON legível, além de restauração com validação de esquema defensiva. Entregue em Configurações › Seus dados (compartilhar no celular, download na web, restauração colando o texto). Próximo passo possível: seletor de arquivo com `expo-document-picker`.
 - **Impacto**: Soberania completa do usuário sobre seus dados de produtividade sem necessidade de nuvem.
 
 ### 2.4 Modo Minimalista Zen (Tela OLED Preta Pura)

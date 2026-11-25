@@ -13,8 +13,8 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "lint": "eslint .",
-    "format": "prettier --write app __tests__ __mocks__ components constants scripts services widgets",
-    "format:check": "prettier --check app __tests__ __mocks__ components constants scripts services widgets",
+    "format": "prettier --write app __tests__ __mocks__ components constants plugins scripts services widgets",
+    "format:check": "prettier --check app __tests__ __mocks__ components constants plugins scripts services widgets",
     "screenshots": "node scripts/screenshots.mjs"
   },
   "jest": {

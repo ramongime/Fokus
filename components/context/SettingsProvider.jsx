@@ -100,10 +100,16 @@ export function SettingsProvider({ children }) {
     );
   }, []);
 
+  // Restaura as configurações de um backup (normalizadas, como qualquer valor salvo)
+  const replaceSettings = useCallback((raw) => {
+    setSettings((oldState) => normalizeSettings({ ...oldState, ...raw }));
+  }, []);
+
   const value = useMemo(
     () => ({
       settings,
       isLoaded,
+      replaceSettings,
       setAutoStartCycles,
       setVibrate,
       setDistinctSounds,
@@ -115,6 +121,7 @@ export function SettingsProvider({ children }) {
     [
       settings,
       isLoaded,
+      replaceSettings,
       setAutoStartCycles,
       setVibrate,
       setDistinctSounds,

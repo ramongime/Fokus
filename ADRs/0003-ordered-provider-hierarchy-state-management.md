@@ -8,7 +8,7 @@
 Fokus requires shared state across three distinct functional domains:
 1. **Settings**: User preferences (phase durations, continuous cycle toggles, vibration, and onboarding status).
 2. **Tasks**: Task entity CRUD, status toggling, and pomodoro completion counts.
-3. **Timer**: Active segment queue, countdown ticking, session completions, and 90-day history.
+3. **Timer**: Active segment queue, countdown ticking, session completions, and the rolling focus history.
 
 These domains exhibit clear directional dependencies:
 - The Timer must read current duration settings and auto-advance configurations from Settings.

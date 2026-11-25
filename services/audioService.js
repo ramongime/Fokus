@@ -1,7 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 
 const FOCUS_SOUND = require("../assets/sounds/focus.wav");
-const BREAK_SOUND = require("../assets/sounds/break.wav");
+const BREAK_SOUND = require("../assets/sounds/pause.wav");
 
 const FOREGROUND_AUDIO_MODE = {
   playsInSilentMode: true,
