@@ -56,6 +56,15 @@
         }
       ],
       [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ],
+      [
         "expo-widgets",
         {
           "enableAndroid": true,

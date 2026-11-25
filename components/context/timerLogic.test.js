@@ -1,7 +1,9 @@
 import {
   buildPlan,
   countFinishedSegments,
+  FOREGROUND_ALERT_WINDOW_MS,
   formatSeconds,
+  getForegroundAlertSegment,
   getNextTypeId,
   getRemainingSeconds,
   getSegmentMinutes,
@@ -242,24 +244,55 @@ describe("normalizeSettings", () => {
   });
 });
 
-describe("shouldVibrateInApp", () => {
+describe("getForegroundAlertSegment & shouldVibrateInApp", () => {
   const justFinished = [{ typeId: "focus", endTime: NOW - 1000 }];
   const base = {
     finishedSegments: justFinished,
     now: NOW,
     settings,
     appActive: true,
-    notificationsScheduled: false,
   };
 
-  it("vibra quando o ciclo acabou agora, com o app aberto e sem notificação", () => {
+  it("retorna o último segmento concluído dentro da janela quando o app está ativo", () => {
+    const first = { typeId: "focus", endTime: NOW - 3000 };
+    const second = { typeId: "short", endTime: NOW - 500 };
+    expect(
+      getForegroundAlertSegment({
+        finishedSegments: [first, second],
+        now: NOW,
+        appActive: true,
+      }),
+    ).toEqual(second);
+    expect(
+      getForegroundAlertSegment({
+        finishedSegments: [first, second],
+        now: NOW,
+        appActive: false,
+      }),
+    ).toBeNull();
+  });
+
+  it("vibra quando o ciclo acabou agora e o app está ativo", () => {
     expect(shouldVibrateInApp(base)).toBe(true);
   });
 
-  it("não vibra junto com a notificação, que já vibra sozinha", () => {
-    expect(shouldVibrateInApp({ ...base, notificationsScheduled: true })).toBe(
-      false,
-    );
+  it("respeita o limite de FOREGROUND_ALERT_WINDOW_MS", () => {
+    expect(
+      shouldVibrateInApp({
+        ...base,
+        finishedSegments: [
+          { typeId: "focus", endTime: NOW - FOREGROUND_ALERT_WINDOW_MS },
+        ],
+      }),
+    ).toBe(true);
+    expect(
+      shouldVibrateInApp({
+        ...base,
+        finishedSegments: [
+          { typeId: "focus", endTime: NOW - FOREGROUND_ALERT_WINDOW_MS - 1 },
+        ],
+      }),
+    ).toBe(false);
   });
 
   it("não vibra com o app em segundo plano ou com a opção desligada", () => {
@@ -272,9 +305,10 @@ describe("shouldVibrateInApp", () => {
     ).toBe(false);
   });
 
-  it("não vibra por um ciclo que acabou há muito tempo", () => {
+  it("não vibra por um ciclo que acabou há muito tempo ou sem segmentos", () => {
     const old = [{ typeId: "focus", endTime: NOW - 10 * MIN }];
     expect(shouldVibrateInApp({ ...base, finishedSegments: old })).toBe(false);
+    expect(shouldVibrateInApp({ ...base, finishedSegments: [] })).toBe(false);
   });
 });
 

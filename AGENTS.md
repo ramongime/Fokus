@@ -6,7 +6,7 @@ Fokus is an offline-first Pomodoro timer and task manager built with React Nativ
 
 - **Architecture, storage schema & runtime boundaries**: Read [`CONTEXT.md`](CONTEXT.md) before changing providers, persistence, or background timer behavior.
 - **Domain vocabulary (`pt-BR`)**: Read [`GLOSSARY.md`](GLOSSARY.md) when naming cycles, tasks, stats, or alerts.
-- **Architectural decisions**: Read [`ADRs/`](ADRs/) (`0001`–`0007`; note this repo uses `ADRs/` rather than `docs/adr/`).
+- **Architectural decisions**: Read [`ADRs/`](ADRs/) (`0001`–`0008`; note this repo uses `ADRs/` rather than `docs/adr/`).
 - **Planned initiatives**: Read [`ROADMAP.md`](ROADMAP.md) before altering foreground audio or adding native Live Activities.
 - **UI & testing standards**: Read [`.agents/rules/fokus-standards.md`](.agents/rules/fokus-standards.md) when editing UI components or tests.
 
@@ -26,5 +26,11 @@ Fokus is an offline-first Pomodoro timer and task manager built with React Nativ
 - **Android exact alarms**: Preserve `SCHEDULE_EXACT_ALARM` in `app.json` for locked-screen alarm precision on Android 12+.
 - **Immutable Android notification channels**: Create new channel IDs when changing sound or vibration policies; `timer` is purged on startup.
 - **Web SPA shell & bundle**: Keep `web.output: "single"` and `asyncRoutes.web: false` in `app.json`, and keep `public/index.html` background color synced with `colors.background` (`constants/theme.js`).
-- **Web audio parity**: Keep exported signatures in `components/context/timerNotifications.web.js` (including `{ distinctSounds }` and `prepareCycleSounds`) synchronized with `timerNotifications.js`.
+- **Web audio & notification parity**: Keep the 5 exported signatures in `services/audioService.web.js` (`prepareCycleSounds`, `playCycleSound`, `scheduleCycleAlarms`, `cancelCycleAlarms`, `releaseCycleSounds`) synchronized with `services/audioService.js`, and keep notification stubs/constants in `components/context/timerNotifications.web.js` synchronized with `components/context/timerNotifications.js`.
 - **Screenshots script**: `npm run screenshots` requires one-time `npx playwright install chromium` and outputs to `docs/screenshots/` and `docs/banner.png`.
+
+## Execution Efficiency
+
+- Batch independent file reads, searches, and edits in parallel within the same turn.
+- Chain checks into a single command (`lint && typecheck && test`), scoping to affected test files and quiet reporters (`--silent`, `--reporter=dot`) so output surfaces only failures.
+- Delegate broad codebase exploration to the `research` subagent to keep the main context lean.

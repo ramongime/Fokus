@@ -176,19 +176,34 @@ export const normalizeSavedSegments = (rawSegments) => {
   return valid.length > 0 ? valid : null;
 };
 
-// Vibrar pelo próprio app só quando ele está aberto, o ciclo acabou agora e não há
-// notificação agendada (se houver, a notificação já vibra, inclusive com a tela bloqueada)
+// Último ciclo que terminou dentro da janela de alerta em primeiro plano com o app aberto
+export const getForegroundAlertSegment = ({
+  finishedSegments,
+  now,
+  appActive,
+}) => {
+  if (!appActive) {
+    return null;
+  }
+  const recentSegments = finishedSegments.filter(
+    (s) => now - s.endTime <= FOREGROUND_ALERT_WINDOW_MS,
+  );
+  return recentSegments[recentSegments.length - 1] ?? null;
+};
+
+// Vibrar pelo próprio app quando ele está aberto e o ciclo acabou agora.
+// Em primeiro plano as notificações do SO são silenciadas, então o próprio app
+// dispara a vibração tanto no Android quanto no iOS e na web.
 export const shouldVibrateInApp = ({
   finishedSegments,
   now,
   settings,
   appActive,
-  notificationsScheduled,
 }) =>
-  settings.vibrate &&
-  appActive &&
-  !notificationsScheduled &&
-  finishedSegments.some((s) => now - s.endTime <= FOREGROUND_ALERT_WINDOW_MS);
+  Boolean(
+    settings.vibrate &&
+    getForegroundAlertSegment({ finishedSegments, now, appActive }),
+  );
 
 // 1500 -> "25:00". Não usa Date, então funciona acima de 60 minutos ("90:00")
 export const formatSeconds = (totalSeconds) =>

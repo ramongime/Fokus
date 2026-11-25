@@ -57,14 +57,20 @@ const LEGACY_CHANNEL_ID = "timer";
 export const ONGOING_CHANNEL_ID = "timer-active";
 export const ONGOING_NOTIFICATION_ID = "fokus-timer-ongoing";
 
-// Mostra a notificação mesmo com o app aberto
+// Em primeiro plano o som e a vibração vêm do audioService/Vibration; suprimimos
+// banners e sons de notificações agendadas, mantendo apenas a notificação fixa do Android.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const isOngoing =
+      Platform.OS === "android" &&
+      notification?.request?.identifier === ONGOING_NOTIFICATION_ID;
+    return {
+      shouldShowBanner: false,
+      shouldShowList: isOngoing,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 let permissionPromise = null;
@@ -219,42 +225,3 @@ export const dismissOngoingNotification = async () => {
     // Ignora se já descartada
   }
 };
-
-// Emite aviso sonoro e vibratório imediato ao atingir 00:00 (primeiro plano)
-export const playCycleSound = async (
-  typeId,
-  { distinctSounds = true, vibrate = true } = {},
-) => {
-  try {
-    const hasPermission = await ensurePermission();
-    if (!hasPermission) {
-      return;
-    }
-    const soundPhase = typeId === "focus" ? "focus" : "break";
-    const customSound = distinctSounds && typeId != null;
-    const channelId = customSound
-      ? `cycles-${soundPhase}-${vibrate ? "vibrate" : "quiet"}`
-      : vibrate
-        ? "cycles"
-        : "cycles-quiet";
-    const sound = customSound ? `${soundPhase}.wav` : true;
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title:
-          typeId === "focus" ? "Ciclo de foco concluído!" : "Pausa concluída!",
-        body:
-          typeId === "focus"
-            ? "Excelente foco! Hora de relaxar a mente."
-            : "Pausa finalizada. Pronto para focar novamente?",
-        sound,
-        vibrate: vibrate ? VIBRATION_PATTERN : undefined,
-      },
-      trigger: channelId ? { channelId } : null,
-    });
-  } catch (e) {
-    console.warn("Erro ao emitir alerta sonoro de conclusão:", e);
-  }
-};
-
-export const prepareCycleSounds = async () => {};

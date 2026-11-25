@@ -7,8 +7,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { AppState, Platform, Vibration } from "react-native";
+import { AppState, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
+import {
+  cancelCycleAlarms,
+  playCycleSound,
+  prepareCycleSounds,
+  releaseCycleSounds,
+  scheduleCycleAlarms,
+} from "../../services/audioService";
 import {
   addFocusSessions,
   getTodayCount,
@@ -18,8 +25,8 @@ import {
 import {
   buildPlan,
   countFinishedSegments,
-  FOREGROUND_ALERT_WINDOW_MS,
   getDurationSeconds,
+  getForegroundAlertSegment,
   getNextTypeId,
   getRemainingSeconds,
   getSegmentMinutes,
@@ -31,8 +38,6 @@ import {
 import {
   cancelTimerNotifications,
   dismissOngoingNotification,
-  playCycleSound,
-  prepareCycleSounds,
   scheduleTimerNotifications,
   showOngoingNotification,
   VIBRATION_PATTERN,
@@ -48,9 +53,9 @@ import useTaskContext from "./useTaskContext";
  * celular bloquear e o JavaScript ficar congelado, ao voltar o valor já está certo.
  *
  * Fluxo:
- *   play   -> buildPlan monta os ciclos e agenda uma notificação para o fim de cada um
+ *   play   -> buildPlan monta os ciclos, prepara o áudio e agenda notificações/alarmes
  *   tick   -> descobre em qual ciclo estamos, contabiliza os que terminaram e atualiza a tela
- *   pausa  -> guarda o tempo restante e cancela as notificações
+ *   pausa  -> guarda o tempo restante e cancela as notificações e alarmes de áudio
  *   fim    -> para no próximo modo sugerido (pausa curta, longa ou foco)
  */
 export const TimerContext = createContext();
@@ -85,9 +90,6 @@ export function TimerProvider({ children }) {
   const settingsRef = useRef(settings);
   const currentTaskIdRef = useRef(currentTaskId);
   const ongoingEndTimeRef = useRef(null);
-  // Se há notificações agendadas para este plano, elas já vibram; o app não vibra junto.
-  // Começa true para um plano restaurado ao abrir o app, que teve notificações agendadas.
-  const notificationsScheduledRef = useRef(true);
 
   // Atualiza o plano e o state juntos, para ref e state nunca ficarem diferentes
   const updateRun = useCallback((newSegments, newProcessed) => {
@@ -202,6 +204,13 @@ export function TimerProvider({ children }) {
     };
   }, []);
 
+  // Libera os players de áudio ao desmontar o provider
+  useEffect(() => {
+    return () => {
+      releaseCycleSounds();
+    };
+  }, []);
+
   // Salva sempre que algo relevante muda (o tempo ao vivo não precisa ser salvo)
   useEffect(() => {
     if (!isLoaded) {
@@ -241,26 +250,25 @@ export function TimerProvider({ children }) {
         (s) => s.typeId === "focus",
       );
       const focusDone = focusSegments.length;
+      const appActive = AppState.currentState === "active";
       if (
-        Platform.OS !== "android" &&
         shouldVibrateInApp({
           finishedSegments,
           now,
           settings: currentSettings,
-          appActive: AppState.currentState === "active",
-          notificationsScheduled: notificationsScheduledRef.current,
+          appActive,
         })
       ) {
         Vibration.vibrate(VIBRATION_PATTERN);
       }
-      const recentSegments = finishedSegments.filter(
-        (segment) => now - segment.endTime <= FOREGROUND_ALERT_WINDOW_MS,
-      );
-      const lastRecentSegment = recentSegments[recentSegments.length - 1];
-      if (lastRecentSegment) {
-        playCycleSound(lastRecentSegment.typeId, {
+      const alertSegment = getForegroundAlertSegment({
+        finishedSegments,
+        now,
+        appActive,
+      });
+      if (alertSegment) {
+        playCycleSound(alertSegment.typeId, {
           distinctSounds: currentSettings.distinctSounds,
-          vibrate: currentSettings.vibrate,
         });
       }
       processedRef.current = finished;
@@ -352,10 +360,9 @@ export function TimerProvider({ children }) {
     };
   }, [ready, segments, reconcileFinished, finishPlan]);
 
-  // Play: planeja os ciclos a partir do tempo atual e agenda as notificações
+  // Play: planeja os ciclos a partir do tempo atual e agenda notificações e alarmes de áudio
   const startTimer = useCallback(async () => {
-    // Na web o navegador só libera áudio dentro de um toque: prepara sempre no Play,
-    // porque o som de fim de ciclo toca com ou sem sons distintos. No nativo é no-op.
+    // Prepara os sons no gesto do usuário (desbloqueia AudioContext na web e pré-carrega no nativo)
     prepareCycleSounds();
     const now = Date.now();
     const currentSettings = settingsRef.current;
@@ -369,35 +376,37 @@ export function TimerProvider({ children }) {
     setClock(now);
     updateRun(plan, 0);
     setLiveSeconds(seconds);
-    notificationsScheduledRef.current = false;
     ongoingEndTimeRef.current = plan[0].endTime;
+    const plannedNotifications = plan.map((segment, index) => ({
+      ...getSegmentNotification(plan, index, currentSettings, currentTask),
+      typeId: segment.typeId,
+      date: segment.endTime,
+    }));
+    const audioAlarmsPromise = scheduleCycleAlarms(plannedNotifications, {
+      distinctSounds: currentSettings.distinctSounds,
+    });
     const ongoingPromise = showOngoingNotification({
       typeLabel: getTypeById(typeId).display,
       endTime: plan[0].endTime,
     });
 
-    const ids = await scheduleTimerNotifications(
-      plan.map((segment, index) => ({
-        ...getSegmentNotification(plan, index, currentSettings, currentTask),
-        typeId: segment.typeId,
-        date: segment.endTime,
-      })),
-      {
-        vibrate: currentSettings.vibrate,
-        distinctSounds: currentSettings.distinctSounds,
-      },
-    );
+    const ids = await scheduleTimerNotifications(plannedNotifications, {
+      vibrate: currentSettings.vibrate,
+      distinctSounds: currentSettings.distinctSounds,
+    });
     // Pausou ou trocou de modo enquanto as notificações eram agendadas
     if (segmentsRef.current !== plan) {
-      await ongoingPromise;
+      await Promise.all([ongoingPromise, audioAlarmsPromise]);
       const stopped = segmentsRef.current == null;
+      if (stopped) {
+        await cancelCycleAlarms();
+      }
       await cancelTimerNotifications(
         ids,
         stopped ? undefined : { dismissOngoing: false },
       );
       return;
     }
-    notificationsScheduledRef.current = ids.length > 0;
   }, [typeId, seconds, currentTask, updateRun]);
 
   // Pausa: guarda quanto faltava no ciclo atual e cancela os avisos
@@ -418,6 +427,7 @@ export function TimerProvider({ children }) {
       setPausedSeconds(getRemainingSeconds(current.endTime, now));
       updateRun(null, 0);
     }
+    cancelCycleAlarms();
     cancelTimerNotifications();
   }, [reconcileFinished, finishPlan, updateRun]);
 
@@ -434,6 +444,7 @@ export function TimerProvider({ children }) {
     (newTimerType) => {
       ongoingEndTimeRef.current = null;
       if (timerRunning) {
+        cancelCycleAlarms();
         cancelTimerNotifications();
       }
       updateRun(null, 0);

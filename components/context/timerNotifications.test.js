@@ -4,7 +4,6 @@ import {
   cancelTimerNotifications,
   dismissOngoingNotification,
   ONGOING_NOTIFICATION_ID,
-  playCycleSound,
   scheduleTimerNotifications,
   showOngoingNotification,
   VIBRATION_PATTERN,
@@ -57,17 +56,67 @@ describe("timerNotifications", () => {
   });
 
   describe("setNotificationHandler", () => {
-    it("configures the notification handler to show banner/list and play sound", async () => {
+    it("suppresses foreground cycle notifications on both iOS and Android", async () => {
       expect(Notifications.setNotificationHandler).toHaveBeenCalledWith({
         handleNotification: expect.any(Function),
       });
 
       const config = Notifications.setNotificationHandler.mock.calls[0][0];
-      const result = await config.handleNotification();
-      expect(result).toEqual({
-        shouldShowBanner: true,
+      const cycleNotification = {
+        request: { identifier: "cycle-notif-1" },
+      };
+
+      Platform.OS = "ios";
+      await expect(
+        config.handleNotification(cycleNotification),
+      ).resolves.toEqual({
+        shouldShowBanner: false,
+        shouldShowList: false,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      });
+
+      Platform.OS = "android";
+      await expect(
+        config.handleNotification(cycleNotification),
+      ).resolves.toEqual({
+        shouldShowBanner: false,
+        shouldShowList: false,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      });
+
+      await expect(config.handleNotification()).resolves.toEqual({
+        shouldShowBanner: false,
+        shouldShowList: false,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      });
+    });
+
+    it("keeps the Android ongoing notification visible in the notification list only on Android", async () => {
+      const config = Notifications.setNotificationHandler.mock.calls[0][0];
+      const ongoingNotification = {
+        request: { identifier: ONGOING_NOTIFICATION_ID },
+      };
+
+      Platform.OS = "android";
+      await expect(
+        config.handleNotification(ongoingNotification),
+      ).resolves.toEqual({
+        shouldShowBanner: false,
         shouldShowList: true,
-        shouldPlaySound: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      });
+
+      Platform.OS = "ios";
+      await expect(
+        config.handleNotification(ongoingNotification),
+      ).resolves.toEqual({
+        shouldShowBanner: false,
+        shouldShowList: false,
+        shouldPlaySound: false,
         shouldSetBadge: false,
       });
     });
@@ -333,37 +382,6 @@ describe("timerNotifications", () => {
       expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith(
         ONGOING_NOTIFICATION_ID,
       );
-    });
-  });
-
-  describe("playCycleSound", () => {
-    it("schedules immediate notification with sound and vibration", async () => {
-      await playCycleSound("focus", { distinctSounds: true, vibrate: true });
-
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith({
-        content: expect.objectContaining({
-          title: "Ciclo de foco concluído!",
-          sound: "focus.wav",
-          vibrate: VIBRATION_PATTERN,
-        }),
-        trigger: { channelId: "cycles-focus-vibrate" },
-      });
-    });
-
-    it("schedules break sound for break cycles", async () => {
-      await playCycleSound("shortBreak", {
-        distinctSounds: true,
-        vibrate: false,
-      });
-
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith({
-        content: expect.objectContaining({
-          title: "Pausa concluída!",
-          sound: "break.wav",
-          vibrate: undefined,
-        }),
-        trigger: { channelId: "cycles-break-quiet" },
-      });
     });
   });
 });

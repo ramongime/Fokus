@@ -2,14 +2,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { AppState, Platform, Vibration } from "react-native";
 import { DEFAULT_SETTINGS } from "../../constants/settings";
+import {
+  cancelCycleAlarms,
+  playCycleSound,
+  prepareCycleSounds,
+  releaseCycleSounds,
+  scheduleCycleAlarms,
+} from "../../services/audioService";
 import { todayKey } from "./historyLogic";
 import { SettingsProvider } from "./SettingsProvider";
 import { TasksProvider } from "./TaskProvider";
 import {
   cancelTimerNotifications,
   dismissOngoingNotification,
-  playCycleSound,
-  prepareCycleSounds,
   scheduleTimerNotifications,
   showOngoingNotification,
   VIBRATION_PATTERN,
@@ -23,6 +28,14 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock("../../services/audioService", () => ({
+  prepareCycleSounds: jest.fn(() => Promise.resolve()),
+  playCycleSound: jest.fn(() => Promise.resolve()),
+  scheduleCycleAlarms: jest.fn(() => Promise.resolve()),
+  cancelCycleAlarms: jest.fn(() => Promise.resolve()),
+  releaseCycleSounds: jest.fn(),
+}));
+
 jest.mock("./timerNotifications", () => ({
   scheduleTimerNotifications: jest.fn(() =>
     Promise.resolve(["notif-1", "notif-2"]),
@@ -30,8 +43,6 @@ jest.mock("./timerNotifications", () => ({
   cancelTimerNotifications: jest.fn(() => Promise.resolve()),
   showOngoingNotification: jest.fn(() => Promise.resolve()),
   dismissOngoingNotification: jest.fn(() => Promise.resolve()),
-  playCycleSound: jest.fn(() => Promise.resolve()),
-  prepareCycleSounds: jest.fn(() => Promise.resolve()),
   VIBRATION_PATTERN: [0, 400, 200, 400],
 }));
 
@@ -46,14 +57,24 @@ function AllProviders({ children }) {
 }
 
 describe("TimerProvider & useTimerContext", () => {
+  const originalAppState = AppState.currentState;
+  const originalPlatform = Platform.OS;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    AppState.currentState = "active";
+    Platform.OS = originalPlatform;
     AsyncStorage.getItem.mockImplementation(async (key) => {
       if (key === "fokus-settings") return null;
       if (key === "fokus-tasks") return null;
       if (key === "fokus-timer") return null;
       return null;
     });
+  });
+
+  afterEach(() => {
+    AppState.currentState = originalAppState;
+    Platform.OS = originalPlatform;
   });
 
   it("throws descriptive error when useTimerContext is used outside TimerProvider", async () => {
@@ -205,10 +226,9 @@ describe("TimerProvider & useTimerContext", () => {
 
     await waitFor(
       () => {
-        expect(playCycleSound).toHaveBeenCalledWith(
-          "focus",
-          expect.objectContaining({ distinctSounds: false }),
-        );
+        expect(playCycleSound).toHaveBeenCalledWith("focus", {
+          distinctSounds: false,
+        });
       },
       { timeout: 2000 },
     );
@@ -261,9 +281,18 @@ describe("TimerProvider & useTimerContext", () => {
 
     expect(result.current.timerRunning).toBe(true);
     expect(prepareCycleSounds).toHaveBeenCalledTimes(1);
+    expect(scheduleCycleAlarms).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          typeId: "focus",
+          date: expect.any(Number),
+        }),
+      ]),
+      { distinctSounds: false },
+    );
   });
 
-  it("cancels notifications if toggleTimerType is called while timer is running", async () => {
+  it("cancels notifications and cycle alarms if toggleTimerType is called while timer is running", async () => {
     const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
@@ -283,10 +312,11 @@ describe("TimerProvider & useTimerContext", () => {
 
     expect(result.current.timerRunning).toBe(false);
     expect(result.current.timerType.id).toBe("short");
+    expect(cancelCycleAlarms).toHaveBeenCalled();
     expect(cancelTimerNotifications).toHaveBeenCalled();
   });
 
-  it("cancels scheduled notifications if timer is stopped before scheduleTimerNotifications resolves", async () => {
+  it("cancels scheduled notifications and cycle alarms if timer is stopped before scheduleTimerNotifications resolves", async () => {
     let resolveSchedule;
     scheduleTimerNotifications.mockImplementationOnce(
       () =>
@@ -312,11 +342,14 @@ describe("TimerProvider & useTimerContext", () => {
       result.current.toggleTimerType({ id: "long" });
     });
 
+    cancelCycleAlarms.mockClear();
+
     // Now resolve scheduling
     await act(async () => {
       resolveSchedule(["delayed-id-1"]);
     });
 
+    expect(cancelCycleAlarms).toHaveBeenCalledTimes(1);
     expect(cancelTimerNotifications).toHaveBeenCalledWith(
       ["delayed-id-1"],
       undefined,
@@ -470,7 +503,7 @@ describe("TimerProvider & useTimerContext", () => {
     });
   });
 
-  it("starts the timer and schedules notifications when toggleTimer is called", async () => {
+  it("starts the timer, prepares audio, and schedules notifications and cycle alarms when toggleTimer is called", async () => {
     const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
@@ -484,10 +517,20 @@ describe("TimerProvider & useTimerContext", () => {
     });
 
     expect(result.current.timerRunning).toBe(true);
+    expect(prepareCycleSounds).toHaveBeenCalledTimes(1);
+    expect(scheduleCycleAlarms).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          typeId: "focus",
+          date: expect.any(Number),
+        }),
+      ]),
+      { distinctSounds: DEFAULT_SETTINGS.distinctSounds },
+    );
     expect(scheduleTimerNotifications).toHaveBeenCalled();
   });
 
-  it("pauses the running timer, saves pausedSeconds, and cancels notifications", async () => {
+  it("pauses the running timer, saves pausedSeconds, and cancels notifications and cycle alarms", async () => {
     const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
@@ -506,11 +549,12 @@ describe("TimerProvider & useTimerContext", () => {
     });
 
     expect(result.current.timerRunning).toBe(false);
+    expect(cancelCycleAlarms).toHaveBeenCalled();
     expect(cancelTimerNotifications).toHaveBeenCalled();
     expect(result.current.seconds).toBeGreaterThan(0);
   });
 
-  it("completes a focus segment, credits pomodoro to current task, updates history, and vibrates", async () => {
+  it("completes a focus segment in foreground, credits pomodoro, updates history, plays sound, and vibrates", async () => {
     const vibrateSpy = jest
       .spyOn(Vibration, "vibrate")
       .mockImplementation(() => {});
@@ -554,60 +598,85 @@ describe("TimerProvider & useTimerContext", () => {
       { timeout: 2000 },
     );
 
-    // When restored from storage, notificationsScheduledRef defaults to true
-    // so in-app vibration is suppressed to avoid duplicate vibration with the OS alert
-    expect(vibrateSpy).not.toHaveBeenCalled();
+    // Foreground notifications are silenced by setNotificationHandler, so the app plays
+    // audio via audioService and triggers vibration directly when AppState is active
+    expect(playCycleSound).toHaveBeenCalledWith("focus", {
+      distinctSounds: DEFAULT_SETTINGS.distinctSounds,
+    });
+    expect(vibrateSpy).toHaveBeenCalledWith(VIBRATION_PATTERN);
     vibrateSpy.mockRestore();
   });
 
-  it("triggers in-app vibration when notifications are not scheduled (e.g. permission denied)", async () => {
-    const originalOS = Platform.OS;
-    const originalAppState = AppState.currentState;
-    Platform.OS = "ios";
-    AppState.currentState = "active";
-    const vibrateSpy = jest
-      .spyOn(Vibration, "vibrate")
-      .mockImplementation(() => {});
-    scheduleTimerNotifications.mockResolvedValueOnce([]); // No OS notifications scheduled
+  it.each([
+    {
+      label: "ios with scheduled OS notifications",
+      os: "ios",
+      scheduledIds: ["scheduled-os-notif"],
+    },
+    {
+      label: "android with scheduled OS notifications",
+      os: "android",
+      scheduledIds: ["scheduled-os-notif"],
+    },
+    {
+      label: "ios when OS notification permission is denied",
+      os: "ios",
+      scheduledIds: [],
+    },
+  ])(
+    "triggers in-app vibration and sound in foreground ($label)",
+    async ({ os, scheduledIds }) => {
+      Platform.OS = os;
+      AppState.currentState = "active";
+      const vibrateSpy = jest
+        .spyOn(Vibration, "vibrate")
+        .mockImplementation(() => {});
+      scheduleTimerNotifications.mockResolvedValueOnce(scheduledIds);
 
-    AsyncStorage.getItem.mockImplementation(async (key) => {
-      if (key === "fokus-timer")
-        return JSON.stringify({ typeId: "focus", pausedSeconds: 1 });
-      if (key === "fokus-settings")
-        return JSON.stringify({ ...DEFAULT_SETTINGS, autoStartCycles: false });
-      return null;
-    });
-
-    const { result } = await renderHook(() => useTimerContext(), {
-      wrapper: AllProviders,
-    });
-
-    await waitFor(() => {
-      expect(result.current.timerRunning).toBe(false);
-      expect(result.current.seconds).toBe(1);
-    });
-
-    jest.useFakeTimers();
-    try {
-      await act(async () => {
-        result.current.toggleTimer();
+      AsyncStorage.getItem.mockImplementation(async (key) => {
+        if (key === "fokus-timer")
+          return JSON.stringify({ typeId: "focus", pausedSeconds: 1 });
+        if (key === "fokus-settings")
+          return JSON.stringify({
+            ...DEFAULT_SETTINGS,
+            autoStartCycles: false,
+            vibrate: true,
+          });
+        return null;
       });
-      expect(result.current.timerRunning).toBe(true);
 
-      await act(async () => {
-        jest.advanceTimersByTime(1200);
+      const { result } = await renderHook(() => useTimerContext(), {
+        wrapper: AllProviders,
       });
 
-      expect(result.current.timerRunning).toBe(false);
-      expect(result.current.timerType.id).toBe("short");
-      expect(vibrateSpy).toHaveBeenCalledWith(VIBRATION_PATTERN);
-    } finally {
-      jest.useRealTimers();
-      vibrateSpy.mockRestore();
-      Platform.OS = originalOS;
-      AppState.currentState = originalAppState;
-    }
-  });
+      await waitFor(() => {
+        expect(result.current.timerRunning).toBe(false);
+        expect(result.current.seconds).toBe(1);
+      });
+
+      jest.useFakeTimers();
+      try {
+        await act(async () => {
+          result.current.toggleTimer();
+        });
+        expect(result.current.timerRunning).toBe(true);
+
+        await act(async () => {
+          jest.advanceTimersByTime(1200);
+        });
+
+        expect(result.current.timerRunning).toBe(false);
+        expect(result.current.timerType.id).toBe("short");
+        expect(playCycleSound).toHaveBeenCalledWith("focus", {
+          distinctSounds: DEFAULT_SETTINGS.distinctSounds,
+        });
+        expect(vibrateSpy).toHaveBeenCalledWith(VIBRATION_PATTERN);
+      } finally {
+        jest.useRealTimers();
+        vibrateSpy.mockRestore();
+      }
+    },
+  );
 
   it("reconciles completed cycle if paused right after endTime before the next tick", async () => {
     AsyncStorage.getItem.mockImplementation(async (key) => {
@@ -698,9 +767,8 @@ describe("TimerProvider & useTimerContext", () => {
     });
   });
 
-  it("suppresses in-app vibration on Android to avoid duplicate concurrent vibration", async () => {
-    const originalOS = Platform.OS;
-    Platform.OS = "android";
+  it("does not play foreground sound or vibrate when AppState is in background", async () => {
+    AppState.currentState = "background";
     const vibrateSpy = jest
       .spyOn(Vibration, "vibrate")
       .mockImplementation(() => {});
@@ -719,20 +787,40 @@ describe("TimerProvider & useTimerContext", () => {
       return null;
     });
 
-    await renderHook(() => useTimerContext(), {
+    const { result } = await renderHook(() => useTimerContext(), {
       wrapper: AllProviders,
     });
 
     await waitFor(
       () => {
-        expect(playCycleSound).toHaveBeenCalled();
+        expect(result.current.todayCount).toBe(1);
+        expect(result.current.timerRunning).toBe(false);
+        expect(result.current.timerType.id).toBe("short");
       },
       { timeout: 2000 },
     );
 
+    expect(playCycleSound).not.toHaveBeenCalled();
     expect(vibrateSpy).not.toHaveBeenCalled();
     vibrateSpy.mockRestore();
-    Platform.OS = originalOS;
+  });
+
+  it("releases cycle sounds when TimerProvider unmounts", async () => {
+    const { result, unmount } = await renderHook(() => useTimerContext(), {
+      wrapper: AllProviders,
+    });
+
+    await waitFor(() => {
+      expect(result.current.timerType.id).toBe("focus");
+    });
+
+    expect(releaseCycleSounds).not.toHaveBeenCalled();
+
+    await act(() => {
+      unmount();
+    });
+
+    expect(releaseCycleSounds).toHaveBeenCalledTimes(1);
   });
 
   it("updates clock and syncs on AppState active event", async () => {
