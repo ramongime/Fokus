@@ -54,6 +54,9 @@ import useTaskContext from "./useTaskContext";
  *   fim    -> para no próximo modo sugerido (pausa curta, longa ou foco)
  */
 export const TimerContext = createContext();
+// O tempo restante muda a cada segundo; fica num contexto separado para que só quem
+// mostra o relógio (tela do timer) renderize a cada segundo, e não o menu ou o histórico
+export const TimerSecondsContext = createContext(null);
 
 const TIMER_STORAGE_KEY = "fokus-timer";
 
@@ -359,16 +362,20 @@ export function TimerProvider({ children }) {
     prepareCycleSounds();
     const now = Date.now();
     const currentSettings = settingsRef.current;
+    // Parado, o tempo na tela é o pausado ou a duração cheia. Calculado aqui (e não
+    // lido de `seconds`) para o toggleTimer não mudar a cada segundo do timer
+    const startSeconds =
+      pausedSeconds ?? getDurationSeconds(typeId, currentSettings);
     const plan = buildPlan({
       typeId,
-      seconds,
+      seconds: startSeconds,
       now,
       focusCount: getTodayCount(historyRef.current, now),
       settings: currentSettings,
     });
     setClock(now);
     updateRun(plan, 0);
-    setLiveSeconds(seconds);
+    setLiveSeconds(startSeconds);
     notificationsScheduledRef.current = false;
     ongoingEndTimeRef.current = plan[0].endTime;
     const ongoingPromise = showOngoingNotification({
@@ -398,7 +405,7 @@ export function TimerProvider({ children }) {
       return;
     }
     notificationsScheduledRef.current = ids.length > 0;
-  }, [typeId, seconds, currentTask, updateRun]);
+  }, [typeId, pausedSeconds, currentTask, updateRun]);
 
   // Pausa: guarda quanto faltava no ciclo atual e cancela os avisos
   const pauseTimer = useCallback(() => {
@@ -453,7 +460,6 @@ export function TimerProvider({ children }) {
   const value = useMemo(
     () => ({
       timerType,
-      seconds,
       timerRunning,
       todayCount,
       segments,
@@ -466,7 +472,6 @@ export function TimerProvider({ children }) {
     }),
     [
       timerType,
-      seconds,
       timerRunning,
       todayCount,
       segments,
@@ -480,6 +485,10 @@ export function TimerProvider({ children }) {
   );
 
   return (
-    <TimerContext.Provider value={value}>{children}</TimerContext.Provider>
+    <TimerContext.Provider value={value}>
+      <TimerSecondsContext.Provider value={seconds}>
+        {children}
+      </TimerSecondsContext.Provider>
+    </TimerContext.Provider>
   );
 }

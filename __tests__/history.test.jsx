@@ -2,13 +2,13 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { useLocalSearchParams } from "expo-router";
 import History from "../app/history";
 import useSettingsContext from "../components/context/useSettingsContext";
-import useTimerContext from "../components/context/useTimerContext";
+import useTimerSummary from "../components/context/useTimerSummary";
 
 jest.mock("expo-router", () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
-jest.mock("../components/context/useTimerContext", () => jest.fn());
+jest.mock("../components/context/useTimerSummary", () => jest.fn());
 jest.mock("../components/context/useSettingsContext", () => jest.fn());
 
 describe("History screen", () => {
@@ -26,7 +26,7 @@ describe("History screen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useLocalSearchParams.mockReturnValue({});
-    useTimerContext.mockReturnValue({
+    useTimerSummary.mockReturnValue({
       history: mockHistory,
       clock: MOCK_NOW,
     });

@@ -49,6 +49,13 @@ const getDay = (history, key) =>
 export const getTodayCount = (history, now) =>
   getDay(history, todayKey(now)).count;
 
+// Início do próximo dia local (meia-noite), quando o contador de focos de hoje zera
+export const getNextDayStart = (now) => {
+  const date = new Date(now);
+  date.setHours(24, 0, 0, 0);
+  return date.getTime();
+};
+
 // Soma focos concluídos ao histórico. Cada sessão: { endTime, minutes }.
 // O dia é o do fim do foco, então um foco que termina 00:10 conta no dia novo.
 export const addFocusSessions = (history, sessions, now) => {

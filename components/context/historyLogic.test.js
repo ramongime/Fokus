@@ -1,4 +1,5 @@
 import {
+  getNextDayStart,
   addFocusSessions,
   formatMinutes,
   getStreak,
@@ -208,5 +209,22 @@ describe("normalizeHistory", () => {
       "2026-09-26": { count: 2, minutes: 50 },
       "2026-09-25": { count: 1, minutes: 0 },
     });
+  });
+});
+
+describe("getNextDayStart", () => {
+  it("retorna a próxima meia-noite local", () => {
+    const now = new Date(2026, 10, 25, 23, 59, 30).getTime();
+    expect(getNextDayStart(now)).toBe(new Date(2026, 10, 26).getTime());
+  });
+
+  it("vira o mês e o ano", () => {
+    const now = new Date(2026, 11, 31, 8, 0).getTime();
+    expect(getNextDayStart(now)).toBe(new Date(2027, 0, 1).getTime());
+  });
+
+  it("à meia-noite em ponto aponta para o dia seguinte", () => {
+    const now = new Date(2026, 10, 26).getTime();
+    expect(getNextDayStart(now)).toBe(new Date(2026, 10, 27).getTime());
   });
 });

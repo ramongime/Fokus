@@ -11,14 +11,14 @@ import {
   summarizeWeek,
 } from "../components/context/historyLogic";
 import useSettingsContext from "../components/context/useSettingsContext";
-import useTimerContext from "../components/context/useTimerContext";
+import useTimerSummary from "../components/context/useTimerSummary";
 import { StatTile } from "../components/StatTile";
 import { WeekChart } from "../components/WeekChart";
 import { colors, fontSizes, radii } from "../constants/theme";
 
 export default function History() {
   const params = useLocalSearchParams();
-  const { history, clock: now } = useTimerContext();
+  const { history, clock: now } = useTimerSummary();
   const { settings } = useSettingsContext();
   const [prevParamView, setPrevParamView] = useState(params?.view);
   const [view, setView] = useState(params?.view === "month" ? "month" : "week");
